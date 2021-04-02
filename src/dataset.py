@@ -2,8 +2,13 @@ import os
 import numpy as np
 import pandas as pd
 from io import StringIO
-import re
-from functools import reduce
+import astropy.wcs as pywcs
+import src.utils as utils
+import json
+import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+
+
 
 class SKADataset:
     """
@@ -83,4 +88,164 @@ class SKADataset:
         df = pd.read_csv(dataset_path, skiprows=18, header=None, names=self.col_names, delimiter=' ', skipinitialspace=True)
 
         return df
+
     
+    def _convert_boxes_to_px_coord(self, boxes_dataframe, fits_header):
+        # convert all boxes into pix coords
+        # boxes_dataframe = ska_dataset.raw_train_df
+        fits_header = fits_header #data_560Mhz_1000h_fits[0].header
+        image_width = fits_header['NAXIS1']
+        image_height = fits_header['NAXIS2']
+        pixel_res_x_arcsec = fits_header['CDELT1']
+        pixel_res_y_arcsec = fits_header['CDELT2']
+
+        coords={
+        'x1':[],
+        'y1':[],
+        'x2':[],
+        'y2':[],
+        'major_semia_px':[],
+        'minor_semia_px':[],
+        'pa_in_rad':[],
+        'width':[],
+        'height':[]
+        }
+
+        # remove useless data from dataframe
+        # filt_dataframe = boxes_dataframe[['x', 'y', 'RA (centroid)', 'DEC (centroid)', 'BMAJ', 'BMIN', 'PA']]
+        wc = pywcs.WCS(fits_header)
+
+        for idx, box in boxes_dataframe.iterrows():
+        # compute centroid coord to check with gt data
+            cx, cy = wc.wcs_world2pix([[box['RA (centroid)'], box['DEC (centroid)'], 0, 0]], 0)[0][0:2]
+
+            # Safety check
+            dx = cx - box['x']
+            dy = cy - box['y']
+            if (dx >= 0.01 or dy >= 0.01):
+                raise ValueError("Computed Centroid is not valid")
+
+            if (cx < 0 or cx > image_width):
+                print('got it cx {0}, {1}'.format(cx, fits_fn))
+                raise ValueError("Out of image BB")
+            if (cy < 0 or cy > image_height):
+                print('got it cy {0}'.format(cy))
+                raise ValueError("Out of image BB")
+
+            major_semia_px = box['BMAJ'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            minor_semia_px = box['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            pa_in_rad = np.radians(box['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
+
+            x1, y1, x2, y2 = utils._get_bbox_from_ellipse(pa_in_rad, major_semia_px, minor_semia_px, cx, cy, image_height, image_width)
+
+            coords['x1'].append(x1)
+            coords['y1'].append(y1)
+            coords['x2'].append(x2)
+            coords['y2'].append(y2)
+            coords['major_semia_px'].append(major_semia_px)
+            coords['minor_semia_px'].append(minor_semia_px)
+            coords['pa_in_rad'].append(pa_in_rad)
+            coords['width'].append(abs(x2-x1))
+            coords['height'].append(abs(y2-y1))
+
+        return coords
+
+    def _extend_dataframe(self, df, cols_dict):
+      # aggiungere x1... al df
+      df_from_dict = pd.DataFrame.from_dict(cols_dict)
+      if df.shape[0] != df_from_dict.shape[0]:
+          raise ValueError("Dimension of DataFrame and dict passed don't match!")
+      return pd.concat([df, df_from_dict], axis=1)
+
+
+
+    def _split_in_patch(self, img, df, img_name, patch_dim=200):
+        h, w = img.shape
+        fits_filename = img_name.split('/')[-1].split('.')[0]
+        
+        patches = {
+            "patch_name": [],
+            "patch_xo": [],
+            "patch_yo": [],
+            "patch_dim": [],
+            "gt_id": []
+        }
+
+        patches_json = {}
+        
+        if w % patch_dim !=0 or h % patch_dim != 0:
+            raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
+
+        #TODO: fix taking into account that in pix2world origin in upper-left
+        for i in range(0, h, patch_dim):
+            print(f'riga:{i}')
+            for j in range(0, w, patch_dim):
+                print(f'colonna:{j}')
+                patch_xo = 16000+j
+                patch_yo = 16000+i
+
+                patch = {}
+                gt_id = []
+                img_patch = img[i:i+patch_dim, j:j+patch_dim]
+                patch = {
+                    "orig_coords": img_patch.tolist(),
+                    # "scaled_coords": scaled_img_patch
+                }
+
+                gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
+                
+                if len(gt_id) > 0:
+                    perc = 95
+                    percentileThresh = np.percentile(img_patch, perc)       
+
+                    # Create figure and axes
+                    fig, ax = plt.subplots()
+
+                    # Display the image
+                    plt.imshow(img_patch * (1.0 / percentileThresh))
+                    for box_index in gt_id:
+                        print(box_index)
+                        box = df.iloc[box_index]
+                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=1,edgecolor='r',facecolor='none'))
+                    
+                    plt.show()
+                    return
+
+                    
+                
+                filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
+                patches_json[filename] = patch
+
+                patches["patch_name"].append(filename)
+                patches["patch_xo"].append(patch_xo)
+                patches["patch_yo"].append(patch_yo)
+                patches["patch_dim"].append(patch_dim)
+                patches["gt_id"].append(gt_id)
+
+
+        with open(f'data/training/{fits_filename}.json', 'w', encoding='utf-8') as f:
+            json.dump(patches_json, f, ensure_ascii=False, indent=4)
+
+        
+        return patches
+        
+    
+    def _find_gt_in_patch(self, patch_xo, patch_yo, patch_dim, gt_df):
+        def filter_func(x, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim):
+            # print(f'xo:{patch_xo}')
+            # print(f'yo:{patch_yo}')
+            # print(f'x1:{x.x1}')
+            # print(f'y1:{x.y1}')
+            # print(f'x2:{x.x2}')
+            # print(f'y2:{x.y2}')
+            return x.x1 >= patch_xo and x.y1 >= patch_yo and x.x2 <= patch_xo + patch_dim and x.y2 <= patch_yo + patch_dim
+
+        # filter = lambda x: x.x1 >= patch_xo and x.y1 >= patch_yo and x.x2 <= patch_xo + patch_dim and x.y2 <= patch_yo + patch_dim
+        
+        filtered_df = gt_df[gt_df.apply(filter_func, axis = 1)]
+        if filtered_df.shape[0] > 1:
+            print(f'patch_xo:{patch_xo}, patch_yo:{patch_yo}')
+            print(filtered_df.head())
+
+        idx = filtered_df.index.tolist()
+        return idx
