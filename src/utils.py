@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import astropy.wcs as pywcs
 import json
-
+import os
+import requests
 
 def save_response_content(response, destination):
     CHUNK_SIZE = 32768
