@@ -96,8 +96,8 @@ class SKADataset:
         fits_header = fits_header #data_560Mhz_1000h_fits[0].header
         image_width = fits_header['NAXIS1']
         image_height = fits_header['NAXIS2']
-        pixel_res_x_arcsec = fits_header['CDELT1']
-        pixel_res_y_arcsec = fits_header['CDELT2']
+        pixel_res_x_arcsec = abs(float(fits_header['CDELT1'])) * 3600
+        pixel_res_y_arcsec = abs(float(fits_header['CDELT2'])) * 3600
 
         coords={
         'x1':[],
@@ -176,7 +176,7 @@ class SKADataset:
         if w % patch_dim !=0 or h % patch_dim != 0:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
-        #TODO: fix taking into account that in pix2world origin in upper-left
+        #TODO: fix this taking into account that origin should be in upper-left corner
         for i in range(0, h, patch_dim):
             print(f'riga:{i}')
             for j in range(0, w, patch_dim):
