@@ -6,7 +6,7 @@ DATA_SUBSET = 1
 DOWNLOAD_FOLDER = 'data/training'
 DATA_FOLDER = os.path.join(os.getcwd(), "data")
 TRAIN_DATA_FOLDER = os.path.join(DATA_FOLDER, "training")
-TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_SKA.txt") #TODO: fix this
+TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_clean_SKA.txt") #TODO: fix this
 
 required_files = [
     {
