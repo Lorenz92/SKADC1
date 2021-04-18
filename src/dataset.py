@@ -8,7 +8,11 @@ import json
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
-
+# these values are copyed form ICRAR code https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+b5_sigma = 3.8465818166348711e-08
+b5_median = -5.2342429e-11
+num_sigma = 0.05
+b5_three_sigma = b5_median + num_sigma * b5_sigma
 
 class SKADataset:
     """
@@ -89,17 +93,24 @@ class SKADataset:
 
         return df
 
-    
+    # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+    def _primary_beam_gridding(self, total_flux, ra, dec, pb_wcs, pb_data):
+        x, y = pb_wcs.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
+        #print(pb_data.shape)
+        pbv = pb_data[int(y)][int(x)]
+        #print(x, y, pbv)
+        return total_flux * pbv
+
     def _convert_boxes_to_px_coord(self, boxes_dataframe, fits_header):
         # convert all boxes into pix coords
         # boxes_dataframe = ska_dataset.raw_train_df
-        fits_header = fits_header #data_560Mhz_1000h_fits[0].header
         image_width = fits_header['NAXIS1']
         image_height = fits_header['NAXIS2']
         pixel_res_x_arcsec = abs(float(fits_header['CDELT1'])) * 3600
         pixel_res_y_arcsec = abs(float(fits_header['CDELT2'])) * 3600
 
         coords={
+        #'ID':[],    
         'x1':[],
         'y1':[],
         'x2':[],
@@ -111,10 +122,15 @@ class SKADataset:
         'height':[]
         }
 
+        #clean_boxes_dataframe = pd.DataFrame().reindex_like(boxes_dataframe)
+
         # remove useless data from dataframe
         # filt_dataframe = boxes_dataframe[['x', 'y', 'RA (centroid)', 'DEC (centroid)', 'BMAJ', 'BMIN', 'PA']]
         wc = pywcs.WCS(fits_header)
 
+        #list  of rows to be deleted due to a too weak flux
+        id_to_delete = []
+        faint = 0
         for idx, box in boxes_dataframe.iterrows():
         # compute centroid coord to check with gt data
             cx, cy = wc.wcs_world2pix([[box['RA (centroid)'], box['DEC (centroid)'], 0, 0]], 0)[0][0:2]
@@ -132,12 +148,28 @@ class SKADataset:
                 print('got it cy {0}'.format(cy))
                 raise ValueError("Out of image BB")
 
+
             major_semia_px = box['BMAJ'] / pixel_res_x_arcsec / 2 #actually semi-major 
             minor_semia_px = box['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
             pa_in_rad = np.radians(box['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
 
+            #area_pixel = major_semia_px * minor_semia_px *4
+            # if(area_pixel==0):
+            #     #id_to_delete.append(box['ID'])
+            #     faint += 1
+            #     continue
+            # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            # total_flux = float(box['FLUX'])
+            # total_flux = self._primary_beam_gridding(total_flux, box['RA (centroid)'],  box['DEC (centroid)'], pb_wcs, primaryBeam_data)
+            # total_flux /= area_pixel
+            # if (total_flux < b5_three_sigma):
+            #      #id_to_delete.append(box['ID'])
+            #     faint += 1
+            #     continue
+
             x1, y1, x2, y2 = utils._get_bbox_from_ellipse(pa_in_rad, major_semia_px, minor_semia_px, cx, cy, image_height, image_width)
 
+            #coords['ID'].append(box['ID'])
             coords['x1'].append(x1)
             coords['y1'].append(y1)
             coords['x2'].append(x2)
@@ -148,7 +180,49 @@ class SKADataset:
             coords['width'].append(abs(x2-x1))
             coords['height'].append(abs(y2-y1))
 
+        # boxes_dataframe.iloc[:rows_to_delete]
+        # boxes_dataframe['id_check'] = coords['ID']
+        # boxes_dataframe['x1']= coords['x1']
+        # boxes_dataframe['y1']= coords['y1']
+        # boxes_dataframe['x2']= coords['x2']
+        # boxes_dataframe['y2']= coords['y2']
+        
         return coords
+        
+
+    def remove_rows_by_flux(self, df, fits_header, primaryBeam):
+        pbhead = primaryBeam[0].header
+        pb_wcs = pywcs.WCS(pbhead)
+        primaryBeam_data = primaryBeam[0].data[0][0]
+
+        def filter(df_row, fits_header=fits_header, pb_wcs=pb_wcs, primaryBeam_data=primaryBeam_data):
+
+            image_width = fits_header['NAXIS1']
+            image_height = fits_header['NAXIS2']
+            pixel_res_x_arcsec = abs(float(fits_header['CDELT1'])) * 3600
+            pixel_res_y_arcsec = abs(float(fits_header['CDELT2'])) * 3600
+
+            major_semia_px = df_row['BMAJ'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            minor_semia_px = df_row['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            pa_in_rad = np.radians(df_row['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
+
+            area_pixel = major_semia_px * minor_semia_px *4
+            if(area_pixel==0):
+                return False
+
+            # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            total_flux = float(df_row['FLUX'])
+            total_flux = self._primary_beam_gridding(total_flux, df_row['RA (centroid)'],  df_row['DEC (centroid)'], pb_wcs, primaryBeam_data)
+            total_flux /= area_pixel
+            if (total_flux < b5_three_sigma):
+                return False
+
+            return True
+
+        df[df.apply(filter, axis=1)]
+        #print(df.apply(filter, axis=1))
+        #print(df[df.apply(filter, axis = 1)])
+
 
     def _extend_dataframe(self, df, cols_dict):
       # aggiungere x1... al df
@@ -159,7 +233,7 @@ class SKADataset:
 
 
 
-    def _split_in_patch(self, img, df, img_name, patch_dim=200):
+    def split_in_patch(self, img, df, img_name, patch_dim=200):
         h, w = img.shape
         fits_filename = img_name.split('/')[-1].split('.')[0]
         
@@ -178,9 +252,9 @@ class SKADataset:
 
         #TODO: fix this taking into account that origin should be in upper-left corner
         for i in range(0, h, patch_dim):
-            print(f'riga:{i}')
+            print('----')
             for j in range(0, w, patch_dim):
-                print(f'colonna:{j}')
+                print(f'riga:{i}', f'colonna:{j}')
                 patch_xo = 16000+j
                 patch_yo = 16000+i
 
@@ -209,6 +283,7 @@ class SKADataset:
                         plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=1,edgecolor='r',facecolor='none'))
                     
                     plt.show()
+                    input("Press Enter to continue...")
                     return
 
                     
