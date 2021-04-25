@@ -40,6 +40,7 @@ class SKADataset:
     
         # Process the training set
         self.raw_train_df = None
+        self.proc_train_df = pd.DataFrame()
         if self.train_set_path is not None:
             assert os.path.exists(
                 self.train_set_path
@@ -177,29 +178,34 @@ class SKADataset:
 
         for i in range(0, h, patch_dim):
             if i <= 1000:
-                print(f'riga:{i}')
-                for j in range(0, w, patch_dim):
-                    print(f'colonna:{j}')
+                for j in range(0, w, patch_dim):                    
                     patch_xo = x_origin+j
                     patch_yo = y_origin+i
-                    patch = {}
                     gt_id = []
-                    img_patch = img[i:i+patch_dim, j:j+patch_dim]
-                    patch = {
-                        "orig_coords": img_patch.tolist(),
-                        # "scaled_coords": scaled_img_patch
-                    }
+
+                    # patch = {
+                    #     "orig_coords": img_patch.tolist(),
+                    #     # "scaled_coords": scaled_img_patch
+                    # }
 
                     gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
 
                     if len(gt_id) > 0:
                         perc = 95
-                        percentileThresh = np.percentile(img_patch, perc)       
+                        filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
+                        img_patch = img[i:i+patch_dim, j:j+patch_dim]
+                        percentileThresh = np.percentile(img_patch, perc)
 
                         # Cut bboxes that fall outside the patch
-                        # print(df.loc[df['ID'].isin(gt_id)])
-                        df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
-                        print(df.loc[df['ID']==16009993])
+                        df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
+                        
+                        df_scaled["patch_name"] = filename
+                        df_scaled["patch_xo"] = patch_xo
+                        df_scaled["patch_yo"] = patch_yo
+                        df_scaled["patch_dim"] = patch_dim
+
+                        self.proc_train_df = self.proc_train_df.append(df_scaled)
+
 
                         # Create figure and axes
                         fig, ax = plt.subplots()
@@ -207,37 +213,36 @@ class SKADataset:
                         # Display the image
                         plt.imshow(img_patch * (1.0 / percentileThresh))
                         for box_index in gt_id:
-                            print(box_index)
-                            box = df.loc[df['ID']==box_index].squeeze()
+                            box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
                             plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
                             plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
                         
                         plt.show()
                         #return
                     
-                    filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                    patches_json[filename] = patch
+                    
+                    # patches_json[filename] = patch
 
-                    patches["patch_name"].append(filename)
-                    patches["patch_xo"].append(patch_xo)
-                    patches["patch_yo"].append(patch_yo)
-                    patches["patch_dim"].append(patch_dim)
-                    patches["gt_id"].append(gt_id)
+                    # patches["patch_name"].append(filename)
+                    # patches["patch_xo"].append(patch_xo)
+                    # patches["patch_yo"].append(patch_yo)
+                    # patches["patch_dim"].append(patch_dim)
+                    # patches["gt_id"].append(gt_id)
 
 
-        with open(f'data/training/{fits_filename}.json', 'w', encoding='utf-8') as f:
-            json.dump(patches_json, f, ensure_ascii=False, indent=4)
+        # with open(f'data/training/{fits_filename}.json', 'w', encoding='utf-8') as f:
+        #     json.dump(patches_json, f, ensure_ascii=False, indent=4)
 
         
-        return patches
+        return #patches
     
     def _cut_bbox(self, x, patch_xo, patch_yo, patch_dim):
-
+        
         x.x1 = max(x.x1, patch_xo)
         x.y1 = max(x.y1, patch_yo)
         x.x2 = min(x.x2, patch_xo+patch_dim)
         x.y2 = min(x.y2, patch_yo+patch_dim)
-
+        
         return x
         
 
@@ -248,12 +253,6 @@ class SKADataset:
             return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
 
         filtered_df = gt_df[gt_df.apply(filter_func, axis = 1)]
-
-
-
-        if filtered_df.shape[0] > 1:
-            print(f'patch_xo:{patch_xo}, patch_yo:{patch_yo}')
-            print(filtered_df.head())
 
         idx2 = filtered_df['ID'].tolist()
         return idx2
