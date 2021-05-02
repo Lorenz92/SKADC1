@@ -7,6 +7,7 @@ import src.utils as utils
 import json
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+from PIL import Image
 
 
 
@@ -159,7 +160,7 @@ class SKADataset:
 
 
 
-    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=200, is_multiple=False):
+    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patches_path, patch_dim=200, is_multiple=False):
         h, w = img.shape
         fits_filename = img_name.split('/')[-1].split('.')[0]
         
@@ -183,11 +184,6 @@ class SKADataset:
                     patch_yo = y_origin+i
                     gt_id = []
 
-                    # patch = {
-                    #     "orig_coords": img_patch.tolist(),
-                    #     # "scaled_coords": scaled_img_patch
-                    # }
-
                     gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
 
                     if len(gt_id) > 0:
@@ -205,6 +201,11 @@ class SKADataset:
                         df_scaled["patch_dim"] = patch_dim
 
                         self.proc_train_df = self.proc_train_df.append(df_scaled)
+                        
+                        np.save(os.path.join(patches_path, "your_file.npy"), img_patch)
+                            
+                        print('image saved')
+                        return #TODO: remove this
 
 
                         # Create figure and axes
@@ -218,21 +219,6 @@ class SKADataset:
                             plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
                         
                         plt.show()
-                        #return
-                    
-                    
-                    # patches_json[filename] = patch
-
-                    # patches["patch_name"].append(filename)
-                    # patches["patch_xo"].append(patch_xo)
-                    # patches["patch_yo"].append(patch_yo)
-                    # patches["patch_dim"].append(patch_dim)
-                    # patches["gt_id"].append(gt_id)
-
-
-        # with open(f'data/training/{fits_filename}.json', 'w', encoding='utf-8') as f:
-        #     json.dump(patches_json, f, ensure_ascii=False, indent=4)
-
         
         return #patches
     
