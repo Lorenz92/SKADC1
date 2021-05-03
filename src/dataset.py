@@ -195,6 +195,17 @@ class SKADataset:
                         # Cut bboxes that fall outside the patch
                         df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
                         
+                        # Write boxes coordinates considering the origin of the current patch as origin
+                        df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
+                        # df_scaled_json = df_scaled.to_json()
+                        # parsed = json.loads(df_scaled_json)
+
+                        # with open(os.path.join(patches_path,'prova.json'), 'w') as f:
+                        #     json.dump(parsed, f)
+                        #np.save(os.path.join(patches_path, "your_file.npy"), df_scaled)
+
+                        print(df_scaled)
+
                         df_scaled["patch_name"] = filename
                         df_scaled["patch_xo"] = patch_xo
                         df_scaled["patch_yo"] = patch_yo
@@ -232,6 +243,14 @@ class SKADataset:
         return x
         
 
+    # shift from image to patch coordinates, we are assuming that the box are all inside the patch (i.e. we already perform _cut_bbox)    
+    def _from_image_to_patch_coord(self, x, patch_xo, patch_yo):
+        x.x1 = x.x1 - patch_xo
+        x.y1 = x.y1 - patch_yo
+        x.x2 = x.x2 - patch_xo
+        x.y2 = x.y2 - patch_yo
+
+        return x
     
     def _find_gt_in_patch(self, patch_xo, patch_yo, patch_dim, gt_df):
 
