@@ -4,10 +4,10 @@ import pandas as pd
 from io import StringIO
 import astropy.wcs as pywcs
 import src.utils as utils
+import src.config as C
 import json
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-from PIL import Image
 
 
 
@@ -160,7 +160,7 @@ class SKADataset:
 
 
 
-    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patches_path, patch_dim=200, is_multiple=False):
+    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=200, is_multiple=False):
         h, w = img.shape
         fits_filename = img_name.split('/')[-1].split('.')[0]
         
@@ -173,6 +173,12 @@ class SKADataset:
         }
 
         patches_json = {}
+
+        # Add new columns to df
+        df['x1s'] = None
+        df['y1s'] = None
+        df['x2s'] = None
+        df['y2s'] = None
         
         if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
@@ -201,10 +207,11 @@ class SKADataset:
                         df_scaled["patch_dim"] = patch_dim
 
                         self.proc_train_df = self.proc_train_df.append(df_scaled)
-                        
-                        np.save(os.path.join(patches_path, "your_file.npy"), img_patch)
+                        patch_id = str(patch_xo)+str(patch_xo)
+                        self._save_bbox_files(img_patch, patch_id, df_scaled)
                             
-                        print('image saved')
+                        print(df_scaled.columns)
+                        print(df_scaled.head())
                         return #TODO: remove this
 
 
@@ -228,8 +235,21 @@ class SKADataset:
         x.y1 = max(x.y1, patch_yo)
         x.x2 = min(x.x2, patch_xo+patch_dim)
         x.y2 = min(x.y2, patch_yo+patch_dim)
+        x.x1s = x.x1 - patch_xo
+        x.y1s = x.y1 - patch_yo
+        x.x2s = x.x2 - patch_xo
+        x.y2s = x.y2 - patch_yo
+
         
         return x
+
+    def _save_bbox_files(self, img_patch, patch_id, df):
+        
+        np.save(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}.npy"), img_patch)
+        df.to_pickle(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}.pkl"))
+        print('image saved')
+        
+        return
         
 
     
