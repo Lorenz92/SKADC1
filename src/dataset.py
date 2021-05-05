@@ -244,9 +244,11 @@ class SKADataset:
         return x
 
     def _save_bbox_files(self, img_patch, patch_id, df):
-        
-        np.save(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}.npy"), img_patch)
-        df.to_pickle(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}.pkl"))
+        if not os.path.exists(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
+            os.makedirs(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
+
+        np.save(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
+        df.to_pickle(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
         
         return
