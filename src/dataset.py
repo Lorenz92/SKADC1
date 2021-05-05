@@ -235,12 +235,22 @@ class SKADataset:
         x.y1 = max(x.y1, patch_yo)
         x.x2 = min(x.x2, patch_xo+patch_dim)
         x.y2 = min(x.y2, patch_yo+patch_dim)
+        # x.x1s = x.x1 - patch_xo
+        # x.y1s = x.y1 - patch_yo
+        # x.x2s = x.x2 - patch_xo
+        # x.y2s = x.y2 - patch_yo
+
+        x = self._from_image_to_patch_coord(x, patch_xo, patch_yo)
+
+        return x
+
+    def _from_image_to_patch_coord(self, x, patch_xo, patch_yo):
+
         x.x1s = x.x1 - patch_xo
         x.y1s = x.y1 - patch_yo
         x.x2s = x.x2 - patch_xo
         x.y2s = x.y2 - patch_yo
 
-        
         return x
 
     def _save_bbox_files(self, img_patch, patch_id, df):
