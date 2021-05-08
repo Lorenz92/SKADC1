@@ -224,7 +224,6 @@ class SKADataset:
                         print(df_scaled.head())
                         return #TODO: remove this
 
-
                         # Create figure and axes
                         fig, ax = plt.subplots()
 
