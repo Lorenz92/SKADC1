@@ -58,7 +58,8 @@ rot_90 = False
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled
 # Original anchor_box_scales in the paper is [128, 256, 512]
-anchor_box_scales = [2, 4, 8, 16] 
+# anchor_box_scales = [2, 4, 8, 16] 
+anchor_box_scales = [.5, 1, 2, 4, 8, 16, 32, 64, 128, 256] 
 
 # Anchor box ratios
 anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
