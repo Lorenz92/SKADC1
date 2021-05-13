@@ -69,7 +69,10 @@ anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2
 im_size = 300
 
 # image channel-wise mean to subtract
-img_channel_mean = [103.939, 116.779, 123.68]
+img_channel_mean =  [3.8131893e-07] #mean value of all patches
+img_channel_max = 0.006585681
+img_channel_min = 0.0
+#img_channel_mean =  [2.1317146e-06] #mean value of all patches
 img_scaling_factor = 1.0
 
 # number of ROIs at once

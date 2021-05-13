@@ -196,8 +196,10 @@ class SKADataset:
                     if len(gt_id) > 0:
                         perc = 95
                         filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                        img_patch = img[i:i+patch_dim, j:j+patch_dim]
+                        img_patch = img[i:i+patch_dim, j:j+patch_dim].copy()
                         percentileThresh = np.percentile(img_patch, perc)
+
+                        self._zero_centering(img_patch)
 
                         # Cut bboxes that fall outside the patch
                         df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
@@ -257,6 +259,19 @@ class SKADataset:
         x.y2s = x.y2 - patch_yo
 
         return x
+
+    def _zero_centering(self, img_patch):
+        #in order to manage images with 3 channels. ours should be 1
+        imageChannels = 1 if len(img_patch.shape)== 2 else 3
+        
+        if(imageChannels == 1):
+            img_patch[:, :] -= C.img_channel_mean[0]
+        else:
+            img_patch[:, :, 0] -= C.img_channel_mean[0]
+            img_patch[:, :, 1] -= C.img_channel_mean[1]
+            img_patch[:, :, 2] -= C.img_channel_mean[2]
+        
+        return
 
     def _save_bbox_files(self, img_patch, patch_id, df):
         if not os.path.exists(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
