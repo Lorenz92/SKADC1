@@ -24,10 +24,10 @@ class RpnVgg16(keras.Model):
         # Create Region Proposal Net
         rpn_cls, rpn_reg = RpnNet(self.anchor_num)(x)
 
-        if training:
-            print('TRAINING') #training loop
-        else:
-            print('TEST')
+        # if training:
+        #     print('TRAINING') #training loop
+        # else:
+        #     print('TEST')
 
         return [rpn_cls, rpn_reg]
 
@@ -38,7 +38,23 @@ class RpnVgg16(keras.Model):
         # Replace with shape=[None, None, None, 1] if input_shape is unknown.
         inputs  = Input(shape=shape)
         outputs = self.call(inputs)
-        super(RpnVgg16, self).__init__(name="RpnVgg16", inputs=inputs, outputs=outputs, **kwargs) 
+        super(RpnVgg16, self).__init__(name="RpnVgg16", inputs=inputs, outputs=outputs, **kwargs)
+
+
+def rpnvgg16(input_shape, anchor_num):
+
+    # Add custom input-layer to change from1 to 3 channels
+    input = Input(shape=input_shape)
+    x = Expander()(input)
+
+    # # Load pretrained VGG16 and remove last MaxPool layer
+    x = vgg16(x)
+
+    # Create Region Proposal Net
+    rpn_cls, rpn_reg = RpnNet(anchor_num)(x)
+    
+    return keras.Model(input, [rpn_cls, rpn_reg], name='RegionProposal')
+
 
 
 class ClsVgg16(keras.Model):
@@ -65,10 +81,10 @@ class ClsVgg16(keras.Model):
         x = RoiPoolingConv(self.pooling_regions, self.num_rois)([x, inputs[1]])
         x = Classifier(self.num_classes)(x)
 
-        if training:
-            print('TRAINING') #training loop
-        else:
-            print('TEST')
+        # if training:
+        #     print('TRAINING') #training loop
+        # else:
+        #     print('TEST')
 
         return x
 

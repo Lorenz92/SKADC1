@@ -1,21 +1,21 @@
 # First net version
 import keras.backend as K
 import tensorflow as tf
-from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout
+from keras.layers import Input, Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout
 
-# ANCHOR_NUM = 30
-# PROB_PRED_OUT = 2 * ANCHOR_NUM
-# COORD_PRED_OUT = 4 * ANCHOR_NUM 
+ANCHOR_NUM = 30
+PROB_PRED_OUT = 2 * ANCHOR_NUM
+COORD_PRED_OUT = 4 * ANCHOR_NUM 
 
 
-# def custom_input_layer(input_shape, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
+def custom_input_layer(input_shape, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
 
-#     print(input_shape)
+    print(input_shape)
 
-#     inp = Input(input_shape)
-#     x = Conv2D(filters=channels, kernel_size=kernel_size, padding=padding, activation=activation, name=name)(inp)
+    inp = Input(input_shape)
+    x = Conv2D(filters=channels, kernel_size=kernel_size, padding=padding, activation=activation, name=name)(inp)
 
-#     return inp, x
+    return inp, x
 
 class Expander(Layer):
     def __init__(self, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
@@ -101,14 +101,14 @@ def vgg16(input_image):
 #         return x
 
 
-# def rpn_net(input_tensor=None):
+def rpn_net(input_tensor=None):
 
-#     # Create Region Proposal Net
-#     x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', name='18_RPN_Conv1')(input_tensor)
-#     cls_pred = Conv2D(filters=PROB_PRED_OUT, kernel_size=(1, 1), padding='same', activation='sigmoid', name='19_Anchor_Cls_Conv')(x) #output of layer 20
-#     reg_pred = Conv2D(filters=COORD_PRED_OUT, kernel_size=(1, 1), padding='same', activation='linear', name='19_Anchor_Reg_Conv')(x) #output of layer 19
+    # Create Region Proposal Net
+    x = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', name='18_RPN_Conv1')(input_tensor)
+    cls_pred = Conv2D(filters=PROB_PRED_OUT, kernel_size=(1, 1), padding='same', activation='sigmoid', name='19_Anchor_Cls_Conv')(x) #output of layer 20
+    reg_pred = Conv2D(filters=COORD_PRED_OUT, kernel_size=(1, 1), padding='same', activation='linear', name='19_Anchor_Reg_Conv')(x) #output of layer 19
 
-#     return [cls_pred, reg_pred]
+    return [cls_pred, reg_pred]
 
 
 class RpnNet(Layer):
