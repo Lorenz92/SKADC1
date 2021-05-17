@@ -104,7 +104,6 @@ class RpnNet(Layer):
         x = self.conv2d(inputs)
         cls_pred = self.cls_pred(x) #output of layer 20
         reg_pred = self.reg_pred(x) #output of layer 19
-
         return [cls_pred, reg_pred]
 
 
