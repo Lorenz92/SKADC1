@@ -16,7 +16,7 @@ class SKADataset:
     SKA dataset wrapper.
     """
 
-    def __init__(self, train_set_path=None, test_set_path=None, subset=2.0):
+    def __init__(self, train_set_path=None, test_set_path=None, subset=1.0):
         
         # Save training and test2set path+patch_dim-1s
         self.train_set_path = train_set_path
@@ -42,6 +42,7 @@ class SKADataset:
         # Process the training set
         self.raw_train_df = None
         self.proc_train_df = pd.DataFrame()
+
         if self.train_set_path is not None:
             assert os.path.exists(
                 self.train_set_path
@@ -195,25 +196,35 @@ class SKADataset:
                     if len(gt_id) > 0:
                         perc = 95
                         filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                        img_patch = img[i:i+patch_dim, j:j+patch_dim]
+                        img_patch = img[i:i+patch_dim, j:j+patch_dim].copy()
                         percentileThresh = np.percentile(img_patch, perc)
+
+                        self._zero_centering(img_patch)
 
                         # Cut bboxes that fall outside the patch
                         df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
+                        df_scaled = df_scaled.loc[df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
                         
                         df_scaled["patch_name"] = filename
                         df_scaled["patch_xo"] = patch_xo
                         df_scaled["patch_yo"] = patch_yo
                         df_scaled["patch_dim"] = patch_dim
 
+                        df_scaled = df_scaled.reset_index(drop=True)
+                        df_scaled['ID'] = df_scaled['ID'].astype(int).astype('object')
+                        df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
+                        df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
+                        df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
+
+                        patch_index = i * (h // patch_dim) +j
+
                         self.proc_train_df = self.proc_train_df.append(df_scaled)
-                        patch_id = str(patch_xo)+str(patch_xo)
+                        patch_id = str(patch_index)+'_'+str(patch_xo)+str(patch_xo)+'_'+str(patch_dim)
                         self._save_bbox_files(img_patch, patch_id, df_scaled)
                             
                         print(df_scaled.columns)
                         print(df_scaled.head())
                         return #TODO: remove this
-
 
                         # Create figure and axes
                         fig, ax = plt.subplots()
@@ -235,10 +246,6 @@ class SKADataset:
         x.y1 = max(x.y1, patch_yo)
         x.x2 = min(x.x2, patch_xo+patch_dim)
         x.y2 = min(x.y2, patch_yo+patch_dim)
-        # x.x1s = x.x1 - patch_xo
-        # x.y1s = x.y1 - patch_yo
-        # x.x2s = x.x2 - patch_xo
-        # x.y2s = x.y2 - patch_yo
 
         x = self._from_image_to_patch_coord(x, patch_xo, patch_yo)
 
@@ -252,6 +259,19 @@ class SKADataset:
         x.y2s = x.y2 - patch_yo
 
         return x
+
+    def _zero_centering(self, img_patch):
+        #in order to manage images with 3 channels. ours should be 1
+        imageChannels = 1 if len(img_patch.shape)== 2 else 3
+        
+        if(imageChannels == 1):
+            img_patch[:, :] -= C.img_channel_mean[0]
+        else:
+            img_patch[:, :, 0] -= C.img_channel_mean[0]
+            img_patch[:, :, 1] -= C.img_channel_mean[1]
+            img_patch[:, :, 2] -= C.img_channel_mean[2]
+        
+        return
 
     def _save_bbox_files(self, img_patch, patch_id, df):
         if not os.path.exists(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
