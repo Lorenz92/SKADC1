@@ -129,7 +129,7 @@ class SKADataset:
                 raise ValueError("Computed Centroid is not valid")
 
             if (cx < 0 or cx > image_width):
-                print('got it cx {0}, {1}'.format(cx, fits_fn))
+                print('got it cx {0}, {1}'.format(cx))#, fits_fn))
                 raise ValueError("Out of image BB")
             if (cy < 0 or cy > image_height):
                 print('got it cy {0}'.format(cy))
@@ -184,61 +184,61 @@ class SKADataset:
         if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
+        patches_list = []
         for i in range(0, h, patch_dim):
-            if i <= 1000:
-                for j in range(0, w, patch_dim):                    
-                    patch_xo = x_origin+j
-                    patch_yo = y_origin+i
-                    gt_id = []
+            if i<=10 :   #i <= 1000:
+                for j in range(0, w, patch_dim):       
+                    if j <=  patch_dim*10 :                
+                        patch_xo = x_origin+j
+                        patch_yo = y_origin+i
+                        gt_id = []
 
-                    gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
+                        gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
 
-                    if len(gt_id) > 0:
-                        perc = 95
-                        filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                        img_patch = img[i:i+patch_dim, j:j+patch_dim].copy()
-                        percentileThresh = np.percentile(img_patch, perc)
+                        if len(gt_id) > 0:
+                            perc = 95
+                            filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
+                            img_patch = img[i:i+patch_dim, j:j+patch_dim].copy()
+                            percentileThresh = np.percentile(img_patch, perc)
 
-                        self._zero_centering(img_patch)
+                            # self._zero_centering(img_patch)
 
-                        # Cut bboxes that fall outside the patch
-                        df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
-                        df_scaled = df_scaled.loc[df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
-                        
-                        df_scaled["patch_name"] = filename
-                        df_scaled["patch_xo"] = patch_xo
-                        df_scaled["patch_yo"] = patch_yo
-                        df_scaled["patch_dim"] = patch_dim
-
-                        df_scaled = df_scaled.reset_index(drop=True)
-                        df_scaled['ID'] = df_scaled['ID'].astype(int).astype('object')
-                        df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
-                        df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
-                        df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
-
-                        patch_index = i * (h // patch_dim) +j
-
-                        self.proc_train_df = self.proc_train_df.append(df_scaled)
-                        patch_id = str(patch_index)+'_'+str(patch_xo)+str(patch_xo)+'_'+str(patch_dim)
-                        self._save_bbox_files(img_patch, patch_id, df_scaled)
+                            # Cut bboxes that fall outside the patch
+                            df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
+                            df_scaled = df_scaled.loc[df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
                             
-                        print(df_scaled.columns)
-                        print(df_scaled.head())
-                        return #TODO: remove this
+                            df_scaled["patch_name"] = filename
+                            df_scaled["patch_xo"] = patch_xo
+                            df_scaled["patch_yo"] = patch_yo
+                            df_scaled["patch_dim"] = patch_dim
 
-                        # Create figure and axes
-                        fig, ax = plt.subplots()
+                            df_scaled = df_scaled.reset_index(drop=True)
+                            df_scaled['ID'] = df_scaled['ID'].astype(int).astype('object')
+                            df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
+                            df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
+                            df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
 
-                        # Display the image
-                        plt.imshow(img_patch * (1.0 / percentileThresh))
-                        for box_index in gt_id:
-                            box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
-                            plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
-                            plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
-                        
-                        plt.show()
-        
-        return #patches
+                            patch_index = i * (h // patch_dim) +j
+
+                            self.proc_train_df = self.proc_train_df.append(df_scaled)
+                            patch_id = str(patch_index)+'_'+str(patch_xo)+str(patch_xo)+'_'+str(patch_dim)
+                            self._save_bbox_files(img_patch, patch_id, df_scaled)
+                            patches_list.append(patch_id)    
+                            # return #TODO: remove this
+
+                            # # Create figure and axes
+                            # fig, ax = plt.subplots()
+
+                            # # Display the image
+                            # plt.imshow(img_patch * (1.0 / percentileThresh))
+                            # for box_index in gt_id:
+                            #     box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
+                            #     plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
+                            #     plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
+                            
+                            # plt.show()
+            
+        return patches_list
     
     def _cut_bbox(self, x, patch_xo, patch_yo, patch_dim):
         
@@ -260,18 +260,18 @@ class SKADataset:
 
         return x
 
-    def _zero_centering(self, img_patch):
-        #in order to manage images with 3 channels. ours should be 1
-        imageChannels = 1 if len(img_patch.shape)== 2 else 3
+    # def _zero_centering(self, img_patch):
+    #     #in order to manage images with 3 channels. ours should be 1
+    #     imageChannels = 1 if len(img_patch.shape)== 2 else 3
         
-        if(imageChannels == 1):
-            img_patch[:, :] -= C.img_channel_mean[0]
-        else:
-            img_patch[:, :, 0] -= C.img_channel_mean[0]
-            img_patch[:, :, 1] -= C.img_channel_mean[1]
-            img_patch[:, :, 2] -= C.img_channel_mean[2]
+    #     if(imageChannels == 1):
+    #         img_patch[:, :] -= C.img_channel_mean[0]
+    #     else:
+    #         img_patch[:, :, 0] -= C.img_channel_mean[0]
+    #         img_patch[:, :, 1] -= C.img_channel_mean[1]
+    #         img_patch[:, :, 2] -= C.img_channel_mean[2]
         
-        return
+    #     return
 
     def _save_bbox_files(self, img_patch, patch_id, df):
         if not os.path.exists(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}")):

@@ -53,7 +53,7 @@ network = 'vgg'
 # Setting for data augmentation
 use_horizontal_flips = False
 use_vertical_flips = False
-rot_90 = False
+rot_90 = True
 
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled

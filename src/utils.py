@@ -1,9 +1,11 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 import astropy.wcs as pywcs
 import json
 import os
 import requests
+from matplotlib.patches import Rectangle
 
 def save_response_content(response, destination):
     CHUNK_SIZE = 32768
@@ -331,3 +333,27 @@ def apply_regr_np(X, T):
     except Exception as e:
         print(e)
         return X
+
+
+def print_img(img, img_data = None):
+    #img must be a numpy.ndarray img
+
+    normalized_data = img * (1.0 /img.max())
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Display the image
+    ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
+
+    if img_data is None:
+        return
+    else:
+        for _, box in img_data.iterrows():
+            #box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
+            ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.1, edgecolor='r',facecolor='none'))
+            #plt.text(box.x - patch_xo, box.y - patch_yo, box_index, fontsize = 1)
+        
+        plt.show()
+        
+    return
