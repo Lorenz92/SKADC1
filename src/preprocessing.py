@@ -42,7 +42,7 @@ def iou(a, b):
 	return float(area_i) / float(area_u + 1e-6)
 
 
-def calc_rpn(img_data, width, height, resized_width, resized_height):
+def calc_rpn(img_data, width, height):
 	"""(Important part!) Calculate the rpn for all anchors 
 		If feature map has shape 38x50=1900, there are 1900x9=17100 potential anchors
 	
@@ -51,8 +51,6 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 		img_data: augmented image data
 		width: original image width (e.g. 600)
 		height: original image height (e.g. 800)
-		resized_width: resized image width according to C.im_size (e.g. 300)
-		resized_height: resized image height according to C.im_size (e.g. 400)
 
 	Returns:
 		y_rpn_cls: list(num_bboxes, y_is_box_valid + y_rpn_overlap)
@@ -70,8 +68,7 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x3=9
 
 	# calculate the output map size based on the network architecture
-	(output_width, output_height) = get_img_output_length(resized_width, resized_height) #get_img_output_length: function to calculate final layer's feature map (of base model) size according to input image size
-
+	(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
 	n_anchratios = len(anchor_ratios)    # 3
 	
 	# initialise empty output objectives
@@ -81,7 +78,6 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 
 	# num_bboxes = len(img_data['bboxes'])
 	num_bboxes = img_data.shape[0]
-	print(num_bboxes)
 
 	num_anchors_for_bbox = np.zeros(num_bboxes).astype(int)
 	best_anchor_for_bbox = -1*np.ones((num_bboxes, 4)).astype(int)
@@ -93,13 +89,11 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 	gta = np.zeros((num_bboxes, 4))
 	# for bbox_num, bbox in enumerate(img_data['bboxes']): # previously
 	for bbox_num, bbox in img_data.iterrows():
-		print(bbox_num)
-		print(bbox)
 		# get the GT box coordinates, and resize to account for image resizing
-		gta[bbox_num, 0] = bbox.x1s * (resized_width / float(width))
-		gta[bbox_num, 1] = bbox.x2s * (resized_width / float(width))
-		gta[bbox_num, 2] = bbox.y1s * (resized_height / float(height))
-		gta[bbox_num, 3] = bbox.y2s * (resized_height / float(height))
+		gta[bbox_num, 0] = bbox.x1s * (width / float(width))
+		gta[bbox_num, 1] = bbox.x2s * (width / float(width))
+		gta[bbox_num, 2] = bbox.y1s * (height / float(height))
+		gta[bbox_num, 3] = bbox.y2s * (height / float(height))
 	
 	# rpn ground truth
 
@@ -114,7 +108,7 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 				x2_anc = downscale * (ix + 0.5) + anchor_x / 2	
 				
 				# ignore boxes that go across image boundaries					
-				if x1_anc < 0 or x2_anc > resized_width:
+				if x1_anc < 0 or x2_anc > width:
 					continue
 					
 				for jy in range(output_height):
@@ -124,7 +118,7 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 					y2_anc = downscale * (jy + 0.5) + anchor_y / 2
 
 					# ignore boxes that go across image boundaries
-					if y1_anc < 0 or y2_anc > resized_height:
+					if y1_anc < 0 or y2_anc > height:
 						continue
 
 					# bbox_type indicates whether an anchor should be a target
@@ -239,19 +233,6 @@ def calc_rpn(img_data, width, height, resized_width, resized_height):
 	return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos
 
 
-def get_new_img_size(width, height, img_min_side=300):
-	if width <= height:
-		f = float(img_min_side) / width
-		resized_height = int(f * height)
-		resized_width = img_min_side
-	else:
-		f = float(img_min_side) / height
-		resized_width = int(f * width)
-		resized_height = img_min_side
-
-	return resized_width, resized_height
-
-
 def augment(img_path, img_data_path, augment=True):
 	# assert 'filepath' in img_data_path
 	# assert 'bboxes' in img_data_path
@@ -269,40 +250,42 @@ def augment(img_path, img_data_path, augment=True):
 
 	if augment:
 		rows, cols = img_orig.shape[:2]
-		print(cols)
+		# print(cols)
 
 		if C.use_horizontal_flips and np.random.randint(0, 2) == 0:
+			# print('Horizontal flipping')
 			img_aug = cv2.flip(img_aug, 1)
-			for bbox in imgData_aug['bboxes']:
-				x1 = bbox['x1s']
-				x2 = bbox['x2s']
-				bbox['x2s'] = cols - x1
-				bbox['x1s'] = cols - x2
+			for index, row in imgData_aug.iterrows():			
+				x1 = row['x1s']
+				x2 = row['x2s']
+				imgData_aug.at[index,'x2s']= cols - x1
+				imgData_aug.at[index,'x1s']= cols - x2
 
 		if C.use_vertical_flips and np.random.randint(0, 2) == 0:
+			# print('Vertical flipping')
 			img_aug = cv2.flip(img_aug, 0)
-			for bbox in imgData_aug['bboxes']:
-				y1 = bbox['y1s']
-				y2 = bbox['y2s']
-				bbox['y2s'] = rows - y1
-				bbox['y1s'] = rows - y2
+			for index, row in imgData_aug.iterrows():			
+				y1 = row['y1s']
+				y2 = row['y2s']
+				imgData_aug.at[index,'y2s']= rows - y1
+				imgData_aug.at[index,'y1s']= rows - y2
 
 		if C.rot_90:
 			angle = np.random.choice([0,90,180,270],1)[0]
-			print("angle = ", angle) 
+			# print("angle = ", angle) 
 			if angle == 270:
-				img_aug = np.transpose(img_aug, (1,0))#,2))
+				img_aug = np.transpose(img_aug, (1,0))
 				img_aug = cv2.flip(img_aug, 0)
 			elif angle == 180:
 				img_aug = cv2.flip(img_aug, -1)
 			elif angle == 90:
-				img_aug = np.transpose(img_aug, (1,0))#,2))
+				img_aug = np.transpose(img_aug, (1,0))
 				img_aug = cv2.flip(img_aug, 1)
 			elif angle == 0:
 				pass
 
-			print(type(imgData_aug))
-			print(imgData_aug.head())
+			# print(type(imgData_aug))
+			# print(imgData_aug.head())
 
 			#for bbox in imgData_aug['bboxes']:
 			for index, row in imgData_aug.iterrows():
@@ -312,7 +295,7 @@ def augment(img_path, img_data_path, augment=True):
 				y1 = row['y1s']
 				y2 = row['y2s']
 				if angle == 270:
-					print("angle rot 270")
+					# print("angle rot 270")
 					# row['x1s'] = y1
 					# row['x2s'] = y2
 					# row['y1s'] = cols - x2
@@ -322,7 +305,7 @@ def augment(img_path, img_data_path, augment=True):
 					imgData_aug.at[index,'y1s']=  cols - x2
 					imgData_aug.at[index,'y2s']=  cols - x1	
 				elif angle == 180:
-					print("angle rot 180")
+					# print("angle rot 180")
 					# row['x2s'] = cols - x1
 					# row['x1s'] = cols - x2
 					# row['y2s'] = rows - y1
@@ -332,7 +315,7 @@ def augment(img_path, img_data_path, augment=True):
 					imgData_aug.at[index,'y2s'] = rows - y1
 					imgData_aug.at[index,'y1s'] = rows - y2
 				elif angle == 90:
-					print("angle rot 90")
+					# print("angle rot 90")
 					# row['x1s'] = rows - y2
 					# row['x2s'] = rows - y1
 					# row['y1s'] = x1
@@ -347,17 +330,16 @@ def augment(img_path, img_data_path, augment=True):
 	#AA commentate perchè le nostre patches sono quadrate
 	#imgData_aug['width'] = img_aug.shape[1]
 	#imgData_aug['height'] = img_aug.shape[0]
-	print(imgData_aug.head())
 	return img_aug, imgData_aug
 
 
 
 #def get_anchor_gt( all_img_data, img_length_calc_function, mode='train'):
-def get_anchor_gt( folderPath, all_img_data, mode='train'):
+def get_anchor_gt(patches_path, patch_list, mode='train'):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
-		all_img_data: list(filepath, width, height, list(bboxes))
+		patch_list: list(filepath, width, height, list(bboxes))
 		C: config
 		img_length_calc_function: function to calculate final layer's feature map (of base model) size according to input image size
 		mode: 'train' or 'test'; 'train' mode need augmentation
@@ -371,55 +353,55 @@ def get_anchor_gt( folderPath, all_img_data, mode='train'):
 	"""
 	while True:
 
-		for patchId in all_img_data:
+		for patch_id in patch_list:
+			print(patch_id)
 			try:
 
 				# read in image, and optionally add augmentation
-				imagePath = os.path.join(folderPath, patchId, ".npy")
-				imageDataPath = os.path.join(folderPath, patchId, ".pkl")
+				image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
+				image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
 
 				if mode == 'train':
-					x_img, img_data_aug  = augment(imagePath, imageDataPath, augment=True)
+					x_img, img_data_aug  = augment(image_path, image_data_path, augment=True)
 				else:
-					x_img, img_data_aug  = augment(imagePath, imageDataPath, augment=False)
+					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
 
-				(width, height) = (img_data_aug['width'], img_data_aug['height'])
-				(rows, cols, _) = x_img.shape
-
-				assert cols == width
-				assert rows == height
-
-				# get image dimensions for resizing
-				#(resized_width, resized_height) = get_new_img_size(width, height, C.im_size)
-
-				# resize the image so that smalles side is length = 300px
-				#x_img = cv2.resize(x_img, (resized_width, resized_height), interpolation=cv2.INTER_CUBIC)
+				(width, height) = x_img.shape
 				debug_img = x_img.copy()
 
-				# try:
-				# 	y_rpn_cls, y_rpn_regr, num_pos = (C, img_data_aug, width, height, resized_width, resized_height, img_length_calc_function)
-				# except:
-				# 	continue
+				try:
+					y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
+
+				except Exception as e:
+					print(e)
+					continue
 
 				# Zero-center by mean pixel, and preprocess image
-
-				#x_img = x_img[:,:, (2, 1, 0)]  # BGR -> RGB
-				#x_img = x_img.astype(np.float32)
 				zero_centering(x_img)
+				print('centrato')
 
 				# x_img[:, :, 0] -= C.img_channel_mean[0]
 				# x_img[:, :, 1] -= C.img_channel_mean[1]
 				# x_img[:, :, 2] -= C.img_channel_mean[2]
 				# x_img /= C.img_scaling_factor
 
-				x_img = np.transpose(x_img, (2, 0, 1))
-				x_img = np.expand_dims(x_img, axis=0)
+				print('x_img = ')
+				print(x_img.shape)
+				x_img = np.expand_dims(x_img, axis=0) # (205, 205) --> (1, 205, 205)
+				x_img = np.expand_dims(x_img, axis=3) # (1, 205, 205) --> (1, 205, 205, 1)
+				print('x_img = ')
+				print(x_img.shape) 
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
 
-				x_img = np.transpose(x_img, (0, 2, 3, 1))
-				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1))
-				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1))
+				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1)) # (1, 60, 12, 12) --> (1, 12, 12, 60)
+				print('y_rpn_cls = ')
+				print(y_rpn_cls.shape)
+
+				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # (1, 240, 12, 12) --> (1, 12, 12, 240)
+				print('y_rpn_regr = ')
+				print(y_rpn_regr.shape)
+
 
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
 
@@ -440,75 +422,3 @@ def zero_centering(img_patch):
         img_patch[:, :, 2] -= C.img_channel_mean[2]
     
     return
-
-
-# def get_anchor_gt(all_img_data, C, img_length_calc_function, mode='train'):
-# 	""" Yield the ground-truth anchors as Y (labels)
-		
-# 	Args:
-# 		all_img_data: list(filepath, width, height, list(bboxes))
-# 		C: config
-# 		img_length_calc_function: function to calculate final layer's feature map (of base model) size according to input image size
-# 		mode: 'train' or 'test'; 'train' mode need augmentation
-
-# 	Returns:
-# 		x_img: image data after resized and scaling (smallest size = 300px)
-# 		Y: [y_rpn_cls, y_rpn_regr]
-# 		img_data_aug: augmented image data (original image with augmentation)
-# 		debug_img: show image for debug
-# 		num_pos: show number of positive anchors for debug
-# 	"""
-# 	while True:
-
-# 		for img_data in all_img_data:
-# 			try:
-
-# 				# read in image, and optionally add augmentation
-			
-# 				if mode == 'train':
-# 					img_data_aug, x_img = augment(img_data, C, augment=True)
-# 				else:
-# 					img_data_aug, x_img = augment(img_data, C, augment=False)
-
-
-# 				(width, height) = (img_data_aug['width'], img_data_aug['height'])
-# 				(rows, cols, _) = x_img.shape
-
-# 				assert cols == width
-# 				assert rows == height
-
-# 				# get image dimensions for resizing
-# 				(resized_width, resized_height) = get_new_img_size(width, height, C.im_size)
-
-# 				# resize the image so that smalles side is length = 300px
-# 				x_img = cv2.resize(x_img, (resized_width, resized_height), interpolation=cv2.INTER_CUBIC)
-# 				debug_img = x_img.copy()
-
-# 				try:
-# 					y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(C, img_data_aug, width, height, resized_width, resized_height, img_length_calc_function)
-# 				except:
-# 					continue
-
-# 				# Zero-center by mean pixel, and preprocess image
-
-# 				x_img = x_img[:,:, (2, 1, 0)]  # BGR -> RGB
-# 				x_img = x_img.astype(np.float32)
-# 				x_img[:, :, 0] -= C.img_channel_mean[0]
-# 				x_img[:, :, 1] -= C.img_channel_mean[1]
-# 				x_img[:, :, 2] -= C.img_channel_mean[2]
-# 				x_img /= C.img_scaling_factor
-
-# 				# x_img = np.transpose(x_img, (2, 0, 1))
-# 				x_img = np.expand_dims(x_img, axis=0)
-
-# 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling # TODO: da capire
-
-# 				# x_img = np.transpose(x_img, (0, 2, 3, 1))
-# 				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1))
-# 				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1))
-
-# 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
-
-# 			except Exception as e:
-# 				print(e)
-# 				continue

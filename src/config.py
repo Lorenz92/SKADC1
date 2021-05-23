@@ -51,8 +51,8 @@ verbose = True
 network = 'vgg'
 
 # Setting for data augmentation
-use_horizontal_flips = False
-use_vertical_flips = False
+use_horizontal_flips = True
+use_vertical_flips = True
 rot_90 = True
 
 # Anchor box scales
@@ -67,6 +67,7 @@ anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2
 # Size to resize the smallest side of the image
 # Original setting in paper is 600. Set to 300 in here to save training time
 im_size = 300
+in_out_img_size_ratio = 16
 
 # image channel-wise mean to subtract
 img_channel_mean =  [3.8131893e-07] #mean value of all patches
