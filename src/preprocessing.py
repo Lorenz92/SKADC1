@@ -6,11 +6,11 @@ import cv2
 import pandas as pd
 import os
 
-def get_img_output_length(width, height):
-    def get_output_length(input_length):
-        return input_length//16
+# def get_img_output_length(width, height):
+#     def get_output_length(input_length):
+#         return input_length//16
 
-    return get_output_length(width), get_output_length(height)
+#     return get_output_length(width), get_output_length(height)
 
 
 def union(au, bu, area_intersection):
@@ -378,29 +378,19 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 
 				# Zero-center by mean pixel, and preprocess image
 				zero_centering(x_img)
-				print('centrato')
 
 				# x_img[:, :, 0] -= C.img_channel_mean[0]
 				# x_img[:, :, 1] -= C.img_channel_mean[1]
 				# x_img[:, :, 2] -= C.img_channel_mean[2]
 				# x_img /= C.img_scaling_factor
 
-				print('x_img = ')
-				print(x_img.shape)
 				x_img = np.expand_dims(x_img, axis=0) # (205, 205) --> (1, 205, 205)
 				x_img = np.expand_dims(x_img, axis=3) # (1, 205, 205) --> (1, 205, 205, 1)
-				print('x_img = ')
-				print(x_img.shape) 
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
 
 				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1)) # (1, 60, 12, 12) --> (1, 12, 12, 60)
-				print('y_rpn_cls = ')
-				print(y_rpn_cls.shape)
-
 				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # (1, 240, 12, 12) --> (1, 12, 12, 240)
-				print('y_rpn_regr = ')
-				print(y_rpn_regr.shape)
 
 
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos

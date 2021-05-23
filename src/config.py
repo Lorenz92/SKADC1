@@ -58,11 +58,14 @@ rot_90 = True
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled
 # Original anchor_box_scales in the paper is [128, 256, 512]
-# anchor_box_scales = [2, 4, 8, 16] 
-anchor_box_scales = [.5, 1, 2, 4, 8, 16, 32, 64, 128, 256] 
+anchor_box_scales = [1, 2, 4, 8, 16, 32] 
+# anchor_box_scales = [32, 64, 128, 256, 512]
 
 # Anchor box ratios
-anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
+# anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
+anchor_box_ratios = [[1, .5], [1, 1], [1, 2]]
+
+anchor_num = len(anchor_box_ratios)*len(anchor_box_scales)
 
 # Size to resize the smallest side of the image
 # Original setting in paper is 600. Set to 300 in here to save training time
@@ -100,3 +103,5 @@ classifier_max_overlap = 0.5
 class_mapping = None
 
 model_path = None
+
+use_bg = False

@@ -2,10 +2,13 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.wcs as pywcs
-import json
 import os
 import requests
 from matplotlib.patches import Rectangle
+import src.preprocessing as prep
+import copy
+import src.config as C
+
 
 def save_response_content(response, destination):
     CHUNK_SIZE = 32768
@@ -105,7 +108,7 @@ def _gen_single_bbox(fits_fn, ra, dec, major, minor, pa):
     return (xp_min, yp_min, xp_max, yp_max, height, width, cx, cy)
 
 
-def rpn_to_roi(rpn_layer, regr_layer, C, use_regr=True, max_boxes=300,overlap_thresh=0.9):
+def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thresh=0.9):
     """Convert rpn layer to roi bboxes
 
     Args: (num_anchors = 9)
@@ -209,8 +212,12 @@ def rpn_to_roi(rpn_layer, regr_layer, C, use_regr=True, max_boxes=300,overlap_th
     # Find out the bboxes which is illegal and delete them from bboxes list
     idxs = np.where((x1 - x2 >= 0) | (y1 - y2 >= 0))
 
+    print(f'all_boxes={all_boxes.shape}')
+
     all_boxes = np.delete(all_boxes, idxs, 0)
     all_probs = np.delete(all_probs, idxs, 0)
+
+    print(f'all_boxes={all_boxes.shape}')
 
     # Apply non_max_suppression
     # Only extract the bboxes. Don't need rpn probs in the later process
@@ -224,7 +231,7 @@ def non_max_suppression_fast(boxes, probs, overlap_thresh=0.9, max_boxes=300):
 
     # Process explanation:
     #   Step 1: Sort the probs list
-    #   Step 2: Find the larget prob 'Last' in the list and save it to the pick list
+    #   Step 2: Find the largest prob 'Last' in the list and save it to the pick list
     #   Step 3: Calculate the IoU with 'Last' box and other boxes in the list. If the IoU is larger than overlap_threshold, delete the box from list
     #   Step 4: Repeat step 2 and step 3 until there is no item in the probs list 
     if len(boxes) == 0:
@@ -252,9 +259,6 @@ def non_max_suppression_fast(boxes, probs, overlap_thresh=0.9, max_boxes=300):
 
     # sort the bounding boxes 
     idxs = np.argsort(probs)
-
-    probs=[1, 4, 2]
-    idxs=[0,2,1]
 
     # keep looping while some indexes still remain in the indexes list
     while len(idxs) > 0:
@@ -357,3 +361,111 @@ def print_img(img, img_data = None):
         plt.show()
         
     return
+
+def calc_iou(R, img_data, C, class_mapping):
+    """Converts from (x1,y1,x2,y2) to (x,y,w,h) format
+
+    Args:
+        R: bboxes, probs
+    """
+    
+    gta = np.zeros((img_data.shape[0], 4))
+
+    for box_index, bbox in img_data.iterrows():
+        # get the GT box coordinates, and resize to account for image resizing
+        # gta[box_index, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
+        gta[box_index, 0] = bbox['x1s']/C.rpn_stride
+        gta[box_index, 1] = bbox['x2s']/C.rpn_stride
+        gta[box_index, 2] = bbox['y1s']/C.rpn_stride
+        gta[box_index, 3] = bbox['y2s']/C.rpn_stride
+
+    x_roi = []
+    y_class_num = []
+    y_class_regr_coords = []
+    y_class_regr_label = []
+    IoUs = [] # for debugging only
+
+    # R.shape[0]: number of bboxes (=300 from non_max_suppression)
+    for ix in range(R.shape[0]):
+        print(f'ix ={ix}')
+        (x1, y1, x2, y2) = R[ix, :]
+        # x1 = int(round(x1))
+        # y1 = int(round(y1))
+        # x2 = int(round(x2))
+        # y2 = int(round(y2))
+
+        best_iou = 0.0
+        best_bbox = -1
+        # Iterate through all the ground-truth bboxes to calculate the iou
+        for box_index in range(img_data.shape[0]):
+            # print(f'box_index={box_index}')
+            curr_iou = prep.iou([gta[box_index, 0], gta[box_index, 2], gta[box_index, 1], gta[box_index, 3]], [x1, y1, x2, y2])
+
+            # Find out the corresponding ground-truth box_index with larget iou
+            if curr_iou > best_iou:
+                best_iou = curr_iou
+                best_bbox = box_index
+        
+        print(f'best_iou={best_iou}')
+                
+        # Discard ROI if overlap is not sufficient
+        if best_iou < C.classifier_min_overlap:
+            continue
+        else:
+            w = x2 - x1
+            h = y2 - y1
+            x_roi.append([x1, y1, w, h])
+            IoUs.append(best_iou)
+
+            print('suca 1')
+
+            if C.classifier_min_overlap <= best_iou < C.classifier_max_overlap:
+                # hard negative example
+                cls_name = 'bg'
+                print('suca 2')
+
+            elif C.classifier_max_overlap <= best_iou:
+                cls_name = img_data.loc[box_index,'CLASS'] #TODO: change here
+                cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0
+                cyg = (gta[best_bbox, 2] + gta[best_bbox, 3]) / 2.0
+
+                cx = x1 + w / 2.0
+                cy = y1 + h / 2.0
+
+                tx = (cxg - cx) / float(w)
+                ty = (cyg - cy) / float(h)
+                tw = np.log((gta[best_bbox, 1] - gta[best_bbox, 0]) / float(w))
+                th = np.log((gta[best_bbox, 3] - gta[best_bbox, 2]) / float(h))
+            else:
+                print('roi = {}'.format(best_iou))
+                raise RuntimeError
+
+        # One-hot encodig array of class
+        class_num = class_mapping[cls_name]
+        class_label = len(class_mapping) * [0] #[0,0,0]
+        class_label[class_num] = 1 #[0,1,0]
+        y_class_num.append(copy.deepcopy(class_label))
+        coords = [0] * 4 * (len(class_mapping) - 1) # -1 for the 'bg' class
+        labels = [0] * 4 * (len(class_mapping) - 1) # -1 for the 'bg' class
+        if cls_name != 'bg':
+            label_pos = 4 * class_num
+            sx, sy, sw, sh = C.classifier_regr_std
+            coords[label_pos:4+label_pos] = [sx*tx, sy*ty, sw*tw, sh*th]
+            labels[label_pos:4+label_pos] = [1, 1, 1, 1]
+            y_class_regr_coords.append(copy.deepcopy(coords))
+            y_class_regr_label.append(copy.deepcopy(labels))
+        else:
+            y_class_regr_coords.append(copy.deepcopy(coords))
+            y_class_regr_label.append(copy.deepcopy(labels))
+
+    if len(x_roi) == 0:
+        return None, None, None, None
+
+    # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
+    X = np.array(x_roi)
+    # one hot encode for bboxes from above => x_roi (X)
+    Y1 = np.array(y_class_num)
+    # corresponding labels and corresponding gt bboxes
+    Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
+
+    return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
