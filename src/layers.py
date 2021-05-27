@@ -203,7 +203,7 @@ class Classifier(Layer):
         self.td_do_2 = TimeDistributed(Dropout(0.5))
 
         self.td_fc_cls = TimeDistributed(Dense(self.num_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(self.num_classes))
-        self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
+        self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
 
     def call(self, inputs):
 
@@ -222,3 +222,34 @@ class Classifier(Layer):
         return [out_class, out_regr]
 
 
+# def Classifier(num_classes):
+
+#     def __init__(self, num_classes, **kwargs):
+#         super(Classifier, self).__init__(name='cls')
+
+#         self.num_classes = num_classes
+        
+#         self.td_flatten = TimeDistributed(Flatten(name='flatten'))
+#         self.td_fc_1 = TimeDistributed(Dense(4096, activation='relu', name='fc1'))
+#         self.td_do_1 = TimeDistributed(Dropout(0.5))
+#         self.td_fc_2 = TimeDistributed(Dense(4096, activation='relu', name='fc2'))
+#         self.td_do_2 = TimeDistributed(Dropout(0.5))
+
+#         self.td_fc_cls = TimeDistributed(Dense(self.num_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(self.num_classes))
+#         self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
+
+#     def call(self, inputs):
+
+#         x = self.td_flatten(inputs)
+#         x = self.td_fc_1(x)
+#         x = self.td_do_1(x)
+#         x = self.td_fc_2(x)
+#         x = self.td_do_2(x)
+
+#         # There are two output layer
+#         # out_class: softmax acivation function for classify the class name of the object
+#         # out_regr: linear activation function for bboxes coordinates regression
+#         out_class = self.td_fc_cls(x)
+#         out_regr = self.td_fc_reg(x)
+        
+#         return [out_class, out_regr]

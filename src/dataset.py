@@ -211,12 +211,16 @@ class SKADataset:
                             df_scaled["patch_xo"] = patch_xo
                             df_scaled["patch_yo"] = patch_yo
                             df_scaled["patch_dim"] = patch_dim
+                            df_scaled['bbox_w'] = np.abs(df_scaled['x2'] - df_scaled['x1'])
+                            df_scaled['bbox_h'] = np.abs(df_scaled['y2'] - df_scaled['y1'])
 
                             df_scaled = df_scaled.reset_index(drop=True)
                             df_scaled['ID'] = df_scaled['ID'].astype(int).astype('object')
                             df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                             df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                             df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
+                            df_scaled['class_label'] = df_scaled[['SIZE', 'SELECTION']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+                            # df_scaled['class_label'] = df_scaled['SIZE'].astype(str) + df_scaled['SELECTION'].astype(str)
 
                             patch_index = i * (h // patch_dim) +j
 
