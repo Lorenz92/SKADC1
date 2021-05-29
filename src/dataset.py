@@ -10,6 +10,10 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 
 
+b5_sigma = 3.8465818166348711e-08
+b5_median = -5.2342429e-11
+num_sigma = 0.05
+b5_three_sigma = b5_median + num_sigma * b5_sigma
 
 class SKADataset:
     """
@@ -92,10 +96,20 @@ class SKADataset:
 
         return df
 
-    
-    def _convert_boxes_to_px_coord(self, boxes_dataframe, fits_header):
+    # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+    # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
+    def _primary_beam_gridding(self, total_flux, cx, cy, pb_data):
+
+        pbv = pb_data[int(cy)][int(cx)]
+        return total_flux * pbv
+
+    def _convert_boxes_to_px_coord(self, boxes_dataframe, primay_beam_fits ):
         # convert all boxes into pix coords
         # boxes_dataframe = ska_dataset.raw_train_df
+        fits_header = primay_beam_fits[0].header
+        wc = pywcs.WCS(fits_header)
+        primaryBeam_data = primay_beam_fits[0].data[0][0]
+
         fits_header = fits_header #data_560Mhz_1000h_fits[0].header
         image_width = fits_header['NAXIS1']
         image_height = fits_header['NAXIS2']
@@ -114,10 +128,18 @@ class SKADataset:
         'height':[]
         }
 
+        #rows with selection == 0 must be deleted (form 274883 rows to 190553)
+        boxes_dataframe = boxes_dataframe[boxes_dataframe.SELECTION != 0]
+        #clean_boxes_dataframe = pd.DataFrame().reindex_like(boxes_dataframe)
+
         # remove useless data from dataframe
         # filt_dataframe = boxes_dataframe[['x', 'y', 'RA (centroid)', 'DEC (centroid)', 'BMAJ', 'BMIN', 'PA']]
-        wc = pywcs.WCS(fits_header)
+ 
 
+        #list  of rows to be deleted due to a too weak flux
+        id_to_delete = []
+        faint = 0
+        faint_a = 0
         for idx, box in boxes_dataframe.iterrows():
         # compute centroid coord to check with gt data
             cx, cy = wc.wcs_world2pix([[box['RA (centroid)'], box['DEC (centroid)'], 0, 0]], 0)[0][0:2]
@@ -139,6 +161,20 @@ class SKADataset:
             minor_semia_px = box['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
             pa_in_rad = np.radians(box['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
 
+            area_pixel = major_semia_px * minor_semia_px *4
+            if(area_pixel==0):
+                id_to_delete.append(idx)#(box['ID'])
+                faint_a += 1
+                continue
+            # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            total_flux = float(box['FLUX'])
+            total_flux = self._primary_beam_gridding(total_flux, cx, cy, primaryBeam_data)
+            total_flux /= area_pixel
+            if (total_flux < b5_three_sigma):
+                id_to_delete.append(idx) #(box['ID'])
+                faint += 1
+                continue
+
             x1, y1, x2, y2 = utils._get_bbox_from_ellipse(pa_in_rad, major_semia_px, minor_semia_px, cx, cy, image_height, image_width)
 
             coords['x1'].append(x1)
@@ -151,7 +187,49 @@ class SKADataset:
             coords['width'].append(abs(x2-x1))
             coords['height'].append(abs(y2-y1))
 
+        print(boxes_dataframe.shape)
+        print(len(id_to_delete))       
+        boxes_dataframe.drop(index = id_to_delete, inplace= True)
+        print(len(coords))
+        print(boxes_dataframe.shape)
+        print(faint_a)
+        print(faint)
         return coords
+        
+
+    def remove_rows_by_flux(self, df, fits_header, primaryBeam):
+        pbhead = primaryBeam[0].header
+        pb_wcs = pywcs.WCS(pbhead)
+        primaryBeam_data = primaryBeam[0].data[0][0]
+
+        def filter(df_row, fits_header=fits_header, pb_wcs=pb_wcs, primaryBeam_data=primaryBeam_data):
+
+            image_width = fits_header['NAXIS1']
+            image_height = fits_header['NAXIS2']
+            pixel_res_x_arcsec = abs(float(fits_header['CDELT1'])) * 3600
+            pixel_res_y_arcsec = abs(float(fits_header['CDELT2'])) * 3600
+
+            major_semia_px = df_row['BMAJ'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            minor_semia_px = df_row['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
+            pa_in_rad = np.radians(df_row['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
+
+            area_pixel = major_semia_px * minor_semia_px *4
+            if(area_pixel==0):
+                return False
+
+            # copied form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            total_flux = float(df_row['FLUX'])
+            total_flux = self._primary_beam_gridding(total_flux, df_row['RA (centroid)'],  df_row['DEC (centroid)'], pb_wcs, primaryBeam_data)
+            total_flux /= area_pixel
+            if (total_flux < b5_three_sigma):
+                return False
+
+            return True
+
+        df[df.apply(filter, axis=1)]
+        #print(df.apply(filter, axis=1))
+        #print(df[df.apply(filter, axis = 1)])
+
 
     def _extend_dataframe(self, df, cols_dict):
       df_from_dict = pd.DataFrame.from_dict(cols_dict)
