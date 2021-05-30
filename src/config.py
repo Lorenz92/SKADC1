@@ -60,12 +60,12 @@ rot_90 = True
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled
 # Original anchor_box_scales in the paper is [128, 256, 512]
-anchor_box_scales = [1, 2, 4, 8, 16, 32] 
+anchor_box_scales = [2, 4, 8, 16, 32, 64, 128] 
 # anchor_box_scales = [32, 64, 128, 256, 512]
 
 # Anchor box ratios
 # anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
-anchor_box_ratios = [[1, .5], [1, 1], [1, 2]]
+anchor_box_ratios = [[2, 1], [1, 1], [1, 2]]
 
 anchor_num = len(anchor_box_ratios)*len(anchor_box_scales)
 
@@ -80,6 +80,19 @@ img_channel_max = 0.006585681
 img_channel_min = 0.0
 #img_channel_mean =  [2.1317146e-06] #mean value of all patches
 img_scaling_factor = 1.0
+
+# This is used in order to resize the biggest bbox to match the network input shape
+resize_image_factor = 1.
+
+# Control wheter to remove bbox with area less than resize_image_factor
+clean_dataset = True
+
+# Control bbox enlargement
+bbox_scale_factor = 20
+enlarge_bbox = True
+
+# Stretching parameter for the gamma function
+gamma = 0.7
 
 # number of ROIs at once
 num_rois = 4

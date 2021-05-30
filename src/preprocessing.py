@@ -90,10 +90,10 @@ def calc_rpn(img_data, width, height):
 	# for bbox_num, bbox in enumerate(img_data['bboxes']): # previously
 	for bbox_num, bbox in img_data.iterrows():
 		# get the GT box coordinates, and resize to account for image resizing
-		gta[bbox_num, 0] = bbox.x1s * (width / float(width))
-		gta[bbox_num, 1] = bbox.x2s * (width / float(width))
-		gta[bbox_num, 2] = bbox.y1s * (height / float(height))
-		gta[bbox_num, 3] = bbox.y2s * (height / float(height))
+		gta[bbox_num, 0] = bbox.x1s
+		gta[bbox_num, 1] = bbox.x2s
+		gta[bbox_num, 2] = bbox.y1s
+		gta[bbox_num, 3] = bbox.y2s
 	
 	# rpn ground truth
 
@@ -145,29 +145,29 @@ def calc_rpn(img_data, width, height):
 							tw = np.log((gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc))
 							th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
 						
-						# if img_data['bboxes'][bbox_num]['class'] != 'bg':
+						if img_data.loc[bbox_num]['CLASS'] != 'bg':
 
-                        # all GT boxes should be mapped to an anchor box, so we keep track of which anchor box was best
-						if curr_iou > best_iou_for_bbox[bbox_num]:
-							best_anchor_for_bbox[bbox_num] = [jy, ix, anchor_ratio_idx, anchor_size_idx]
-							best_iou_for_bbox[bbox_num] = curr_iou
-							best_x_for_bbox[bbox_num,:] = [x1_anc, x2_anc, y1_anc, y2_anc]
-							best_dx_for_bbox[bbox_num,:] = [tx, ty, tw, th]
+							# all GT boxes should be mapped to an anchor box, so we keep track of which anchor box was best
+							if curr_iou > best_iou_for_bbox[bbox_num]:
+								best_anchor_for_bbox[bbox_num] = [jy, ix, anchor_ratio_idx, anchor_size_idx]
+								best_iou_for_bbox[bbox_num] = curr_iou
+								best_x_for_bbox[bbox_num,:] = [x1_anc, x2_anc, y1_anc, y2_anc]
+								best_dx_for_bbox[bbox_num,:] = [tx, ty, tw, th]
 
-						# we set the anchor to positive if the IOU is >0.7 (it does not matter if there was another better box, it just indicates overlap)
-						if curr_iou > C.rpn_max_overlap:
-							bbox_type = 'pos'
-							num_anchors_for_bbox[bbox_num] += 1
-							# we update the regression layer target if this IOU is the best for the current (x,y) and anchor position
-							if curr_iou > best_iou_for_loc:
-								best_iou_for_loc = curr_iou
-								best_regr = (tx, ty, tw, th) #Regression layer target (y_true)
+							# we set the anchor to positive if the IOU is >0.7 (it does not matter if there was another better box, it just indicates overlap)
+							if curr_iou > C.rpn_max_overlap:
+								bbox_type = 'pos'
+								num_anchors_for_bbox[bbox_num] += 1
+								# we update the regression layer target if this IOU is the best for the current (x,y) and anchor position
+								if curr_iou > best_iou_for_loc:
+									best_iou_for_loc = curr_iou
+									best_regr = (tx, ty, tw, th) #Regression layer target (y_true)
 
-						# if the IOU is >0.3 and <0.7, it is ambiguous and no included in the objective
-						if C.rpn_min_overlap < curr_iou < C.rpn_max_overlap:
-							# gray zone between neg and pos
-							if bbox_type != 'pos':
-								bbox_type = 'neutral'
+							# if the IOU is >0.3 and <0.7, it is ambiguous and no included in the objective
+							if C.rpn_min_overlap < curr_iou < C.rpn_max_overlap:
+								# gray zone between neg and pos
+								if bbox_type != 'pos':
+									bbox_type = 'neutral'
 
 					# turn on or off outputs depending on IOUs
                     # Le anchor valide sono quelle da "guardare", poi se c'è overlap è un True altrimenti False

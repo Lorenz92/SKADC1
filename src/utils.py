@@ -184,7 +184,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
                 A[:, :, :, anchor_index] = apply_regr_np(A[:, :, :, anchor_index], regr) # Ora A è l'ancora modificata
 
             # Avoid width and height exceeding 1 by clipping values
-            A[2, :, :, anchor_index] = np.maximum(1, A[2, :, :, anchor_index]) #TODO: capire se tenere
+            A[2, :, :, anchor_index] = np.maximum(1, A[2, :, :, anchor_index]) #TODO: capire se tenere --> sembra non funzionare
             A[3, :, :, anchor_index] = np.maximum(1, A[3, :, :, anchor_index])
 
             # Convert (x, y , w, h) to (x1, y1, x2, y2)
@@ -339,7 +339,10 @@ def apply_regr_np(X, T):
         return X
 
 
-def print_img(img, img_data = None):
+def print_img(img_folder, img_name = None):
+    img = f'{img_folder}/{img_name}/{img_name}.npy'
+    img = np.load(img)
+    img_data = f'{img_folder}/{img_name}/{img_name}.pkl'
     #img must be a numpy.ndarray img
 
     normalized_data = img * (1.0 /img.max())
@@ -353,6 +356,7 @@ def print_img(img, img_data = None):
     if img_data is None:
         return
     else:
+        img_data = pd.read_pickle(img_data)
         for _, box in img_data.iterrows():
             #box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
             ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.1, edgecolor='r',facecolor='none'))
@@ -413,8 +417,8 @@ def calc_iou(R, img_data, class_mapping):
         else:
             w = x2 - x1
             h = y2 - y1
-            x_roi.append([x1, y1, w, h])
-            IoUs.append(best_iou)
+            x_roi.append([x1, y1, w, h]) # ROI proposta dal network
+            IoUs.append(best_iou) # Quanto x_roi overlappa con la gt
 
 
             if C.classifier_min_overlap <= best_iou < C.classifier_max_overlap:
@@ -446,7 +450,7 @@ def calc_iou(R, img_data, class_mapping):
         labels = [0.] * 4 * (len(class_mapping)-1) # -1 for the 'bg' class
         if cls_name != 'bg':
             label_pos = 4 * class_num
-            sx, sy, sw, sh = C.classifier_regr_std
+            sx, sy, sw, sh = C.classifier_regr_std #TODO: da capire
             coords[label_pos:4+label_pos] = [sx*tx, sy*ty, sw*tw, sh*th]
             labels[label_pos:4+label_pos] = [1, 1, 1, 1]
             y_class_regr_coords.append(copy.deepcopy(coords))
