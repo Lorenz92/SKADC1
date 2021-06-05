@@ -5,6 +5,8 @@ import copy
 import cv2
 import pandas as pd
 import os
+# import PIL
+from PIL import Image
 
 # def get_img_output_length(width, height):
 #     def get_output_length(input_length):
@@ -246,7 +248,22 @@ def augment(img_path, img_data_path, augment=True):
 	img_aug = copy.copy(img_orig)
 	imgData_aug = copy.deepcopy(imgData_orig)
 
-	#img = cv2.imread(img_data_aug['   '])
+	# resize paches, the final dimension is the one set in the config (C.resizeFinalDim)
+	if C.resizePatch :
+		rows, cols = img_orig.shape[:2]
+		width_percent = (C.resizeFinalDim / float(cols))
+		hsize = int((float(rows) * float(width_percent)))
+		#img_orig = img_orig.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS)
+
+		for index, row in imgData_aug.iterrows():			
+			x1 = row['x1s'] * width_percent
+			x2 = row['x2s'] * width_percent
+			y1 = row['y1s'] * width_percent
+			y2 = row['y2s'] * width_percent
+			imgData_aug.at[index,'x1s']= x1
+			imgData_aug.at[index,'x2s']= x2
+			imgData_aug.at[index,'y1s']= y1
+			imgData_aug.at[index,'y2s']= y2
 
 	if augment:
 		rows, cols = img_orig.shape[:2]
@@ -331,7 +348,6 @@ def augment(img_path, img_data_path, augment=True):
 	#imgData_aug['width'] = img_aug.shape[1]
 	#imgData_aug['height'] = img_aug.shape[0]
 	return img_aug, imgData_aug
-
 
 
 #def get_anchor_gt( all_img_data, img_length_calc_function, mode='train'):

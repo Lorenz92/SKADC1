@@ -89,10 +89,15 @@ clean_dataset = True
 
 # Control bbox enlargement
 bbox_scale_factor = 20
-enlarge_bbox = True
+enlarge_bbox = False
 
 # Stretching parameter for the gamma function
 gamma = 0.7
+
+# resize the original patch
+resizePatch = True
+# final dimension of the patch
+resizeFinalDim = 600
 
 # number of ROIs at once
 num_rois = 4
