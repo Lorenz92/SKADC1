@@ -211,9 +211,16 @@ class SKADataset:
 
     def enlarge_bbox(self, x, scale_factor):
 
-        if (x.width < 2) | (x.height < 2):    
+        if (1 < x.width < 2) | (1 < x.height < 2):    
             x.width = x.width * scale_factor
             x.height = x.height * scale_factor
+            x.x1 = x.x - x.width/2
+            x.y1 = x.y - x.height/2
+            x.x2 = x.x + x.width/2
+            x.y2 = x.y + x.height/2
+        elif (x.width <= 1) | (x.height <= 1):    
+            x.width = x.width * 6
+            x.height = x.height * 6
             x.x1 = x.x - x.width/2
             x.y1 = x.y - x.height/2
             x.x2 = x.x + x.width/2
@@ -230,7 +237,7 @@ class SKADataset:
 
 
 
-    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=200, is_multiple=False):
+    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=100, is_multiple=False):
         h, w = img.shape
         fits_filename = img_name.split('/')[-1].split('.')[0]
 
@@ -244,9 +251,9 @@ class SKADataset:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
         patches_list = []
-        for i in tqdm(range(0, h, patch_dim)):
+        for i in tqdm(range(0, h, int(patch_dim/2))):
             if i<=10:#*patch_dim :   #i <= 1000:
-                for j in tqdm(range(0, w, patch_dim)):
+                for j in tqdm(range(0, w, int(patch_dim/2))):
                     if j <=  patch_dim*10 :                
                         patch_xo = x_origin+j
                         patch_yo = y_origin+i

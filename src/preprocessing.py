@@ -5,8 +5,10 @@ import copy
 import cv2
 import pandas as pd
 import os
-# import PIL
+import PIL
 from PIL import Image
+from tqdm import tqdm
+import itertools
 
 # def get_img_output_length(width, height):
 #     def get_output_length(input_length):
@@ -99,7 +101,7 @@ def calc_rpn(img_data, width, height):
 	
 	# rpn ground truth
 
-	for anchor_size_idx in range(len(anchor_sizes)):
+	for anchor_size_idx in tqdm(range(len(anchor_sizes))):
 		for anchor_ratio_idx in range(n_anchratios):
 			anchor_x = anchor_sizes[anchor_size_idx] * anchor_ratios[anchor_ratio_idx][0]
 			anchor_y = anchor_sizes[anchor_size_idx] * anchor_ratios[anchor_ratio_idx][1]
@@ -147,7 +149,7 @@ def calc_rpn(img_data, width, height):
 							tw = np.log((gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc))
 							th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
 						
-						if img_data.loc[bbox_num]['CLASS'] != 'bg':
+						if img_data.loc[bbox_num]['class_label'] != 'bg':
 
 							# all GT boxes should be mapped to an anchor box, so we keep track of which anchor box was best
 							if curr_iou > best_iou_for_bbox[bbox_num]:
@@ -186,7 +188,7 @@ def calc_rpn(img_data, width, height):
 						y_rpn_regr[jy, ix, start:start+4] = best_regr
 
 	# we ensure that every bbox has at least one positive RPN region
-	for idx in range(num_anchors_for_bbox.shape[0]):
+	for idx in tqdm(range(num_anchors_for_bbox.shape[0])):
         # Qui entra quando per una bbox non ha trovato ancore che superano 0.7
 		if num_anchors_for_bbox[idx] == 0:
 			# no box with an IOU greater than zero ...
@@ -235,7 +237,7 @@ def calc_rpn(img_data, width, height):
 	return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos
 
 
-def augment(img_path, img_data_path, augment=True):
+def augment(img_path, img_data_path, augment=True, **kwargs):
 	# assert 'filepath' in img_data_path
 	# assert 'bboxes' in img_data_path
 	# assert 'width' in img_data
@@ -253,7 +255,8 @@ def augment(img_path, img_data_path, augment=True):
 		rows, cols = img_orig.shape[:2]
 		width_percent = (C.resizeFinalDim / float(cols))
 		hsize = int((float(rows) * float(width_percent)))
-		#img_orig = img_orig.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS)
+		img = Image.fromarray(img_aug)
+		img_aug = np.array(img.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS))
 
 		for index, row in imgData_aug.iterrows():			
 			x1 = row['x1s'] * width_percent
@@ -266,10 +269,10 @@ def augment(img_path, img_data_path, augment=True):
 			imgData_aug.at[index,'y2s']= y2
 
 	if augment:
-		rows, cols = img_orig.shape[:2]
+		rows, cols = img_aug.shape[:2]
 		# print(cols)
 
-		if C.use_horizontal_flips and np.random.randint(0, 2) == 0:
+		if C.use_horizontal_flips and kwargs['hflip']: #np.random.randint(0, 2) == 0:
 			# print('Horizontal flipping')
 			img_aug = cv2.flip(img_aug, 1)
 			for index, row in imgData_aug.iterrows():			
@@ -278,7 +281,7 @@ def augment(img_path, img_data_path, augment=True):
 				imgData_aug.at[index,'x2s']= cols - x1
 				imgData_aug.at[index,'x1s']= cols - x2
 
-		if C.use_vertical_flips and np.random.randint(0, 2) == 0:
+		if C.use_vertical_flips and kwargs['vflip']: #np.random.randint(0, 2) == 0:
 			# print('Vertical flipping')
 			img_aug = cv2.flip(img_aug, 0)
 			for index, row in imgData_aug.iterrows():			
@@ -288,7 +291,7 @@ def augment(img_path, img_data_path, augment=True):
 				imgData_aug.at[index,'y1s']= rows - y2
 
 		if C.rot_90:
-			angle = np.random.choice([0,90,180,270],1)[0]
+			angle = kwargs['angle'] #np.random.choice([0,90,180,270],1)[0]
 			# print("angle = ", angle) 
 			if angle == 270:
 				img_aug = np.transpose(img_aug, (1,0))
@@ -351,7 +354,7 @@ def augment(img_path, img_data_path, augment=True):
 
 
 #def get_anchor_gt( all_img_data, img_length_calc_function, mode='train'):
-def get_anchor_gt(patches_path, patch_list, mode='train'):
+def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn/rpn_dataframe.pkl', mode='train'):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -367,9 +370,12 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 		debug_img: show image for debug
 		num_pos: show number of positive anchors for debug
 	"""
+
+	# rpn_df = pd.load(rpn_path)
+
 	while True:
 
-		for patch_id in patch_list:
+		for patch_id in tqdm(patch_list):
 			print(patch_id)
 			try:
 
@@ -378,7 +384,15 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
 
 				if mode == 'train':
-					x_img, img_data_aug  = augment(image_path, image_data_path, augment=True)
+					print('Augmenting -- START')
+					hflip = np.random.randint(0, 2)
+					vflip = np.random.randint(0, 2)
+					angle = np.random.choice([0,90,180,270],1)[0]
+
+					comb = f'{hflip}_{vflip}_{angle}'
+
+					x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
+					print('Augmenting -- END')
 				else:
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
 
@@ -386,14 +400,34 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				debug_img = x_img.copy()
 
 				try:
+					print('calc_rpn -- START')
 					y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
+					print('calc_rpn -- END')
+
+					print(y_rpn_cls.shape)
+					print(y_rpn_regr.shape)
+
+					# rpn_row = rpn_df[rpn_df['img_aug'] == f'{patch_id}_{comb}']
+
+					# print('Asserting')
+
+					# np.testing.assert_array_equal(y_rpn_cls, rpn_row['y_rpn_cls'])
+					# np.testing.assert_array_equal(y_rpn_regr,rpn_row['y_rpn_regr'])
+					# assert num_pos == rpn_row['num_pos']
+					# print('Asserting -- END')
+
+
 
 				except Exception as e:
 					print(e)
 					continue
 
 				# Zero-center by mean pixel, and preprocess image
+				print('zero-centering -- START')
+
 				zero_centering(x_img)
+				print('zero-centering -- END')
+
 
 				# x_img[:, :, 0] -= C.img_channel_mean[0]
 				# x_img[:, :, 1] -= C.img_channel_mean[1]
@@ -408,7 +442,7 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1)) # (1, 60, 12, 12) --> (1, 12, 12, 60)
 				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # (1, 240, 12, 12) --> (1, 12, 12, 240)
 
-
+				print('END')
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
 
 			except Exception as e:
@@ -428,3 +462,61 @@ def zero_centering(img_patch):
         img_patch[:, :, 2] -= C.img_channel_mean[2]
     
     return
+
+
+
+def generate_rpn(patches_path, patch_list):
+
+	h, v = [0,1], [0,1]
+	angle = [0,90,180,270]
+	df = {
+		'img_aug':[],
+		'y_rpn_cls':[],
+		'y_rpn_regr':[],
+		'num_pos':[]
+	}
+	cart_prod = list(itertools.product(h,v,angle))
+
+	for patch_id in tqdm(patch_list):
+
+		print('Working on patch: ', patch_id)
+
+		# read in image, and optionally add augmentation
+		image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
+		image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
+
+		for (hflip, vflip, angle) in tqdm(cart_prod):
+			print(f'Combination: {hflip}_{vflip}_{angle}')
+			x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
+
+			(width, height) = x_img.shape
+
+			try:
+				print('calc_rpn -- START')
+				y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) 
+				print('calc_rpn -- END')
+
+				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
+				df['y_rpn_cls'].append(y_rpn_cls)
+				df['y_rpn_regr'].append(y_rpn_regr)
+				df['num_pos'].append(num_pos)
+
+			except Exception as e:
+				print(e)
+				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
+				df['y_rpn_cls'].append([])
+				df['y_rpn_regr'].append([])
+				df['num_pos'].append('Error')
+				continue
+
+
+	df = pd.DataFrame.from_dict(df)
+
+	path = f'{C.TRAIN_DATA_FOLDER}/rpn'
+
+	if not os.path.exists(path):
+		os.makedirs(path)
+
+	df.to_pickle(f'{path}/rpn_dataframe.pkl')
+
+	return df

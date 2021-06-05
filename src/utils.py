@@ -53,61 +53,6 @@ def _get_bbox_from_ellipse(phi, r1, r2, cx, cy, h, w):
     return (x1, y1, x2, y2)
 
 
-def _gen_single_bbox(fits_fn, ra, dec, major, minor, pa):
-    """
-    Form the bbox BEFORE converting wcs to the pixel coordinates
-    major and mior are in arcsec
-    """
-    ra = float(ra)
-    dec = float(dec)
-    fits_fn_dict = dict()
-
-    if (fits_fn not in fits_fn_dict):
-        hdulist = pyfits.open(fits_fn)
-        height, width = hdulist[0].data.shape[0:2]
-        w = pywcs.WCS(hdulist[0].header).deepcopy()
-        fits_fn_dict[fits_fn] = (w, height, width)
-    else:
-        w, height, width = fits_fn_dict[fits_fn]
-
-    cx, cy = w.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
-    #cx = np.ceil(cx)
-    if (not for_png):
-        cx += 1
-    #cy = np.ceil(cy)
-    cy += 1
-    if (cx < 0 or cx > width):
-        print('got it cx {0}, {1}'.format(cx, fits_fn))
-        return []
-    if (cy < 0 or cy > height):
-        print('got it cy {0}'.format(cy))
-        return []
-    if (for_png):
-        cy = height - cy
-    majorp = major / 3600.0 / pixel_res_x / 2 #actually semi-major 
-    minorp = minor / 3600.0 / pixel_res_x / 2
-    paa = np.radians(pa)
-    x1, y1, x2, y2 = _get_bbox_from_ellipse(paa, majorp, minorp, cx, cy, height, width)
-    # return x1, y1, x2, y2, height, width
-    origin_area = (y2 - y1) * (x2 - x1)
-
-    # crop it around the border
-    xp_min = max(x1, 0)
-    yp_min = max(y1, 0)
-    xp_max = min(x2, width - 1)
-    if (xp_max <= xp_min):
-        return []
-    yp_max = min(y2, height - 1)
-    if (yp_max <= yp_min):
-        return []
-    new_area = (yp_max - yp_min) * (xp_max - xp_min)
-
-    if (origin_area / new_area > 4):
-        print('cropped box is too small, discarding...')
-        return []
-    return (xp_min, yp_min, xp_max, yp_max, height, width, cx, cy)
-
-
 def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thresh=0.9):
     """Convert rpn layer to roi bboxes
 
@@ -426,7 +371,7 @@ def calc_iou(R, img_data, class_mapping):
                 cls_name = 'bg'
 
             elif C.classifier_max_overlap <= best_iou:
-                cls_name = str(img_data.loc[box_index,'CLASS']) #TODO: change here with the combination of 3 SIZE x 3 CLASS and remove str()
+                cls_name = str(img_data.loc[box_index,'class_label'])
                 cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0
                 cyg = (gta[best_bbox, 2] + gta[best_bbox, 3]) / 2.0
 

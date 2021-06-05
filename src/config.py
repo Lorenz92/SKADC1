@@ -40,17 +40,15 @@ required_files = [
     }
 ]
 
-#TODO: convert the following in class
-'''
-class Config:
 
-	def __init__(self):
-'''
 # Print the process or not
 verbose = True
 
 # Name of base network
 network = 'vgg'
+
+# Dimensions of patches
+patch_dim = 100
 
 # Setting for data augmentation
 use_horizontal_flips = True
@@ -60,14 +58,17 @@ rot_90 = True
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled
 # Original anchor_box_scales in the paper is [128, 256, 512]
-anchor_box_scales = [2, 4, 8, 16, 32, 64, 128] 
+anchor_box_scales = [4, 8, 64, 256] 
 # anchor_box_scales = [32, 64, 128, 256, 512]
 
 # Anchor box ratios
 # anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
-anchor_box_ratios = [[2, 1], [1, 1], [1, 2]]
+anchor_box_ratios = [[2, 1], [1, 2], [1,1]]
 
 anchor_num = len(anchor_box_ratios)*len(anchor_box_scales)
+
+#NMS max boxes
+nms_max_boxes = 2000
 
 # Size to resize the smallest side of the image
 # Original setting in paper is 600. Set to 300 in here to save training time
@@ -88,8 +89,8 @@ resize_image_factor = 1.
 clean_dataset = True
 
 # Control bbox enlargement
-bbox_scale_factor = 20
-enlarge_bbox = False
+bbox_scale_factor = 3
+enlarge_bbox = True
 
 # Stretching parameter for the gamma function
 gamma = 0.7
@@ -97,7 +98,7 @@ gamma = 0.7
 # resize the original patch
 resizePatch = True
 # final dimension of the patch
-resizeFinalDim = 600
+resizeFinalDim = 300
 
 # number of ROIs at once
 num_rois = 4
