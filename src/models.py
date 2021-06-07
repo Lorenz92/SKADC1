@@ -64,15 +64,15 @@ from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Classifier
 
 
 # Per usare un unico modello andrebbero riscritte tutte le funzioni numpy in tf
-def e2e(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, weights, feature_extractor='VGG16'):
+def e2e(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, weights, feature_extractor='vgg16'):
     
     # Add custom input-layer to change from1 to 3 channels
     input_image  = Input(shape=input_shape_1, name='input_1')
 
     x = Expander()(input_image)
 
-    if feature_extractor == 'VGG16':
-        # # Load pretrained VGG16 and remove last MaxPool layer
+    if feature_extractor == 'vgg16':
+        # Load pretrained VGG16 and remove last MaxPool layer
         x = vgg16(x)
 
     # Create Region Proposal Net

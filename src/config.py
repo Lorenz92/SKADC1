@@ -98,7 +98,7 @@ gamma = 0.7
 # resize the original patch
 resizePatch = True
 # final dimension of the patch
-resizeFinalDim = 300
+resizeFinalDim = 600
 
 # number of ROIs at once
 num_rois = 4
