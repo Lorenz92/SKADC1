@@ -1,42 +1,34 @@
 import os
+from IPython.core.display import display
 import numpy as np
 import pandas as pd
 import astropy.wcs as pywcs
-import src.utils as utils
-import src.config as C
+from astropy.io import fits
 import copy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from tqdm import tqdm
 
-#TODO: capire da dove arrivano
-num_sigma = 0.05
-
-b5_sigma = 3.8465818166348711e-08
-b5_median = -5.2342429e-11
-b5_n_sigma = b5_median + num_sigma * b5_sigma
-
-# these are for training map only
-b1_sigma = 3.8185009938219004e-07 #
-b1_median = -1.9233363e-07 #
-b1_n_sigma = b1_median + num_sigma * b1_sigma
+import src.utils as utils
+import src.config as config
 
 
-class SKADataset:
+class SKADatasetv2:
     """
     SKA dataset wrapper.
     Schema:
 
-    1. load
+    1. load dataset
+    1.5. load FITS image
     2. preprocess
     3. split train/val
     """
 
-    def __init__(self, train_set_path=None, test_set_path=None, subset=1.0):
+    def __init__(self):
         
-        # Save training and test2set path+patch_dim-1s
-        self.train_set_path = train_set_path
-        self.test_set_path = test_set_path
+        # Save training and test set
+        self.train_set_path = None
+        self.test_set_path = None
 
         # Save column names
         self.col_names = ['ID',
@@ -56,80 +48,158 @@ class SKADataset:
               'y']
     
         # Process the training set
-        self.raw_train_df = None
+        boxes_dataframe = pd.DataFrame()
         self.cleaned_train_df = pd.DataFrame()
         self.proc_train_df = pd.DataFrame()
 
+        
+
+    def load_dataset(self, train_set_path=config.TRAIN_SET_PATH_CLEANED, subset=config.DATA_SUBSET):
+
+
+        """
+        Loading portion <subset> of given dateset
+        """
+
+        def _load_dataset(dataset_path, dataframe_path):
+            """
+            Loads the SKA dataset into a Pandas DataFrame,
+            starting from a specifically-formatted txt file.
+            """
+            # Load the DataFrame, if it was already pickled before
+            if os.path.exists(dataframe_path):
+                try:
+                    return pd.read_pickle(dataframe_path)
+                except ValueError:
+                    pass
+
+            # Otherwise load the txt file and extract data
+            else:
+                df = _prepare_dataset(dataset_path)
+
+            # Save the dataframe into a pickle file
+            df.to_pickle(dataframe_path)
+            
+            return df
+
+        def _get_portion(df, subset=1.0):
+            """
+            Returns a random subset of the whole dataframe.
+            """
+            amount = int(df.shape[0] * subset)
+            random_indexes = np.random.choice(
+                np.arange(df.shape[0]), size=amount, replace=False
+            )
+            return df.iloc[random_indexes].reset_index(drop=True)
+
+        def _prepare_dataset(dataset_path):
+
+            df = pd.read_csv(dataset_path, skiprows=18, header=None, names=self.col_names, delimiter=' ', skipinitialspace=True)
+
+            return df
+
+        
+        # Save training and test set
+        self.train_set_path = train_set_path
+        
         if self.train_set_path is not None:
             assert os.path.exists(
                 self.train_set_path
             ), "Missing SKA training set .txt file"
             self.train_df_path = f"{os.path.splitext(self.train_set_path)[0]}.pkl"
-            self.raw_train_df = self._load_dataset(
+            self.raw_train_df = _load_dataset(
                 self.train_set_path, self.train_df_path
             )
             if subset < 1.0:
-                self.raw_train_df = self._get_portion(self.raw_train_df, subset)
+                self.raw_train_df = _get_portion(self.raw_train_df, subset)
 
-    def _load_dataset(self, dataset_path, dataframe_path):
-        """
-        Loads the SKA dataset into a Pandas DataFrame,
-        starting from a specifically-formatted txt file.
-        """
-        # Load the DataFrame, if it was already pickled before
-        if os.path.exists(dataframe_path):
-            try:
-                return pd.read_pickle(dataframe_path)
-            except ValueError:
-                pass
+        print(f'Dataset shape: {self.raw_train_df.shape}')
+        display(self.raw_train_df.head())
 
-        # Otherwise load the txt file and extract data
-        else:
-            df = self._prepare_dataset(dataset_path)
+    def load_train_image(self, image_path, primary_beam, print_info=False, load_pb=False):
+        fits_image = fits.open(image_path)
+        if print_info:
+            print(fits_image.info())
 
-        # Save the dataframe into a pickle file
-        df.to_pickle(dataframe_path)
+        print(f'Loading FITS file {fits_image.filename()}')
+
+        self.image_data = fits_image[0].data[0,0]
+        self.image_header = fits_image[0].header;
         
-        return df
-
-
-    def _get_portion(self, df, subset=1.0):
+        if load_pb:
+            fits_image = fits.open(image_path)  
+            self.primary_beam_data =  primary_beam[0].data[0,0]
+            self.primary_beam_header =  primary_beam[0].header;
+    
+    def process_dataset(self, use_pb=False, primary_beam=None, b='b5'):
         """
-        Returns a random subset of the whole dataframe.
+        TODO: write desc
         """
-        amount = int(df.shape[0] * subset)
-        random_indexes = np.random.choice(
-            np.arange(df.shape[0]), size=amount, replace=False
-        )
-        return df.iloc[random_indexes].reset_index(drop=True)
+        def _apply_primary_beam_correction(b, box, area_pixel):
+            # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            num_sigma = 0.05
 
-    def _prepare_dataset(self, dataset_path):
+            if b == 'b5':
+                b5_sigma = 3.8465818166348711e-08
+                b5_median = -5.2342429e-11
+                b_n_sigma = b5_median + num_sigma * b5_sigma
 
-        df = pd.read_csv(dataset_path, skiprows=18, header=None, names=self.col_names, delimiter=' ', skipinitialspace=True)
+            if b == 'b1':
+                # these are for training map only
+                b1_sigma = 3.8185009938219004e-07 #
+                b1_median = -1.9233363e-07 #
+                b_n_sigma = b1_median + num_sigma * b1_sigma
 
-        return df
+            pbwc = pywcs.WCS(self.primary_beam_header)
 
-    # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
-    # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
-    def _primary_beam_gridding(self, pbwc, total_flux, ra, dec, primary_beam):
-        x, y = pbwc.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
-        pb_data = primary_beam[0].data[0][0]
-        pbv = pb_data[int(y)][int(x)]
-        return total_flux / pbv
+            total_flux = float(box['FLUX'])
+            total_flux = _primary_beam_gridding(pbwc, total_flux, box['RA (centroid)'], box['DEC (centroid)'], self.primary_beam_data)
+            total_flux /= area_pixel
+            return total_flux, b_n_sigma
 
-    # def convert_boxes_to_px_coord(self, boxes_dataframe, fits_image, primary_beam ):
-    def convert_boxes_to_px_coord(self, boxes_dataframe, fits_image):
-        # convert all boxes into pix coords
-        # boxes_dataframe = ska_dataset.raw_train_df
-        fits_header = fits_image[0].header
-        wc = pywcs.WCS(fits_image[0].header)
-        # pbwc = pywcs.WCS(primary_beam[0].header)
 
-        fits_header = fits_header #data_560Mhz_1000h_fits[0].header
-        image_width = fits_header['NAXIS1']
-        image_height = fits_header['NAXIS2']
-        pixel_res_x_arcsec = abs(float(fits_header['CDELT1'])) * 3600
-        pixel_res_y_arcsec = abs(float(fits_header['CDELT2'])) * 3600
+        def _primary_beam_gridding(pbwc, total_flux, ra, dec, primary_beam):
+            # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
+            # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
+            x, y = pbwc.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
+            pb_data = primary_beam[0].data[0][0]
+            pbv = pb_data[int(y)][int(x)]
+            return total_flux / pbv
+
+        def _enlarge_bbox(x, scale_factor):
+
+            if (1 < x.width < 2) | (1 < x.height < 2):    
+                x.width = x.width * scale_factor
+                x.height = x.height * scale_factor
+                x.x1 = x.x - x.width/2
+                x.y1 = x.y - x.height/2
+                x.x2 = x.x + x.width/2
+                x.y2 = x.y + x.height/2
+            elif (x.width <= 1) | (x.height <= 1):    
+                x.width = x.width * 6
+                x.height = x.height * 6
+                x.x1 = x.x - x.width/2
+                x.y1 = x.y - x.height/2
+                x.x2 = x.x + x.width/2
+                x.y2 = x.y + x.height/2
+        
+            return x
+
+        def _extend_dataframe(df, cols_dict):
+            df_from_dict = pd.DataFrame.from_dict(cols_dict)
+            if df.shape[0] != df_from_dict.shape[0]:
+                raise ValueError("Dimension of DataFrame and dict passed don't match!")
+            return pd.concat([df, df_from_dict], axis=1)
+
+
+        wc = pywcs.WCS(self.image_header)
+
+        image_width = self.image_header['NAXIS1']
+        image_height = self.image_header['NAXIS2']
+        pixel_res_x_arcsec = abs(float(self.image_header['CDELT1'])) * 3600
+        pixel_res_y_arcsec = abs(float(self.image_header['CDELT2'])) * 3600
+
+        assert pixel_res_x_arcsec == pixel_res_y_arcsec
 
         coords={
         'x1':[],
@@ -143,8 +213,8 @@ class SKADataset:
         'height':[]
         }
 
-        #rows with selection == 0 must be deleted (form 274883 rows to 190553)
-        boxes_dataframe = boxes_dataframe[boxes_dataframe.SELECTION != 0] 
+        #rows with selection == 0 must be deleted (from 274883 rows to 190553)
+        boxes_dataframe = self.raw_train_df[self.raw_train_df.SELECTION != 0] 
 
         #list  of rows to be deleted due to a too weak flux
         id_to_delete = []
@@ -157,9 +227,9 @@ class SKADataset:
             # Safety check
             dx = cx - box['x']
             dy = cy - box['y']
+
             if (dx >= 0.01 or dy >= 0.01):
                 raise ValueError("Computed Centroid is not valid")
-
             if (cx < 0 or cx > image_width):
                 print('got it cx {0}, {1}'.format(cx))#, fits_fn))
                 raise ValueError("Out of image BB")
@@ -167,26 +237,24 @@ class SKADataset:
                 print('got it cy {0}'.format(cy))
                 raise ValueError("Out of image BB")
 
-            major_semia_px = box['BMAJ'] / pixel_res_x_arcsec / 2 #actually semi-major 
-            minor_semia_px = box['BMIN'] / pixel_res_x_arcsec / 2 #actually semi-major 
-            pa_in_rad = np.radians(box['PA']) # ATTENTION: qui dovrebbe essere 180°-box[PA]
-
-            # # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
-            # total_flux = float(box['FLUX'])
-            # total_flux = self._primary_beam_gridding(pbwc, total_flux, box['RA (centroid)'], box['DEC (centroid)'], primary_beam)
-            # total_flux /= area_pixel
-            # if (total_flux < b5_n_sigma):
-            #     id_to_delete.append(idx) #(box['ID'])
-            #     faint += 1
-            #     continue
-
+            major_semia_px = box['BMAJ'] / pixel_res_x_arcsec / 2
+            minor_semia_px = box['BMIN'] / pixel_res_x_arcsec / 2
+            pa_in_rad = np.radians(box['PA']) # TODO: ATTENTION: qui dovrebbe essere 180°-box[PA]
+                
             x1, y1, x2, y2 = utils._get_bbox_from_ellipse(pa_in_rad, major_semia_px, minor_semia_px, cx, cy, image_height, image_width)
 
             area_pixel = abs(x2-x1) * abs(y2-y1)
-            if(C.clean_dataset) & (area_pixel<=0.):
+            if(config.clean_dataset) & (area_pixel<=0.):
                 id_to_delete.append(idx)
                 faint_a += 1
                 continue
+            
+            if use_pb:
+                total_flux, b_n_sigma = _apply_primary_beam_correction(idx, b, area_pixel)
+                if (total_flux < b_n_sigma):
+                    id_to_delete.append(idx)
+                    faint += 1
+                    continue
 
             coords['x1'].append(x1)
             coords['y1'].append(y1)
@@ -198,47 +266,24 @@ class SKADataset:
             coords['width'].append(abs(x2-x1))
             coords['height'].append(abs(y2-y1))
 
-        print(boxes_dataframe.shape)
-        print(len(id_to_delete))       
+        print(f'Initial dataset shape: {boxes_dataframe.shape}')
+        print(f'Found {faint_a} boxes with zero area')
+        print(f'Rows to be deleted: {len(id_to_delete)}')       
         self.cleaned_train_df = copy.copy(boxes_dataframe.drop(index = id_to_delete).reset_index(drop=True))
-        print(len(coords))
-        print(self.cleaned_train_df.shape)
-        print(faint_a)
-        print(faint)
+        print(f'New dataset shape: {self.cleaned_train_df.shape}')
+        print('Extending dataset with new computed columns...')
+        self.cleaned_train_df = copy.copy(_extend_dataframe(self.cleaned_train_df, coords))
+        print(f'Final cleaned dataset shape: {self.cleaned_train_df.shape}')
+        print()
 
-        self.cleaned_train_df = copy.copy(self._extend_dataframe(self.cleaned_train_df, coords))
-
-        if C.enlarge_bbox:
+        if config.enlarge_bbox:
             print('Enlarging bboxes...')
-            self.cleaned_train_df = self.cleaned_train_df.apply(self.enlarge_bbox, scale_factor = C.bbox_scale_factor, axis=1)
+            self.cleaned_train_df = self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
             print('DONE - Enlarging bboxes...')
         return
 
-    def enlarge_bbox(self, x, scale_factor):
-
-        if (1 < x.width < 2) | (1 < x.height < 2):    
-            x.width = x.width * scale_factor
-            x.height = x.height * scale_factor
-            x.x1 = x.x - x.width/2
-            x.y1 = x.y - x.height/2
-            x.x2 = x.x + x.width/2
-            x.y2 = x.y + x.height/2
-        elif (x.width <= 1) | (x.height <= 1):    
-            x.width = x.width * 6
-            x.height = x.height * 6
-            x.x1 = x.x - x.width/2
-            x.y1 = x.y - x.height/2
-            x.x2 = x.x + x.width/2
-            x.y2 = x.y + x.height/2
-    
-        return x
-
-
-    def _extend_dataframe(self, df, cols_dict):
-        df_from_dict = pd.DataFrame.from_dict(cols_dict)
-        if df.shape[0] != df_from_dict.shape[0]:
-            raise ValueError("Dimension of DataFrame and dict passed don't match!")
-        return pd.concat([df, df_from_dict], axis=1)
+    def split_train_val(self, train_portion=.8, val_portion=.2):
+        pass
 
 
 
@@ -303,7 +348,7 @@ class SKADataset:
 
                                 # Display the image
                                 # plt.imshow(img_patch * (1.0 / percentileThresh))
-                                plt.imshow(np.power(img_patch/np.max(img_patch), C.gamma), cmap='viridis', vmax=1, vmin=0)
+                                plt.imshow(np.power(img_patch/np.max(img_patch), config.gamma), cmap='viridis', vmax=1, vmin=0)
 
                                 for box_index in gt_id:
                                     box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
@@ -335,13 +380,13 @@ class SKADataset:
         return x
 
     def _save_bbox_files(self, img_patch, patch_id, df):
-        if not os.path.exists(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
-            os.makedirs(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
+        if not os.path.exists(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
+            os.makedirs(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
 
-        img_patch = np.power(img_patch/np.max(img_patch), C.gamma)
+        img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
 
-        np.save(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
-        df.to_pickle(os.path.join(C.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
+        np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
+        df.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
         
         return

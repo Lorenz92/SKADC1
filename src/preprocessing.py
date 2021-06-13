@@ -354,7 +354,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 
 #def get_anchor_gt( all_img_data, img_length_calc_function, mode='train'):
-def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn/rpn_dataframe.pkl', mode='train'):
+def get_anchor_gt(patches_path, patch_list, mode='train'):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -371,8 +371,6 @@ def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn
 		num_pos: show number of positive anchors for debug
 	"""
 
-	# rpn_df = pd.load(rpn_path)
-
 	while True:
 
 		for patch_id in tqdm(patch_list):
@@ -384,15 +382,13 @@ def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn
 				image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
 
 				if mode == 'train':
-					print('Augmenting -- START')
+					# print('Augmenting -- START')
 					hflip = np.random.randint(0, 2)
 					vflip = np.random.randint(0, 2)
 					angle = np.random.choice([0,90,180,270],1)[0]
 
-					comb = f'{hflip}_{vflip}_{angle}'
-
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
-					print('Augmenting -- END')
+					# print('Augmenting -- END')
 				else:
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
 
@@ -400,38 +396,20 @@ def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn
 				debug_img = x_img.copy()
 
 				try:
-					print('calc_rpn -- START')
+					# print('calc_rpn -- START')
 					y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
-					print('calc_rpn -- END')
-
-					print(y_rpn_cls.shape)
-					print(y_rpn_regr.shape)
-
-					# rpn_row = rpn_df[rpn_df['img_aug'] == f'{patch_id}_{comb}']
-
-					# print('Asserting')
-
-					# np.testing.assert_array_equal(y_rpn_cls, rpn_row['y_rpn_cls'])
-					# np.testing.assert_array_equal(y_rpn_regr,rpn_row['y_rpn_regr'])
-					# assert num_pos == rpn_row['num_pos']
-					# print('Asserting -- END')
-
-
+					# print('calc_rpn -- END')
 
 				except Exception as e:
 					print(e)
 					continue
 
 				# Zero-center by mean pixel, and preprocess image
-				print('zero-centering -- START')
+				# print('zero-centering -- START')
 
 				zero_centering(x_img)
-				print('zero-centering -- END')
+				# print('zero-centering -- END')
 
-
-				# x_img[:, :, 0] -= C.img_channel_mean[0]
-				# x_img[:, :, 1] -= C.img_channel_mean[1]
-				# x_img[:, :, 2] -= C.img_channel_mean[2]
 				# x_img /= C.img_scaling_factor
 
 				x_img = np.expand_dims(x_img, axis=0) # (205, 205) --> (1, 205, 205)
@@ -442,7 +420,6 @@ def get_anchor_gt(patches_path, patch_list, rpn_path=f'{C.TRAIN_DATA_FOLDER}/rpn
 				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1)) # (1, 60, 12, 12) --> (1, 12, 12, 60)
 				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # (1, 240, 12, 12) --> (1, 12, 12, 240)
 
-				print('END')
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
 
 			except Exception as e:

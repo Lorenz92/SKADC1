@@ -26,7 +26,7 @@ def download_data(file, url, DOWNLOAD_FOLDER):
         os.makedirs(DOWNLOAD_FOLDER)
 
     if os.path.exists(DOWNLOAD_FOLDER):
-        print(f"Downloading SKA {file} data...")
+        print(f"Downloading {file} data...")
         with requests.Session() as current_session:
             response = current_session.get(url, stream=True)
         save_response_content(response, data_path)
@@ -83,8 +83,8 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
 
     anchor_index = 0
 
-    print(f'rpn_layer={rpn_layer.shape}' )
-    print(f'regr_layer={regr_layer.shape}' )
+    # print(f'rpn_layer={rpn_layer.shape}' )
+    # print(f'regr_layer={regr_layer.shape}' )
 
     # A.shape = (4, feature_map.height, feature_map.width, num_anchors) 
     # Might be (4, 18, 25, 18) if resized image is 400 width and 300
@@ -112,7 +112,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
             # Y.shape = (18, 25)
             X, Y = np.meshgrid(np.arange(cols),np.arange(rows))
 
-            # Calculate anchor position and size for each feature map point
+            # Compute anchor position and size for each feature map point
             # Praticamente qui X e Y rappresentano una griglia in cui ogni punto corrisponde ad una coppia di coordinate, es X[0] = [0,1,2,...], Y[0]=[0,0,0,...]
             # con X - anchor_x/2 evita di cilcare su ogni elemento ij della griglia e genera le origini delle ancore in un colpo solo.
             # Il motivo per usare la meshgrid e risparmiari il doppio ciclo innestato
@@ -156,13 +156,8 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
 
     # Find out the bboxes which is illegal and delete them from bboxes list
     idxs = np.where((x1 - x2 >= 0) | (y1 - y2 >= 0))
-
-    # print(f'all_boxes={all_boxes.shape}')
-
     all_boxes = np.delete(all_boxes, idxs, 0)
     all_probs = np.delete(all_probs, idxs, 0)
-
-    # print(f'all_boxes={all_boxes.shape}')
 
     # Apply non_max_suppression
     # Only extract the bboxes. Don't need rpn probs in the later process
@@ -407,16 +402,11 @@ def calc_iou(R, img_data, class_mapping):
     if len(x_roi) == 0:
         return None, None, None, None
 
-    print(IoUs)
     # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
     X = np.array(x_roi)
     # one hot encode for bboxes from above => x_roi (X)
     Y1 = np.array(y_class_num)
     # corresponding labels and corresponding gt bboxes
-    print(np.array(y_class_regr_label).shape,np.array(y_class_regr_coords).shape)
-    print(np.array(y_class_regr_label))
-    print(np.array(y_class_regr_coords))
     Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
-    print(Y2.shape)
 
     return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
