@@ -69,7 +69,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
         overlap_thresh: If iou in NMS is larger than this threshold, drop the box
 
     Returns:
-        result: boxes from non-max-suppression (shape=(300, 4))
+        result: boxes from non-max-suppression (shape=(2000, 4))
             boxes: coordinates for bboxes (on the feature map)
     """
     regr_layer = regr_layer / C.std_scaling

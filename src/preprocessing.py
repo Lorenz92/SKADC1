@@ -441,7 +441,7 @@ def zero_centering(img_patch):
     return
 
 
-
+# The following is not currently used
 def generate_rpn(patches_path, patch_list):
 
 	h, v = [0,1], [0,1]

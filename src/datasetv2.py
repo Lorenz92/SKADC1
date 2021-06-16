@@ -12,6 +12,9 @@ from tqdm import tqdm
 import src.utils as utils
 import src.config as config
 
+from os import listdir
+from os.path import isfile, join
+
 
 class SKADatasetv2:
     """
@@ -48,9 +51,14 @@ class SKADatasetv2:
               'y']
     
         # Process the training set
-        boxes_dataframe = pd.DataFrame()
         self.cleaned_train_df = pd.DataFrame()
         self.proc_train_df = pd.DataFrame()
+
+        # TODO: move this into SKADataset init
+        for download_info in config.required_files:
+            print(os.path.join(config.TRAIN_DATA_FOLDER, download_info['file_name']))
+            if not os.path.exists(os.path.join(config.TRAIN_DATA_FOLDER, download_info['file_name'])):
+                utils.download_data(download_info['file_name'], download_info['url'], config.DOWNLOAD_FOLDER)
 
         
 
@@ -116,7 +124,7 @@ class SKADatasetv2:
         print(f'Dataset shape: {self.raw_train_df.shape}')
         display(self.raw_train_df.head())
 
-    def load_train_image(self, image_path, primary_beam, print_info=False, load_pb=False):
+    def load_train_image(self, image_path, primary_beam=None, print_info=False, load_pb=False):
         fits_image = fits.open(image_path)
         if print_info:
             print(fits_image.info())
@@ -282,7 +290,39 @@ class SKADatasetv2:
             print('DONE - Enlarging bboxes...')
         return
 
+    def cut_preprocess_image(self):
+        # x1_min = int(np.floor(min(df_train['x1'])))
+        # y1_min = int(np.floor(min(df_train['y1'])))
+
+        # x2_max = int(np.floor(max(df_train['x2'])))
+        # y2_max = int(np.floor(max(df_train['y2'])))
+
+        # data_560Mhz_1000h_train = data_560Mhz_1000h[y1_min:y2_max, x1_min:x2_max]
+        # data_560Mhz_1000h_train.shape
+
+        # # histogram of noise (- noise, + noise)
+        # # we know that negative values are due to noise, and we assume a gaussian noise distribution
+
+        # data_flat = data_560Mhz_1000h_train.flatten()
+        # min_val = min(data_flat)
+        # plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))#abs(min_val)))
+
+        # data_560Mhz_1000h_train_clipped = np.clip(data_560Mhz_1000h_train, a_min=0, a_max=np.max(data_560Mhz_1000h))
+
+        pass
+
+    def generate_patches(self):
+        #  split in patch
+        # add class list as class property
+        pass
+    
     def split_train_val(self, train_portion=.8, val_portion=.2):
+        # #TODO: spostare in dataset dopo aver sistemato la classe dataset
+        # from sklearn.model_selection import train_test_split
+
+        # train_patch_list, val_patch_list = train_test_split(patch_list, test_size=.2, random_state=42)
+        # print(len(train_patch_list))
+        # print(len(val_patch_list))
         pass
 
 
