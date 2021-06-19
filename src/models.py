@@ -1,6 +1,6 @@
 import os
 
-from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Classifier #,resnet50
+from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Detector #,resnet50
 import src.config as config
 import src.utils as utils
 
@@ -31,13 +31,13 @@ def get_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_roi
     
     # Final classification and regression step
     x = RoiPoolingConv(pooling_regions, num_rois)([x, input_roi])
-    out_class, out_regr = Classifier(num_classes)(x)
+    out_class, out_regr = Detector(num_classes)(x)
 
     rpn_model = keras.Model(input_image, [rpn_cls, rpn_reg], name='RegionProposal')
-    cls_model = keras.Model([input_image, input_roi], [out_class, out_regr], name='DetectorClassifier')
+    detector_model = keras.Model([input_image, input_roi], [out_class, out_regr], name='DetectorClassifier')
     total_model = keras.Model([input_image, input_roi], [rpn_cls, rpn_reg, out_class, out_regr], name='End2end_model')
 
-    return rpn_model, cls_model, total_model
+    return rpn_model, detector_model, total_model
 
 def load_weigths(rpn_model, detector_model, backbone, resume_train=True):
 
@@ -65,12 +65,12 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True):
     detector_model.load_weights(weights, by_name=True)
     return
 
-def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_losses, class_list, rpn_lr=1e-5, detector_lr=1e-5):
+def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_losses, class_list, rpn_lr=1e-3, rpn_clipnorm=0.001, detector_lr=1e-3, detector_clipnorm=0.001):
 
     ########## Build models
 
-    rpn_optimizer = Adam(lr=rpn_lr)
-    detector_optimizer = Adam(lr=detector_lr)
+    rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
+    detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
 
     rpn_loss_cls = rpn_losses[0]
     rpn_loss_regr = rpn_losses[1]

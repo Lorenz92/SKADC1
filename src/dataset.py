@@ -242,7 +242,7 @@ class SKADataset:
 
 
 
-    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=100, is_multiple=False, show_plot=False):
+    def split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=100, is_multiple=False, show_plot=False):
         h, w = img.shape
         fits_filename = img_name.split('/')[-1].split('.')[0]
 

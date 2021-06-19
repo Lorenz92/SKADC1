@@ -48,6 +48,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
         progbar = generic_utils.Progbar(epoch_length)
         print('Epoch {}/{}'.format(epoch, num_epochs))
 
+        #TODO: check if we need LR warmup
+
         while True:
             try:
                 if len(rpn_accuracy_rpn_monitor) == epoch_length:
@@ -134,6 +136,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
                 print('Starting detector model training on batch')
 
+                print(f'X2 shape: {X2.shape}')
+
                 loss_detector_tot, loss_detector_cls, loss_detector_regr, detector_class_acc, _ = detector_model.train_on_batch([image, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]) 
 
                 losses[iter_num, 0] = loss_rpn_cls
@@ -173,22 +177,23 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if resume_train:
                         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
                         losses_to_save = np.concatenate((previous_losses, losses), axis=0)
-                        del previous_losses
+                        del previous_losses #TODO: check if is it possible to append directly on disk
                     else:
-                        losses_to_save = losses
+                        losses_to_save = losses #TODO: fix this for epoch next to the first one --> create an empty file the first time and always append 
 
                     np.save(f"./model/{backbone}/loss_history.npy", losses_to_save)
                     del losses_to_save
 
                     curr_loss = loss_rpn_cls + loss_rpn_regr + loss_detector_cls + loss_detector_regr
                     iter_num = 0
-                    start_time = time.time()
 
                     # save weights
                     if curr_loss < best_loss:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/end2end_{backbone}.h5')
+                    
+                    start_time = time.time()
                     break
 
             except Exception as e:

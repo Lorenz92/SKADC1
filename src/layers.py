@@ -148,10 +148,10 @@ class RoiPoolingConv(Layer):
         return dict(list(base_config.items()) + list(config.items()))
 
 
-class Classifier(Layer):
+class Detector(Layer):
 
     def __init__(self, num_classes, **kwargs):
-        super(Classifier, self).__init__(name='cls')
+        super(Detector, self).__init__(name='cls')
 
         self.num_classes = num_classes
         

@@ -54,9 +54,7 @@ class SKADatasetv2:
         self.cleaned_train_df = pd.DataFrame()
         self.proc_train_df = pd.DataFrame()
 
-        # TODO: move this into SKADataset init
         for download_info in config.required_files:
-            print(os.path.join(config.TRAIN_DATA_FOLDER, download_info['file_name']))
             if not os.path.exists(os.path.join(config.TRAIN_DATA_FOLDER, download_info['file_name'])):
                 utils.download_data(download_info['file_name'], download_info['url'], config.DOWNLOAD_FOLDER)
 
@@ -124,7 +122,7 @@ class SKADatasetv2:
         print(f'Dataset shape: {self.raw_train_df.shape}')
         display(self.raw_train_df.head())
 
-    def load_train_image(self, image_path, primary_beam=None, print_info=False, load_pb=False):
+    def load_train_image(self, image_path=config.IMAGE_PATH, primary_beam=None, print_info=False, load_pb=False):
         fits_image = fits.open(image_path)
         if print_info:
             print(fits_image.info())
@@ -138,8 +136,10 @@ class SKADatasetv2:
             fits_image = fits.open(image_path)  
             self.primary_beam_data =  primary_beam[0].data[0,0]
             self.primary_beam_header =  primary_beam[0].header;
+
+        #TODO: add plot function
     
-    def process_dataset(self, use_pb=False, primary_beam=None, b='b5'):
+    def process_dataset(self, use_pb=False, b='b5'):
         """
         TODO: write desc
         """
@@ -228,6 +228,7 @@ class SKADatasetv2:
         id_to_delete = []
         faint = 0
         faint_a = 0
+
         for idx, box in tqdm(boxes_dataframe.iterrows(),total=boxes_dataframe.shape[0]):
         # compute centroid coord to check with gt data
             cx, cy = wc.wcs_world2pix([[box['RA (centroid)'], box['DEC (centroid)'], 0, 0]], 0)[0][0:2]
@@ -396,6 +397,13 @@ class SKADatasetv2:
                                     plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
                                 
                                 plt.show()
+
+        # # TODO: trasfromare in attributo della classe dataset
+        # class_list = ska_dataset.proc_train_df['class_label'].unique()
+        # print(class_list)
+
+        # num_classes = len(ska_dataset.proc_train_df['class_label'].unique())
+        # print(num_classes)
             
         return patches_list
     
@@ -430,9 +438,7 @@ class SKADatasetv2:
         print('image saved')
         
         return
-        
-
-    
+            
     def _find_gt_in_patch(self, patch_xo, patch_yo, patch_dim, gt_df):
 
         def filter_func(x, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim):

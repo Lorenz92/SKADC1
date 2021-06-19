@@ -51,7 +51,7 @@ def rpn_loss_cls(num_anchors):
 
     return rpn_loss_cls_fixed_num
 
-def class_loss_regr(num_classes):
+def detector_loss_regr(num_classes):
     """Loss function for rpn regression
     Args:
         num_anchors: number of anchors (9 in here)
@@ -60,14 +60,14 @@ def class_loss_regr(num_classes):
                            0.5*x*x (if x_abs < 1)
                            x_abs - 0.5 (otherwise)
     """
-    def class_loss_regr_fixed_num(y_true, y_pred):
+    def detector_loss_regr_fixed_num(y_true, y_pred):
         x = y_true[:, :, 4*num_classes:] - y_pred # Here <y_true[:, :, 4*num_classes:]> is the y_class_regr_coords of Y2 in calc_iou, so it represents the roi coordinates
         x_abs = K.abs(x)
         x_bool = K.cast(K.less_equal(x_abs, 1.0), 'float32')
         z = lambda_cls_regr * K.sum(y_true[:, :, :4*num_classes] * (x_bool * (0.5 * x * x) + (1 - x_bool) * (x_abs - 0.5))) / K.sum(epsilon + y_true[:, :, :4*num_classes]) # Here <y_true[:, :, :4*num_classes]> is the y_class_regr_label of Y2 in calc_iou, so it represents a mask for the roi to be considered
         # tf.print('z = ', z, output_stream=sys.stderr, sep=',')
         return z
-    return class_loss_regr_fixed_num
+    return detector_loss_regr_fixed_num
 
-def class_loss_cls(y_true, y_pred):
+def detector_loss_cls(y_true, y_pred):
     return lambda_cls_class * K.mean(K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))

@@ -10,6 +10,7 @@ TRAIN_DATA_FOLDER = os.path.join(DATA_FOLDER, "training")
 TRAIN_PATCHES_FOLDER = os.path.join(TRAIN_DATA_FOLDER, "patches")
 TRAIN_SET_PATH_CLEANED = os.path.join(TRAIN_DATA_FOLDER, "B1_training_clean_SKA.txt") #TODO: fix this
 TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_SKA.txt") #TODO: fix this
+IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
 
 MODEL_WEIGHTS = os.path.join(os.getcwd(), "model")
 
