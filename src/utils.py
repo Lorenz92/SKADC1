@@ -329,7 +329,7 @@ def calc_iou(R, img_data, class_mapping):
     y_class_regr_label = []
     IoUs = [] # for debugging only
 
-    # R.shape[0]: number of bboxes (=300 from non_max_suppression)
+    # R.shape[0]: number of bboxes (=2000 from non_max_suppression)
     for ix in range(R.shape[0]):
         # print(f'ix ={ix}')
         (x1, y1, x2, y2) = R[ix, :]
@@ -402,7 +402,7 @@ def calc_iou(R, img_data, class_mapping):
     if len(x_roi) == 0:
         return None, None, None, None
 
-    # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 300 non_max_suppression bboxes
+    # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
     X = np.array(x_roi)
     # one hot encode for bboxes from above => x_roi (X)
     Y1 = np.array(y_class_num)

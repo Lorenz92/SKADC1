@@ -1,5 +1,4 @@
 import os
-from os.path import dirname, abspath
 
 # Generic config
 RANDOM_SEED = 42

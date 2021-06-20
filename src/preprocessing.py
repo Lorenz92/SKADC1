@@ -167,7 +167,7 @@ def calc_rpn(img_data, width, height):
 									best_iou_for_loc = curr_iou
 									best_regr = (tx, ty, tw, th) #Regression layer target (y_true)
 
-							# if the IOU is >0.3 and <0.7, it is ambiguous and no included in the objective
+							# if the IOU is >0.3 and <0.7, it is ambiguous and not included in the objective
 							if C.rpn_min_overlap < curr_iou < C.rpn_max_overlap:
 								# gray zone between neg and pos
 								if bbox_type != 'pos':
