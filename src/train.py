@@ -1,4 +1,6 @@
+from copy import Error
 import time
+import os
 import numpy as np
 
 import src.preprocessing as prep
@@ -39,6 +41,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
         best_loss = previous_losses[-1, :-1].sum()
         del previous_losses
     else:
+        if os.path.exists(f"./model/{backbone}/loss_history.npy"):
+            raise ValueError('There is already a loss history file. Please delete it first.')
         best_loss = np.Inf
 
     ######### (re-)start training
@@ -177,9 +181,10 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if resume_train:
                         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
                         losses_to_save = np.concatenate((previous_losses, losses), axis=0)
-                        del previous_losses #TODO: check if is it possible to append directly on disk
+                        del previous_losses
                     else:
-                        losses_to_save = losses #TODO: fix this for epoch next to the first one --> create an empty file the first time and always append 
+                        losses_to_save = losses
+                        resume_train = True
 
                     np.save(f"./model/{backbone}/loss_history.npy", losses_to_save)
                     del losses_to_save
