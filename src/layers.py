@@ -59,11 +59,11 @@ class RpnNet(Layer):
         self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), padding='same', activation='sigmoid', name='19_Anchor_Cls_Conv')
         self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), padding='same', activation='linear', name='19_Anchor_Reg_Conv')
 
-    def call(self, inputs):
-        x = self.conv2d(inputs)
+    def call(self, backbone):
+        x = self.conv2d(backbone)
         cls_pred = self.cls_pred(x) #output of layer 20
         reg_pred = self.reg_pred(x) #output of layer 19
-        return [cls_pred, reg_pred]
+        return [cls_pred, reg_pred, backbone]
 
 
 class RoiPoolingConv(Layer):
@@ -95,10 +95,10 @@ class RoiPoolingConv(Layer):
     def build(self, input_shape):
         self.channels = input_shape[0][3]   
 
-    def compute_output_shape(self, input_shape):
+    def compute_output_shape(self):
         return None, self.num_rois, self.pool_size, self.pool_size, self.channels
 
-    def call(self, x, mask=None):
+    def call(self, x):
 
         assert(len(x) == 2)
 
@@ -107,8 +107,6 @@ class RoiPoolingConv(Layer):
 
         # x[1] is roi with shape (num_rois,4) with ordering (x,y,w,h)
         rois = x[1]
-
-        input_shape = K.shape(img)
 
         outputs = []
 
@@ -179,3 +177,4 @@ class Detector(Layer):
         out_regr = self.td_fc_reg(x)
         
         return [out_class, out_regr]
+

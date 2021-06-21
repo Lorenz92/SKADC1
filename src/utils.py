@@ -53,7 +53,7 @@ def _get_bbox_from_ellipse(phi, r1, r2, cx, cy, h, w):
     return (x1, y1, x2, y2)
 
 
-def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thresh=0.9):
+def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thresh=0.9): 
     """Convert rpn layer to roi bboxes
 
     Args: (num_anchors = 9)
@@ -410,3 +410,39 @@ def calc_iou(R, img_data, class_mapping):
     Y2 = np.concatenate([np.array(y_class_regr_label),np.array(y_class_regr_coords)],axis=1)
 
     return np.expand_dims(X, axis=0), np.expand_dims(Y1, axis=0), np.expand_dims(Y2, axis=0), IoUs
+
+def plot_loss(history):
+    
+    r_epochs = history.shape[0]
+    total_loss = np.sum(history[:,:4],axis=1)
+
+    plt.figure(figsize=(15,5))
+    plt.subplot(1,2,1)
+    plt.plot(np.arange(0, r_epochs), total_loss, 'r')
+    plt.title('Total loss')
+    plt.subplot(1,2,2)
+    plt.plot(np.arange(0, r_epochs), history[:,4], 'r')
+    plt.title('class_acc')
+
+    plt.show()
+
+    plt.figure(figsize=(15,5))
+    plt.subplot(1,2,1)
+    plt.plot(np.arange(0, r_epochs), history[:, 0], 'r')
+    plt.title('loss_rpn_cls')
+    plt.subplot(1,2,2)
+    plt.plot(np.arange(0, r_epochs), history[:, 1], 'r')
+    plt.title('loss_rpn_regr')
+    plt.show()
+
+
+    plt.figure(figsize=(15,5))
+    plt.subplot(1,2,1)
+    plt.plot(np.arange(0, r_epochs), history[:, 2], 'r')
+    plt.title('loss_detector_cls')
+    plt.subplot(1,2,2)
+    plt.plot(np.arange(0, r_epochs), history[:, 3], 'r')
+    plt.title('loss_detector_regr')
+    plt.show()
+    
+    return

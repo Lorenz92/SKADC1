@@ -8,7 +8,6 @@ import keras
 from keras.layers import Input
 from keras.optimizers import Adam
 
-# Per usare un unico modello andrebbero riscritte tutte le funzioni numpy in tf
 def get_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
     
     # Add custom input-layer to change from1 to 3 channels
@@ -25,7 +24,7 @@ def get_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_roi
         x = resnet50(x)
 
     # Create Region Proposal Net
-    rpn_cls, rpn_reg = RpnNet(anchor_num)(x)
+    rpn_cls, rpn_reg, _ = RpnNet(anchor_num)(x)
 
     input_roi =  Input(shape=input_shape_2, name='input_2')
     
@@ -38,6 +37,39 @@ def get_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_roi
     total_model = keras.Model([input_image, input_roi], [rpn_cls, rpn_reg, out_class, out_regr], name='End2end_model')
 
     return rpn_model, detector_model, total_model
+
+def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
+    
+    # Add custom input-layer to change from1 to 3 channels
+    input_image  = Input(shape=input_shape_1, name='input_1')
+
+    x = Expander()(input_image)
+
+    if backbone == 'vgg16':
+        # Load pretrained VGG16 and remove last MaxPool layer
+        x = vgg16(x)
+        input_shape_fmap = (37, 37, 512)
+    elif backbone == 'resnet50':
+        print('ResNet50 not implemented yet')
+        return # TODO: rimuovi
+        x = resnet50(x)
+
+    # Create Region Proposal Net
+    rpn_cls, rpn_reg, shared_backbone = RpnNet(anchor_num)(x)
+
+    input_roi = Input(shape=input_shape_2, name='input_2')
+    input_fmap = Input(shape=input_shape_fmap, name='Input_fmap')
+    
+    # Final classification and regression step
+    x = RoiPoolingConv(pooling_regions, num_rois)([input_fmap, input_roi])
+    out_class, out_regr = Detector(num_classes)(x)
+
+    rpn_model = keras.Model(input_image, [rpn_cls, rpn_reg, shared_backbone], name='RegionProposal')
+    detector_model = keras.Model([input_fmap, input_roi], [out_class, out_regr], name='DetectorClassifier')
+    total_model = keras.Model([input_image, input_roi, input_fmap], [rpn_cls, rpn_reg, out_class, out_regr], name='End2end_model')
+
+    return rpn_model, detector_model, total_model
+    # return rpn_model, detector_model
 
 def load_weigths(rpn_model, detector_model, backbone, resume_train=True):
 
