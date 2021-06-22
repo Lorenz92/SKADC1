@@ -129,6 +129,7 @@ class SKADatasetv2:
 
         print(f'Loading FITS file {fits_image.filename()}')
 
+        self.image_filename = fits_image.filename()
         self.image_data = fits_image[0].data[0,0]
         self.image_header = fits_image[0].header;
         
@@ -287,35 +288,36 @@ class SKADatasetv2:
 
         if config.enlarge_bbox:
             print('Enlarging bboxes...')
-            self.cleaned_train_df = self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
+            cut_preprocess_image = self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
             print('DONE - Enlarging bboxes...')
         return
 
-    def cut_preprocess_image(self):
-        # x1_min = int(np.floor(min(df_train['x1'])))
-        # y1_min = int(np.floor(min(df_train['y1'])))
+    def cut_preprocess_image(self, plot_Noise_Hist = False):
+        self.x_origin = int(np.floor(min(self.cleaned_train_df['x1'])))
+        self.y_origin = int(np.floor(min(self.cleaned_train_df['y1'])))
 
-        # x2_max = int(np.floor(max(df_train['x2'])))
-        # y2_max = int(np.floor(max(df_train['y2'])))
+        x2_max = int(np.floor(max(self.cleaned_train_df['x2'])))
+        y2_max = int(np.floor(max(self.cleaned_train_df['y2'])))
 
-        # data_560Mhz_1000h_train = data_560Mhz_1000h[y1_min:y2_max, x1_min:x2_max]
-        # data_560Mhz_1000h_train.shape
+        self.data_560Mhz_1000h_train = self.image_data[self.y_origin:y2_max, self.x_origin :x2_max]
 
         # # histogram of noise (- noise, + noise)
+        if plot_Noise_Hist:
         # # we know that negative values are due to noise, and we assume a gaussian noise distribution
+            data_flat = self.data_560Mhz_1000h_train.flatten()
+            min_val = min(data_flat)
+            plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))#abs(min_val)))
 
-        # data_flat = data_560Mhz_1000h_train.flatten()
-        # min_val = min(data_flat)
-        # plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))#abs(min_val)))
+        self.data_560Mhz_1000h_train_clipped = np.clip(self.data_560Mhz_1000h_train, a_min=0, a_max=np.max(self.image_data))
 
-        # data_560Mhz_1000h_train_clipped = np.clip(data_560Mhz_1000h_train, a_min=0, a_max=np.max(data_560Mhz_1000h))
+        return
 
-        pass
-
-    def generate_patches(self):
+    def generate_patches(self, plot_patches = False):
         #  split in patch
         # add class list as class property
-        pass
+        self.patch_list = {}
+        self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches)
+        return self.patch_list
     
     def split_train_val(self, train_portion=.8, val_portion=.2):
         # #TODO: spostare in dataset dopo aver sistemato la classe dataset
@@ -328,15 +330,17 @@ class SKADatasetv2:
 
 
 
-    def _split_in_patch(self, img, df, img_name, x_origin, y_origin, patch_dim=100, is_multiple=False, show_plot=False):
-        h, w = img.shape
-        fits_filename = img_name.split('/')[-1].split('.')[0]
+    def _split_in_patch(self, patch_dim=100, is_multiple=False, show_plot=False):
+
+        self.cleaned_train_df
+        h, w = self.data_560Mhz_1000h_train_clipped.shape
+        fits_filename = self.image_filename.split('/')[-1].split('.')[0]
 
         # Add new columns to df
-        df['x1s'] = None
-        df['y1s'] = None
-        df['x2s'] = None
-        df['y2s'] = None
+        self.cleaned_train_df['x1s'] = None
+        self.cleaned_train_df['y1s'] = None
+        self.cleaned_train_df['x2s'] = None
+        self.cleaned_train_df['y2s'] = None
         
         if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
@@ -346,19 +350,19 @@ class SKADatasetv2:
             if i<=1:#*patch_dim:                           #TODO: remove this
                 for j in tqdm(range(0, w, int(patch_dim/2))):
                     if j <=  patch_dim*10 :                #TODO: remove this
-                        patch_xo = x_origin+j
-                        patch_yo = y_origin+i
+                        patch_xo = self.x_origin+j
+                        patch_yo = self.y_origin+i
                         gt_id = []
 
-                        gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, df)
+                        gt_id = self._find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
 
                         if len(gt_id) > 0:
                             filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                            img_patch = img[i:i+patch_dim, j:j+patch_dim].copy()
+                            img_patch = self.data_560Mhz_1000h_train_clipped[i:i+patch_dim, j:j+patch_dim].copy()
 
                             # Cut bboxes that fall outside the patch
-                            df_scaled = df.loc[df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
-                            df_scaled = df_scaled.loc[df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
+                            df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
+                            df_scaled = df_scaled.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(self._from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
                             
                             df_scaled["patch_name"] = filename
                             df_scaled["patch_xo"] = patch_xo
@@ -378,7 +382,7 @@ class SKADatasetv2:
 
                             self.proc_train_df = self.proc_train_df.append(df_scaled)
                             patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
-                            self._save_bbox_files(img_patch, patch_id, df_scaled)
+                            self._save_bbox_files(img_patch, patch_id)#, df_scaled)
                             patches_list.append(patch_id)    
                             # return #TODO: remove this
 
@@ -427,14 +431,14 @@ class SKADatasetv2:
 
         return x
 
-    def _save_bbox_files(self, img_patch, patch_id, df):
+    def _save_bbox_files(self, img_patch, patch_id):
         if not os.path.exists(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
             os.makedirs(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
 
         img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
 
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
-        df.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
+        self.cleaned_train_df.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
         
         return
