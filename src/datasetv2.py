@@ -319,14 +319,45 @@ class SKADatasetv2:
         self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches)
         return self.patch_list
     
+    def analyze_class_distribution(self):
+        class_list = {}
+        class_list = self.cleaned_train_df[['SIZE', 'SELECTION']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+
+        class_list = class_list.unique()
+        print(class_list)
+
+        num_classes = len(class_list)
+        print(num_classes)
+
+        # num of possible class combinations in each patch, -1: because if there isn't any class the petch is not saved
+        num_combinations = 2^num_classes - 1  
+        print(num_combinations)
+        
+        patch_class_list = {}
+        
+        for patch_id in self.patch_list:
+            img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
+            img_data_patch = pd.read_pickle(img_data_path)
+            #print(list(img_data_patch.columns))
+
+            patch_class_list = img_data_patch['class_label'].unique() 
+            print(patch_class_list)
+            
+            
+            for class in class_list:
+                if 
+        return
+
     def split_train_val(self, train_portion=.8, val_portion=.2):
         # #TODO: spostare in dataset dopo aver sistemato la classe dataset
         # from sklearn.model_selection import train_test_split
+        #self.cleaned_train_df
+        
 
         # train_patch_list, val_patch_list = train_test_split(patch_list, test_size=.2, random_state=42)
         # print(len(train_patch_list))
         # print(len(val_patch_list))
-        pass
+        return
 
 
 
@@ -341,7 +372,8 @@ class SKADatasetv2:
         self.cleaned_train_df['y1s'] = None
         self.cleaned_train_df['x2s'] = None
         self.cleaned_train_df['y2s'] = None
-        
+        self.cleaned_train_df['class_label'] = None
+
         if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
             raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
@@ -382,7 +414,7 @@ class SKADatasetv2:
 
                             self.proc_train_df = self.proc_train_df.append(df_scaled)
                             patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
-                            self._save_bbox_files(img_patch, patch_id)#, df_scaled)
+                            self._save_bbox_files(img_patch, patch_id, df_scaled)
                             patches_list.append(patch_id)    
                             # return #TODO: remove this
 
@@ -431,14 +463,14 @@ class SKADatasetv2:
 
         return x
 
-    def _save_bbox_files(self, img_patch, patch_id):
+    def _save_bbox_files(self, img_patch, patch_id, df_scaled):
         if not os.path.exists(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
             os.makedirs(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
 
         img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
 
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
-        self.cleaned_train_df.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
+        df_scaled.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
         
         return
