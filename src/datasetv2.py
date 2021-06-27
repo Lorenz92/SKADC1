@@ -333,19 +333,44 @@ class SKADatasetv2:
         num_combinations = 2^num_classes - 1  
         print(num_combinations)
         
-        patch_class_list = {}
-        
+        patch_class_list = []
+        patch_class_bool = []
+        patch_class_int = []
+
+        class_labels=[]
         for patch_id in self.patch_list:
             img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
             img_data_patch = pd.read_pickle(img_data_path)
-            #print(list(img_data_patch.columns))
 
             patch_class_list = img_data_patch['class_label'].unique() 
-            print(patch_class_list)
             
+            for class_idx in class_list:
+                if class_idx in patch_class_list:
+                    patch_class_bool.append('1')
+                else:
+                    patch_class_bool.append('0')
+                            
+            patch_class_2=''.join(patch_class_bool)
+            b = (int(patch_class_2, base=2))
+            patch_class_int.append(b)
+            print (b, patch_class_list)
+            patch_class_bool.clear()
+
+        res =[]
+        for idx in range(1, num_classes+1):
+            #res.append((bin(idx)))
+            res.append(int(bin(idx)[2:]))
+            #for idy in res:
+               
+            print(res)
             
-            for class in class_list:
-                if 
+
+        plt.hist(patch_class_int )
+        plt.legend(['columns >= 4 has 'f"{class_list[0]}",  'columns ... has'f"{class_list[1]}", 'odd columns has'f"{class_list[2]}" ])
+        plt.xlabel("classes and combinations")
+        plt.ylabel("num patches")
+        plt.title("Histogram")
+        plt.show()
         return
 
     def split_train_val(self, train_portion=.8, val_portion=.2):
