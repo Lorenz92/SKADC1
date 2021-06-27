@@ -122,7 +122,7 @@ class SKADatasetv2:
         print(f'Dataset shape: {self.raw_train_df.shape}')
         display(self.raw_train_df.head())
 
-    def load_train_image(self, image_path=config.IMAGE_PATH, primary_beam=None, print_info=False, load_pb=False):
+    def load_train_image(self, image_path=config.IMAGE_PATH, primary_beam=None, print_info=False, load_pb=False): #TODO: aggiungere cut_preprocess_image
         fits_image = fits.open(image_path)
         if print_info:
             print(fits_image.info())
@@ -288,7 +288,7 @@ class SKADatasetv2:
 
         if config.enlarge_bbox:
             print('Enlarging bboxes...')
-            cut_preprocess_image = self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
+            self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
             print('DONE - Enlarging bboxes...')
         return
 
@@ -317,7 +317,7 @@ class SKADatasetv2:
         # add class list as class property
         self.patch_list = {}
         self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches)
-        return self.patch_list
+        return
     
     def analyze_class_distribution(self):
         class_list = {}
@@ -329,7 +329,7 @@ class SKADatasetv2:
         num_classes = len(class_list)
         print(num_classes)
 
-        # num of possible class combinations in each patch, -1: because if there isn't any class the petch is not saved
+        # num of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
         num_combinations = 2^num_classes - 1  
         print(num_combinations)
         
@@ -460,11 +460,11 @@ class SKADatasetv2:
                                 plt.show()
 
         # # TODO: trasfromare in attributo della classe dataset
-        # class_list = ska_dataset.proc_train_df['class_label'].unique()
-        # print(class_list)
+        class_list = ska_dataset.proc_train_df['class_label'].unique()
+        print(class_list)
 
-        # num_classes = len(ska_dataset.proc_train_df['class_label'].unique())
-        # print(num_classes)
+        num_classes = len(ska_dataset.proc_train_df['class_label'].unique())
+        print(num_classes)
             
         return patches_list
     

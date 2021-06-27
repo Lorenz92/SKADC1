@@ -30,7 +30,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
-    num_epochs = 1 #config.num_epochs
+    num_epochs = 10 #config.num_epochs
     losses = np.zeros((epoch_length, 5))
 
 
@@ -47,7 +47,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
     ######### (re-)start training
 
-    for epoch in range(2): #range(num_epochs*len(train_patch_list)):
+    for epoch in range(num_epochs*len(train_patch_list)):
 
         progbar = generic_utils.Progbar(epoch_length)
         print('Epoch {}/{}'.format(epoch, num_epochs))
@@ -196,7 +196,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if curr_loss < best_loss:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
-                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/end2end_{backbone}.h5')
+                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/frcnn_{backbone}.h5')
                     
                     start_time = time.time()
                     break

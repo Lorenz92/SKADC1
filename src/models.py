@@ -8,7 +8,7 @@ import keras
 from keras.layers import Input
 from keras.optimizers import Adam
 
-def get_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
+def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
     
     # Add custom input-layer to change from1 to 3 channels
     input_image  = Input(shape=input_shape_1, name='input_1')

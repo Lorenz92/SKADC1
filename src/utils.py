@@ -279,12 +279,15 @@ def apply_regr_np(X, T):
         return X
 
 
-def print_img(img_folder, img_name = None):
+def print_img(img_folder, img_name, data_folder=None):
     img = f'{img_folder}/{img_name}/{img_name}.npy'
     img = np.load(img)
-    img_data = f'{img_folder}/{img_name}/{img_name}.pkl'
+    if data_folder==None:
+        img_data = f'{img_folder}/{img_name}/{img_name}.pkl'
+    else:
+        img_data = f'{data_folder}/{img_name}/{img_name}.pkl'
+    
     #img must be a numpy.ndarray img
-
     normalized_data = img * (1.0 /img.max())
 
     # Create figure and axes

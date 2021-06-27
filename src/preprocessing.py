@@ -236,6 +236,17 @@ def calc_rpn(img_data, width, height):
 
 	return np.copy(y_rpn_cls), np.copy(y_rpn_regr), num_pos
 
+def rescale_image(img_orig):
+	img_aug = copy.copy(img_orig)
+
+	rows, cols = img_orig.shape[:2]
+	width_percent = (C.resizeFinalDim / float(cols))
+	hsize = int((float(rows) * float(width_percent)))
+	img = Image.fromarray(img_aug)
+	img_aug = np.array(img.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS))
+
+	return img_aug, width_percent
+
 
 def augment(img_path, img_data_path, augment=True, **kwargs):
 	# assert 'filepath' in img_data_path
@@ -247,16 +258,19 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 	img_orig = np.load(img_path)
 	imgData_orig = pd.read_pickle(img_data_path)
 
-	img_aug = copy.copy(img_orig)
+	# img_aug = copy.copy(img_orig)
 	imgData_aug = copy.deepcopy(imgData_orig)
 
 	# resize paches, the final dimension is the one set in the config (C.resizeFinalDim)
+	# TODO: tirare fuori in una nuova funzione
 	if C.resizePatch :
-		rows, cols = img_orig.shape[:2]
-		width_percent = (C.resizeFinalDim / float(cols))
-		hsize = int((float(rows) * float(width_percent)))
-		img = Image.fromarray(img_aug)
-		img_aug = np.array(img.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS))
+		# rows, cols = img_orig.shape[:2]
+		# width_percent = (C.resizeFinalDim / float(cols))
+		# hsize = int((float(rows) * float(width_percent)))
+		# img = Image.fromarray(img_aug)
+		# img_aug = np.array(img.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS))
+
+		img_aug, width_percent = rescale_image(img_orig)
 
 		for index, row in imgData_aug.iterrows():			
 			x1 = row['x1s'] * width_percent
@@ -394,15 +408,20 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 
 				(width, height) = x_img.shape
 				debug_img = x_img.copy()
+				if mode=='train':
+					try:
+						# print('calc_rpn -- START')
+						y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
+						# print('calc_rpn -- END')
 
-				try:
-					# print('calc_rpn -- START')
-					y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
-					# print('calc_rpn -- END')
+					except Exception as e:
+						print(e)
+						continue
+				else:
+					y_rpn_cls = np.zeros((1,1,1,1))
+					y_rpn_regr = np.zeros((1,1,1,1))
+					num_pos = 0
 
-				except Exception as e:
-					print(e)
-					continue
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
@@ -412,8 +431,8 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 
 				# x_img /= C.img_scaling_factor
 
-				x_img = np.expand_dims(x_img, axis=0) # (205, 205) --> (1, 205, 205)
-				x_img = np.expand_dims(x_img, axis=3) # (1, 205, 205) --> (1, 205, 205, 1)
+				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
+				x_img = np.expand_dims(x_img, axis=3) # (1, 600, 600) --> (1, 600, 600, 1)
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
 

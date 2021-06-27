@@ -6,7 +6,9 @@ DATA_SUBSET = 1
 DOWNLOAD_FOLDER = 'data/training'
 DATA_FOLDER = os.path.join(os.getcwd(), "data")
 TRAIN_DATA_FOLDER = os.path.join(DATA_FOLDER, "training")
+VAL_DATA_FOLDER = os.path.join(DATA_FOLDER, "validation")
 TRAIN_PATCHES_FOLDER = os.path.join(TRAIN_DATA_FOLDER, "patches")
+VAL_PATCHES_FOLDER = os.path.join(VAL_DATA_FOLDER, "patches")
 TRAIN_SET_PATH_CLEANED = os.path.join(TRAIN_DATA_FOLDER, "B1_training_clean_SKA.txt") #TODO: fix this
 TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_SKA.txt") #TODO: fix this
 IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
@@ -70,9 +72,6 @@ anchor_num = len(anchor_box_ratios)*len(anchor_box_scales)
 #NMS max boxes
 nms_max_boxes = 2000
 
-# Size to resize the smallest side of the image
-# Original setting in paper is 600. Set to 300 in here to save training time
-im_size = 300
 in_out_img_size_ratio = 16
 
 # image channel-wise mean to subtract
@@ -97,6 +96,7 @@ gamma = 0.7
 
 # resize the original patch
 resizePatch = True
+
 # final dimension of the patch
 resizeFinalDim = 600
 
