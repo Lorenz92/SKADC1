@@ -122,7 +122,7 @@ class SKADatasetv2:
         print(f'Dataset shape: {self.raw_train_df.shape}')
         display(self.raw_train_df.head())
 
-    def load_train_image(self, image_path=config.IMAGE_PATH, primary_beam=None, print_info=False, load_pb=False): #TODO: aggiungere cut_preprocess_image
+    def load_train_image(self, image_path=config.IMAGE_PATH, primary_beam=None, print_info=False, load_pb=False): #TODO: aggiungere cut_preprocess_image: non si può fare perchè usa dati del clean dataset
         fits_image = fits.open(image_path)
         if print_info:
             print(fits_image.info())
@@ -279,16 +279,16 @@ class SKADatasetv2:
         print(f'Initial dataset shape: {boxes_dataframe.shape}')
         print(f'Found {faint_a} boxes with zero area')
         print(f'Rows to be deleted: {len(id_to_delete)}')       
-        self.cleaned_train_df = copy.copy(boxes_dataframe.drop(index = id_to_delete).reset_index(drop=True))
-        print(f'New dataset shape: {self.cleaned_train_df.shape}')
+        cleaned_df = copy.copy(boxes_dataframe.drop(index = id_to_delete).reset_index(drop=True))
+        print(f'New dataset shape: {cleaned_df.shape}')
         print('Extending dataset with new computed columns...')
-        self.cleaned_train_df = copy.copy(_extend_dataframe(self.cleaned_train_df, coords))
-        print(f'Final cleaned dataset shape: {self.cleaned_train_df.shape}')
+        cleaned_df = copy.copy(_extend_dataframe(cleaned_df, coords))
+        print(f'Final cleaned dataset shape: {cleaned_df.shape}')
         print()
 
         if config.enlarge_bbox:
             print('Enlarging bboxes...')
-            self.cleaned_train_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1)
+            self.cleaned_train_df= copy.copy(cleaned_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1))
             print('DONE - Enlarging bboxes...')
         return
 
@@ -319,72 +319,6 @@ class SKADatasetv2:
         self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches)
         return
     
-    def analyze_class_distribution(self):
-        class_list = {}
-        class_list = self.cleaned_train_df[['SIZE', 'SELECTION']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
-
-        class_list = class_list.unique()
-        print(class_list)
-
-        num_classes = len(class_list)
-        print(num_classes)
-
-        # num of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
-        num_combinations = 2^num_classes - 1  
-        print(num_combinations)
-        
-        patch_class_list = []
-        patch_class_bool = []
-        patch_class_int = []
-
-        class_labels=[]
-        for patch_id in self.patch_list:
-            img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
-            img_data_patch = pd.read_pickle(img_data_path)
-
-            patch_class_list = img_data_patch['class_label'].unique() 
-            
-            for class_idx in class_list:
-                if class_idx in patch_class_list:
-                    patch_class_bool.append('1')
-                else:
-                    patch_class_bool.append('0')
-                            
-            patch_class_2=''.join(patch_class_bool)
-            b = (int(patch_class_2, base=2))
-            patch_class_int.append(b)
-            print (b, patch_class_list)
-            patch_class_bool.clear()
-
-        res =[]
-        for idx in range(1, num_classes+1):
-            #res.append((bin(idx)))
-            res.append(int(bin(idx)[2:]))
-            #for idy in res:
-               
-            print(res)
-            
-
-        plt.hist(patch_class_int )
-        plt.legend(['columns >= 4 has 'f"{class_list[0]}",  'columns ... has'f"{class_list[1]}", 'odd columns has'f"{class_list[2]}" ])
-        plt.xlabel("classes and combinations")
-        plt.ylabel("num patches")
-        plt.title("Histogram")
-        plt.show()
-        return
-
-    def split_train_val(self, train_portion=.8, val_portion=.2):
-        # #TODO: spostare in dataset dopo aver sistemato la classe dataset
-        # from sklearn.model_selection import train_test_split
-        #self.cleaned_train_df
-        
-
-        # train_patch_list, val_patch_list = train_test_split(patch_list, test_size=.2, random_state=42)
-        # print(len(train_patch_list))
-        # print(len(val_patch_list))
-        return
-
-
 
     def _split_in_patch(self, patch_dim=100, is_multiple=False, show_plot=False):
 
@@ -460,12 +394,10 @@ class SKADatasetv2:
                                 plt.show()
 
         # # TODO: trasfromare in attributo della classe dataset
-        class_list = ska_dataset.proc_train_df['class_label'].unique()
-        print(class_list)
+        self.class_list = self.proc_train_df['class_label'].unique()
 
-        num_classes = len(ska_dataset.proc_train_df['class_label'].unique())
-        print(num_classes)
-            
+        self.num_classes = len(self.proc_train_df['class_label'].unique())
+
         return patches_list
     
     def _cut_bbox(self, x, patch_xo, patch_yo, patch_dim):
@@ -510,5 +442,60 @@ class SKADatasetv2:
         idx2 = filtered_df['ID'].tolist()
         return idx2
 
+    def analyze_class_distribution(self):
 
+        # num of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
+        num_combinations = 2^self.num_classes - 1  
+        print(num_combinations)
+        
+        patch_class_list = []
+        patch_class_bool = []
+        patch_class_int = []
+
+        class_labels=[]
+        for patch_id in self.patch_list:
+            img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
+            img_data_patch = pd.read_pickle(img_data_path)
+
+            patch_class_list = img_data_patch['class_label'].unique() 
+            
+            for class_idx in self.class_list:
+                if class_idx in patch_class_list:
+                    patch_class_bool.append('1')
+                else:
+                    patch_class_bool.append('0')
+                            
+            patch_class_2=''.join(patch_class_bool)
+            b = (int(patch_class_2, base=2))
+            patch_class_int.append(b)
+            print (b, patch_class_list)
+            patch_class_bool.clear()
+
+        res =[]
+        for idx in range(1, self.num_classes+1):
+            #res.append((bin(idx)))
+            res.append(int(bin(idx)[2:]))
+            #for idy in res:
+               
+            print(res)
+            
+
+        plt.hist(patch_class_int )
+        plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
+        plt.xlabel("classes and combinations")
+        plt.ylabel("num patches")
+        plt.title("Histogram")
+        plt.show()
+        return
+
+    def split_train_val(self, train_portion=.8, val_portion=.2):
+        # #TODO: spostare in dataset dopo aver sistemato la classe dataset
+        # from sklearn.model_selection import train_test_split
+        #self.cleaned_train_df
+        
+
+        # train_patch_list, val_patch_list = train_test_split(patch_list, test_size=.2, random_state=42)
+        # print(len(train_patch_list))
+        # print(len(val_patch_list))
+        return
 
