@@ -8,6 +8,7 @@ import copy
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from tqdm import tqdm
+from sklearn.model_selection import train_test_split
 
 import src.utils as utils
 import src.config as config
@@ -395,9 +396,9 @@ class SKADatasetv2:
 
         # # TODO: trasfromare in attributo della classe dataset
         self.class_list = self.proc_train_df['class_label'].unique()
-
+        print(self.class_list)
         self.num_classes = len(self.proc_train_df['class_label'].unique())
-
+        print(self.num_classes)
         return patches_list
     
     def _cut_bbox(self, x, patch_xo, patch_yo, patch_dim):
@@ -429,7 +430,9 @@ class SKADatasetv2:
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
         df_scaled.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
-        
+
+        #print(df_scaled[[ 'patch_xo','bbox_w', 'patch_yo']].describe())
+
         return
             
     def _find_gt_in_patch(self, patch_xo, patch_yo, patch_dim, gt_df):
@@ -445,14 +448,17 @@ class SKADatasetv2:
     def analyze_class_distribution(self):
 
         # num of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
-        num_combinations = 2^self.num_classes - 1  
-        print(num_combinations)
-        
+        self.num_combinations = pow(2, self.num_classes) - 1  
+
         patch_class_list = []
         patch_class_bool = []
         patch_class_int = []
+        self.patch_list_per_class = {}
 
-        class_labels=[]
+        for j in range(1,self.num_combinations+1):
+            key_j = 'key_{}'.format(j)
+            self.patch_list_per_class[key_j] = []
+
         for patch_id in self.patch_list:
             img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
             img_data_patch = pd.read_pickle(img_data_path)
@@ -468,18 +474,19 @@ class SKADatasetv2:
             patch_class_2=''.join(patch_class_bool)
             b = (int(patch_class_2, base=2))
             patch_class_int.append(b)
-            print (b, patch_class_list)
+            self.patch_list_per_class['key_{}'.format(b)].append(patch_id)           
+            #print (b, patch_class_list)
             patch_class_bool.clear()
 
         res =[]
         for idx in range(1, self.num_classes+1):
             #res.append((bin(idx)))
             res.append(int(bin(idx)[2:]))
-            #for idy in res:
-               
-            print(res)
-            
 
+        print('number of possible class combinations:',self.num_combinations )
+        #print('current combinations:',patch_class_int.unique() )
+        # print(self.patch_list_per_class)    
+        self.class_distribution = patch_class_int
         plt.hist(patch_class_int )
         plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
         plt.xlabel("classes and combinations")
@@ -489,13 +496,22 @@ class SKADatasetv2:
         return
 
     def split_train_val(self, train_portion=.8, val_portion=.2):
-        # #TODO: spostare in dataset dopo aver sistemato la classe dataset
-        # from sklearn.model_selection import train_test_split
-        #self.cleaned_train_df
-        
+        # #TODO: check  random_state=42) in train_test_split
 
-        # train_patch_list, val_patch_list = train_test_split(patch_list, test_size=.2, random_state=42)
-        # print(len(train_patch_list))
-        # print(len(val_patch_list))
+        self.train_complete_patch_list = []
+        self.val_complete_val_patch_list = []
+        for idx in range(1, self.num_combinations+1):
+            try:
+                train_patch_list, val_patch_list = train_test_split(self.patch_list_per_class['key_{}'.format(idx)],
+                 test_size = val_portion)#, random_state=42)
+
+                self.train_complete_patch_list = self.train_complete_patch_list + train_patch_list
+                self.val_complete_val_patch_list = self.val_complete_val_patch_list + val_patch_list
+            except:
+                print('key_{}'.format(idx),"not splitted")
+                continue
+
+        print('split ended')
+
         return
 
