@@ -51,7 +51,6 @@ def calc_rpn(img_data, width, height):
 		If feature map has shape 38x50=1900, there are 1900x9=17100 potential anchors
 	
 	Args:
-		C: config
 		img_data: augmented image data
 		width: original image width (e.g. 600)
 		height: original image height (e.g. 800)
@@ -67,31 +66,29 @@ def calc_rpn(img_data, width, height):
 
 	"""
 	downscale = float(C.rpn_stride)
-	anchor_sizes = C.anchor_box_scales   # 128, 256, 512
-	anchor_ratios = C.anchor_box_ratios  # 1:1, 1:2*sqrt(2), 2*sqrt(2):1
-	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x3=9
+	anchor_sizes = C.anchor_box_scales   # [32, 64, 128, 256, 512]
+	anchor_ratios = C.anchor_box_ratios  # 1:1, 1:2, 2:1
+	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x5=15
 
 	# calculate the output map size based on the network architecture
 	(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
 	n_anchratios = len(anchor_ratios)    # 3
 	
 	# initialise empty output objectives
-	y_rpn_overlap = np.zeros((output_height, output_width, num_anchors))
-	y_is_box_valid = np.zeros((output_height, output_width, num_anchors))
+	y_rpn_overlap = np.zeros((output_height, output_width, num_anchors))#.astype(int)
+	y_is_box_valid = np.zeros((output_height, output_width, num_anchors))#.astype(int)
 	y_rpn_regr = np.zeros((output_height, output_width, num_anchors * 4))
 
-	# num_bboxes = len(img_data['bboxes'])
 	num_bboxes = img_data.shape[0]
 
 	num_anchors_for_bbox = np.zeros(num_bboxes).astype(int)
 	best_anchor_for_bbox = -1*np.ones((num_bboxes, 4)).astype(int)
 	best_iou_for_bbox = np.zeros(num_bboxes).astype(np.float32)
-	best_x_for_bbox = np.zeros((num_bboxes, 4)).astype(int)
-	best_dx_for_bbox = np.zeros((num_bboxes, 4)).astype(np.float32)
+	best_x_for_bbox = np.zeros((num_bboxes, 4)).astype(int) #TOTRY: commentare astype
+	best_dx_for_bbox = np.zeros((num_bboxes, 4)).astype(np.float32) #TOTRY: commentare astype
 
 	# get the GT box coordinates, and resize to account for image resizing
 	gta = np.zeros((num_bboxes, 4))
-	# for bbox_num, bbox in enumerate(img_data['bboxes']): # previously
 	for bbox_num, bbox in img_data.iterrows():
 		# get the GT box coordinates, and resize to account for image resizing
 		gta[bbox_num, 0] = bbox.x1s
@@ -146,9 +143,12 @@ def calc_rpn(img_data, width, height):
 
 							tx = (cx - cxa) / (x2_anc - x1_anc)         # Shift tra i centri di gt e anchor
 							ty = (cy - cya) / (y2_anc - y1_anc)
-							tw = np.log((gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc))
-							th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
-						
+							# tw = np.log((gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc))
+							# th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
+							tw = (gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc)
+							th = (gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc)
+							
+							
 						if img_data.loc[bbox_num]['class_label'] != 'bg':
 
 							# all GT boxes should be mapped to an anchor box, so we keep track of which anchor box was best
@@ -185,7 +185,9 @@ def calc_rpn(img_data, width, height):
 						y_is_box_valid[jy, ix, anchor_ratio_idx + n_anchratios * anchor_size_idx] = 1
 						y_rpn_overlap[jy, ix, anchor_ratio_idx + n_anchratios * anchor_size_idx] = 1
 						start = 4 * (anchor_ratio_idx + n_anchratios * anchor_size_idx)
-						y_rpn_regr[jy, ix, start:start+4] = best_regr
+						# y_rpn_regr[jy, ix, start:start+4] = best_regr
+						y_rpn_regr[jy, ix, start:start+2 ] = best_regr[0:2]
+						y_rpn_regr[jy, ix, start+2:start+4 ] = np.log(best_regr[2:])
 
 	# we ensure that every bbox has at least one positive RPN region
 	for idx in tqdm(range(num_anchors_for_bbox.shape[0])):
@@ -201,10 +203,15 @@ def calc_rpn(img_data, width, height):
 				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], best_anchor_for_bbox[idx,2] + n_anchratios *
 				best_anchor_for_bbox[idx,3]] = 1
 			start = 4 * (best_anchor_for_bbox[idx,2] + n_anchratios * best_anchor_for_bbox[idx,3])
+			# y_rpn_regr[
+			# 	best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], start:start+4] = best_dx_for_bbox[idx, :]
 			y_rpn_regr[
-				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], start:start+4] = best_dx_for_bbox[idx, :]
+				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], start:start+2] = best_dx_for_bbox[idx, 0:2]
+			y_rpn_regr[
+				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], start+2:start+4] = np.log(best_dx_for_bbox[idx, 2:4])
 
-	y_rpn_overlap = np.transpose(y_rpn_overlap, (2, 0, 1)) #TODO: check se effettivamente ha senso per noi
+
+	y_rpn_overlap = np.transpose(y_rpn_overlap, (2, 0, 1))
 	y_rpn_overlap = np.expand_dims(y_rpn_overlap, axis=0)
 
 	y_is_box_valid = np.transpose(y_is_box_valid, (2, 0, 1))
@@ -248,65 +255,48 @@ def rescale_image(img_orig):
 	return img_aug, width_percent
 
 
-def augment(img_path, img_data_path, augment=True, **kwargs):
-	# assert 'filepath' in img_data_path
-	# assert 'bboxes' in img_data_path
-	# assert 'width' in img_data
-	# assert 'height' in img_data
-
-	#path = os.path.join(config.TRAIN_PATCHES_FOLDER, '0_1638016380_205/')
+def augment(img_path, img_data_path, augment=True, **kwargs):	
 	img_orig = np.load(img_path)
-	imgData_orig = pd.read_pickle(img_data_path)
+	img_data_orig = pd.read_pickle(img_data_path)
 
 	# img_aug = copy.copy(img_orig)
-	imgData_aug = copy.deepcopy(imgData_orig)
+	img_data_aug = copy.deepcopy(img_data_orig)
 
 	# resize paches, the final dimension is the one set in the config (C.resizeFinalDim)
-	# TODO: tirare fuori in una nuova funzione
 	if C.resizePatch :
-		# rows, cols = img_orig.shape[:2]
-		# width_percent = (C.resizeFinalDim / float(cols))
-		# hsize = int((float(rows) * float(width_percent)))
-		# img = Image.fromarray(img_aug)
-		# img_aug = np.array(img.resize((C.resizeFinalDim , hsize), PIL.Image.ANTIALIAS))
-
 		img_aug, width_percent = rescale_image(img_orig)
 
-		for index, row in imgData_aug.iterrows():			
+		for index, row in img_data_aug.iterrows():			
 			x1 = row['x1s'] * width_percent
 			x2 = row['x2s'] * width_percent
 			y1 = row['y1s'] * width_percent
 			y2 = row['y2s'] * width_percent
-			imgData_aug.at[index,'x1s']= x1
-			imgData_aug.at[index,'x2s']= x2
-			imgData_aug.at[index,'y1s']= y1
-			imgData_aug.at[index,'y2s']= y2
+			img_data_aug.at[index,'x1s']= x1
+			img_data_aug.at[index,'x2s']= x2
+			img_data_aug.at[index,'y1s']= y1
+			img_data_aug.at[index,'y2s']= y2
 
 	if augment:
 		rows, cols = img_aug.shape[:2]
-		# print(cols)
 
-		if C.use_horizontal_flips and kwargs['hflip']: #np.random.randint(0, 2) == 0:
-			# print('Horizontal flipping')
+		if C.use_horizontal_flips and kwargs['hflip']:
 			img_aug = cv2.flip(img_aug, 1)
-			for index, row in imgData_aug.iterrows():			
+			for index, row in img_data_aug.iterrows():			
 				x1 = row['x1s']
 				x2 = row['x2s']
-				imgData_aug.at[index,'x2s']= cols - x1
-				imgData_aug.at[index,'x1s']= cols - x2
+				img_data_aug.at[index,'x2s']= cols - x1
+				img_data_aug.at[index,'x1s']= cols - x2
 
-		if C.use_vertical_flips and kwargs['vflip']: #np.random.randint(0, 2) == 0:
-			# print('Vertical flipping')
+		if C.use_vertical_flips and kwargs['vflip']:
 			img_aug = cv2.flip(img_aug, 0)
-			for index, row in imgData_aug.iterrows():			
+			for index, row in img_data_aug.iterrows():			
 				y1 = row['y1s']
 				y2 = row['y2s']
-				imgData_aug.at[index,'y2s']= rows - y1
-				imgData_aug.at[index,'y1s']= rows - y2
+				img_data_aug.at[index,'y2s']= rows - y1
+				img_data_aug.at[index,'y1s']= rows - y2
 
 		if C.rot_90:
-			angle = kwargs['angle'] #np.random.choice([0,90,180,270],1)[0]
-			# print("angle = ", angle) 
+			angle = kwargs['angle'] 
 			if angle == 270:
 				img_aug = np.transpose(img_aug, (1,0))
 				img_aug = cv2.flip(img_aug, 0)
@@ -318,56 +308,31 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 			elif angle == 0:
 				pass
 
-			# print(type(imgData_aug))
-			# print(imgData_aug.head())
-
-			#for bbox in imgData_aug['bboxes']:
-			for index, row in imgData_aug.iterrows():
-				#row = imgData_aug.iloc[_]
+			for index, row in img_data_aug.iterrows():
 				x1 = row['x1s']
 				x2 = row['x2s']
 				y1 = row['y1s']
 				y2 = row['y2s']
 				if angle == 270:
-					# print("angle rot 270")
-					# row['x1s'] = y1
-					# row['x2s'] = y2
-					# row['y1s'] = cols - x2
-					# row['y2s'] = cols - x1
-					imgData_aug.at[index,'x1s']=  y1
-					imgData_aug.at[index,'x2s']=  y2
-					imgData_aug.at[index,'y1s']=  cols - x2
-					imgData_aug.at[index,'y2s']=  cols - x1	
+					img_data_aug.at[index,'x1s']=  y1
+					img_data_aug.at[index,'x2s']=  y2
+					img_data_aug.at[index,'y1s']=  cols - x2
+					img_data_aug.at[index,'y2s']=  cols - x1	
 				elif angle == 180:
-					# print("angle rot 180")
-					# row['x2s'] = cols - x1
-					# row['x1s'] = cols - x2
-					# row['y2s'] = rows - y1
-					# row['y1s'] = rows - y2
-					imgData_aug.at[index,'x2s'] = cols - x1
-					imgData_aug.at[index,'x1s'] = cols - x2
-					imgData_aug.at[index,'y2s'] = rows - y1
-					imgData_aug.at[index,'y1s'] = rows - y2
+					img_data_aug.at[index,'x2s'] = cols - x1
+					img_data_aug.at[index,'x1s'] = cols - x2
+					img_data_aug.at[index,'y2s'] = rows - y1
+					img_data_aug.at[index,'y1s'] = rows - y2
 				elif angle == 90:
-					# print("angle rot 90")
-					# row['x1s'] = rows - y2
-					# row['x2s'] = rows - y1
-					# row['y1s'] = x1
-					# row['y2s'] = x2
-					imgData_aug.at[index,'x1s'] = rows - y2
-					imgData_aug.at[index,'x2s'] = rows - y1
-					imgData_aug.at[index,'y1s'] = x1
-					imgData_aug.at[index,'y2s'] = x2       
+					img_data_aug.at[index,'x1s'] = rows - y2
+					img_data_aug.at[index,'x2s'] = rows - y1
+					img_data_aug.at[index,'y1s'] = x1
+					img_data_aug.at[index,'y2s'] = x2       
 				elif angle == 0:
 					pass
 
-	#AA commentate perchè le nostre patches sono quadrate
-	#imgData_aug['width'] = img_aug.shape[1]
-	#imgData_aug['height'] = img_aug.shape[0]
-	return img_aug, imgData_aug
+	return img_aug, img_data_aug
 
-
-#def get_anchor_gt( all_img_data, img_length_calc_function, mode='train'):
 def get_anchor_gt(patches_path, patch_list, mode='train'):
 	""" Yield the ground-truth anchors as Y (labels)
 		
@@ -406,8 +371,14 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				else:
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
 
+				img_data_aug['x1s'] = img_data_aug['x1s'].astype(int)
+				img_data_aug['x2s'] = img_data_aug['x2s'].astype(int)
+				img_data_aug['y1s'] = img_data_aug['y1s'].astype(int)
+				img_data_aug['y2s'] = img_data_aug['y2s'].astype(int)
+
 				(width, height) = x_img.shape
 				debug_img = x_img.copy()
+
 				if mode=='train':
 					try:
 						# print('calc_rpn -- START')

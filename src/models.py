@@ -8,13 +8,18 @@ import keras
 from keras.layers import Input
 from keras.optimizers import Adam
 
-def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
-    
-    # Add custom input-layer to change from1 to 3 channels
-    input_image  = Input(shape=input_shape_1, name='input_1')
+def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16', use_expander=True):
 
-    x = Expander()(input_image)
+    if use_expander:    
+        # Add custom input-layer to expand from 1 to 3 channels
+        input_image  = Input(shape=input_shape_1, name='input_1')
 
+        x = Expander()(input_image)
+    else:
+        # In order to use this input layer we replicate the same input image 3 times because we have 1-channel images
+        input_image = Input(shape=(600,600,3), name='input_1')
+        x = input_image
+        
     if backbone == 'vgg16':
         # Load pretrained VGG16 and remove last MaxPool layer
         x = vgg16(x)
@@ -26,7 +31,7 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
     # Create Region Proposal Net
     rpn_cls, rpn_reg, _ = RpnNet(anchor_num)(x)
 
-    input_roi =  Input(shape=input_shape_2, name='input_2')
+    input_roi =  Input(shape=input_shape_2, name='input_2') # Here (None, 4)
     
     # Final classification and regression step
     x = RoiPoolingConv(pooling_regions, num_rois)([x, input_roi])
@@ -38,12 +43,17 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
 
     return rpn_model, detector_model, total_model
 
-def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16'):
+def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16', use_expander=False):
     
-    # Add custom input-layer to change from1 to 3 channels
-    input_image  = Input(shape=input_shape_1, name='input_1')
+    if use_expander:    
+        # Add custom input-layer to expand from 1 to 3 channels
+        input_image  = Input(shape=input_shape_1, name='input_1')
 
-    x = Expander()(input_image)
+        x = Expander()(input_image)
+    else:
+        # In order to use this input layer we replicate the same input image 3 times because we have 1-channel images
+        input_image = Input(shape=(600,600,3), name='input_1')
+        x = input_image
 
     if backbone == 'vgg16':
         # Load pretrained VGG16 and remove last MaxPool layer
@@ -97,7 +107,7 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True):
     detector_model.load_weights(weights, by_name=True)
     return
 
-def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_losses, class_list, rpn_lr=1e-3, rpn_clipnorm=0.001, detector_lr=1e-3, detector_clipnorm=0.001):
+def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_losses, class_list, rpn_lr=1e-2, rpn_clipnorm=0.001, detector_lr=1e-2, detector_clipnorm=0.001):
 
     ########## Build models
 

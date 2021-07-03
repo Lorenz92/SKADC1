@@ -55,10 +55,9 @@ class RpnNet(Layer):
         self.prob_pred_out = anchor_num
         self.coord_pred_out = 4 * anchor_num 
         super(RpnNet, self).__init__(name='rpn')
-        self.conv2d = Conv2D(filters=512, kernel_size=(3, 3), padding='same', activation='relu', name='18_RPN_Conv1')
-        self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), padding='same', activation='sigmoid', name='19_Anchor_Cls_Conv')
-        self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), padding='same', activation='linear', name='19_Anchor_Reg_Conv')
-
+        self.conv2d = Conv2D(filters=512, kernel_size=(3, 3), padding='same', kernel_initializer='normal', activation='relu', name='18_RPN_Conv1')
+        self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), activation='sigmoid', kernel_initializer='uniform', name='19_Anchor_Cls_Conv')
+        self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), activation='linear', kernel_initializer='zero', name='19_Anchor_Reg_Conv')
     def call(self, backbone):
         x = self.conv2d(backbone)
         cls_pred = self.cls_pred(x) #output of layer 20

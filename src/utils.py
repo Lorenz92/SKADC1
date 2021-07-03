@@ -321,10 +321,10 @@ def calc_iou(R, img_data, class_mapping):
     for box_index, bbox in img_data.iterrows():
         # get the GT box coordinates, and resize to account for image resizing
         # gta[box_index, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
-        gta[box_index, 0] = bbox['x1s']/C.rpn_stride
-        gta[box_index, 1] = bbox['x2s']/C.rpn_stride
-        gta[box_index, 2] = bbox['y1s']/C.rpn_stride
-        gta[box_index, 3] = bbox['y2s']/C.rpn_stride
+        gta[box_index, 0] = int(bbox['x1s']/C.rpn_stride)
+        gta[box_index, 1] = int(bbox['x2s']/C.rpn_stride)
+        gta[box_index, 2] = int(bbox['y1s']/C.rpn_stride)
+        gta[box_index, 3] = int(bbox['y2s']/C.rpn_stride)
 
     x_roi = []
     y_class_num = []
@@ -336,10 +336,10 @@ def calc_iou(R, img_data, class_mapping):
     for ix in range(R.shape[0]):
         # print(f'ix ={ix}')
         (x1, y1, x2, y2) = R[ix, :]
-        # x1 = int(round(x1))
-        # y1 = int(round(y1))
-        # x2 = int(round(x2))
-        # y2 = int(round(y2))
+        x1 = int(round(x1))
+        y1 = int(round(y1))
+        x2 = int(round(x2))
+        y2 = int(round(y2))
 
         best_iou = 0.0
         best_bbox = -1

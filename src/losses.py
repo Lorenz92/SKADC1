@@ -46,8 +46,8 @@ def rpn_loss_cls(num_anchors):
         lambda * sum((binary_crossentropy(isValid*y_pred,y_true))) / N
     """
     def rpn_loss_cls_fixed_num(y_true, y_pred):
-        tf.print('pred = ', y_pred.shape, output_stream=sys.stderr, sep=',')
-        tf.print('true = ', y_true.shape, output_stream=sys.stderr, sep=',')
+        # tf.print('pred = ', y_pred.shape, output_stream=sys.stderr, sep=',')
+        # tf.print('true = ', y_true.shape, output_stream=sys.stderr, sep=',')
 
         return lambda_rpn_class * K.sum(y_true[:, :, :, :num_anchors] * K.binary_crossentropy(y_pred[:, :, :, :], y_true[:, :, :, num_anchors:])) / K.sum(epsilon + y_true[:, :, :, :num_anchors])
             

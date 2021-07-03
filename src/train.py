@@ -1,4 +1,3 @@
-from copy import Error
 import time
 import os
 import numpy as np
@@ -15,7 +14,7 @@ np.random.seed(config.RANDOM_SEED)
 
 # Training loop
 
-def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, patches_folder_path, backbone, resume_train=True):
+def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, resume_train=True, use_expander=True):
 
     ######### build class_mapping
 
@@ -23,14 +22,15 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     class_mapping['bg'] = len(class_mapping)
 
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list)
-    val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list)
+    if val_patch_list is not None:
+        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list)
 
     iter_num = 0
-    epoch_length = 1
+    epoch_length = 10
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
-    num_epochs = 10 #config.num_epochs
+    num_epochs = num_epochs #config.num_epochs
     losses = np.zeros((epoch_length, 5))
 
 
@@ -38,7 +38,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
     if resume_train:
         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
-        best_loss = previous_losses[-1, :-1].sum()
+        best_loss = min(previous_losses[:,:-1].sum(axis=1))
+        print(f'Previous best loss: {best_loss}')
         del previous_losses
     else:
         if os.path.exists(f"./model/{backbone}/loss_history.npy"):
@@ -47,10 +48,10 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
     ######### (re-)start training
 
-    for epoch in range(num_epochs*len(train_patch_list)):
+    for epoch in range(num_epochs):
 
         progbar = generic_utils.Progbar(epoch_length)
-        print('Epoch {}/{}'.format(epoch, num_epochs))
+        print('Epoch {}/{}'.format(epoch+1, num_epochs))
 
         #TODO: check if we need LR warmup
 
@@ -66,6 +67,11 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                 image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _ = next(train_datagen)
 
+                if not use_expander:
+                    # print(image.shape)
+                    image = np.repeat(image, 3, axis=3)
+                    # print(image.shape)
+
                 print('Starting rpn model training on batch')
 
                 loss_rpn_tot, loss_rpn_cls, loss_rpn_regr = rpn_model.train_on_batch(image, [y_rpn_cls_true, y_rpn_reg_true])
@@ -75,7 +81,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                 # R: bboxes (shape=(300,4))
                 # Convert rpn layer to roi bboxes
-                R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7)
+                R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
                 
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
@@ -140,7 +146,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
                 print('Starting detector model training on batch')
 
-                print(f'X2 shape: {X2.shape}')
+                # print(f'X2 shape: {X2.shape}')
 
                 loss_detector_tot, loss_detector_cls, loss_detector_regr, detector_class_acc, _ = detector_model.train_on_batch([image, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]) 
 
@@ -153,7 +159,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                 iter_num += 1
 
-                progbar.update(iter_num, [('rpn_cls', np.mean(losses[:iter_num, 0])), 
+                progbar.update(iter_num, [
+                ('rpn_cls', np.mean(losses[:iter_num, 0])), 
                 ('rpn_regr', np.mean(losses[:iter_num, 1])), 
                 ('detector_cls', np.mean(losses[:iter_num, 2])), 
                 ('detector_regr', np.mean(losses[:iter_num, 3])), 
@@ -166,9 +173,12 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     loss_detector_regr = np.mean(losses[:, 3])
                     detector_class_acc = np.mean(losses[:, 4])
 
+                    #TODO: debugguare qui
+                    losses_to_save = [loss_rpn_cls, loss_rpn_regr, loss_detector_cls, loss_detector_regr, detector_class_acc]
+
                     mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
                     rpn_accuracy_for_epoch = []
-
+                    curr_loss = loss_rpn_cls + loss_rpn_regr + loss_detector_cls + loss_detector_regr
 
                     print('Mean number of bounding boxes from RPN overlapping ground truth boxes: {}'.format(mean_overlapping_bboxes))
                     print('Classifier accuracy for bounding boxes from RPN: {}'.format(detector_class_acc))
@@ -176,20 +186,20 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     print('Loss RPN regression: {}'.format(loss_rpn_regr))
                     print('Loss Detector classifier: {}'.format(loss_detector_cls))
                     print('Loss Detector regression: {}'.format(loss_detector_regr))
+                    print('Total loss: {}'.format(curr_loss))
                     print('Elapsed time: {}'.format(time.time() - start_time))
 
                     if resume_train:
                         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
-                        losses_to_save = np.concatenate((previous_losses, losses), axis=0)
+                        losses_to_save = np.concatenate((previous_losses, losses_to_save), axis=0)
                         del previous_losses
                     else:
-                        losses_to_save = losses
+                        losses_to_save = losses_to_save
                         resume_train = True
 
                     np.save(f"./model/{backbone}/loss_history.npy", losses_to_save)
                     del losses_to_save
 
-                    curr_loss = loss_rpn_cls + loss_rpn_regr + loss_detector_cls + loss_detector_regr
                     iter_num = 0
 
                     # save weights
