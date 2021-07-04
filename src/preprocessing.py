@@ -333,7 +333,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 	return img_aug, img_data_aug
 
-def get_anchor_gt(patches_path, patch_list, mode='train'):
+def get_anchor_gt(patches_path, patch_list, mode='train', use_expander = False ):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -393,6 +393,13 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 					y_rpn_regr = np.zeros((1,1,1,1))
 					num_pos = 0
 
+				print('starting shape: ', x_img.shape)
+				if not use_expander:
+					x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
+					x_img = np.transpose(x_img, (1, 2, 0))
+					print('expanded shape: ', x_img.shape)
+					x_img = np.repeat(x_img, 3, axis=3)
+					print('ending shape: ', x_img.shape)
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
@@ -401,8 +408,8 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				# print('zero-centering -- END')
 
 				# x_img /= C.img_scaling_factor
-
-				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
+				if use_expander:
+					x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
 				x_img = np.expand_dims(x_img, axis=3) # (1, 600, 600) --> (1, 600, 600, 1)
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
@@ -413,22 +420,22 @@ def get_anchor_gt(patches_path, patch_list, mode='train'):
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
 
 			except Exception as e:
-				print(e)
+				print('exception get_anchor', e)
 				continue
 
 
 def zero_centering(img_patch):
     #in order to manage images with 3 channels. ours should be 1
-    imageChannels = 1 if len(img_patch.shape)== 2 else 3
+	imageChannels = 1 if len(img_patch.shape)== 2 else 3
     
-    if(imageChannels == 1):
-        img_patch[:, :] -= C.img_channel_mean[0]
-    else:
-        img_patch[:, :, 0] -= C.img_channel_mean[0]
-        img_patch[:, :, 1] -= C.img_channel_mean[1]
-        img_patch[:, :, 2] -= C.img_channel_mean[2]
-    
-    return
+	if(imageChannels == 1):
+		img_patch[:, :] -= C.img_channel_mean[0]
+	else:
+		print('three channels')
+		img_patch[:, :, 0] -= C.img_channel_mean[0]
+		img_patch[:, :, 1] -= C.img_channel_mean[1]
+		img_patch[:, :, 2] -= C.img_channel_mean[2]
+	return
 
 
 # The following is not currently used

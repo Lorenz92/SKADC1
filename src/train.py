@@ -14,7 +14,7 @@ np.random.seed(config.RANDOM_SEED)
 
 # Training loop
 
-def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, resume_train=True, use_expander=True):
+def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, resume_train=True):
 
     ######### build class_mapping
 
@@ -67,9 +67,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                 image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _ = next(train_datagen)
 
-                if not use_expander:
+                #if not use_expander:
                     # print(image.shape)
-                    image = np.repeat(image, 3, axis=3)
+                    #image = np.repeat(image, 3, axis=3)
                     # print(image.shape)
 
                 print('Starting rpn model training on batch')

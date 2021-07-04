@@ -71,7 +71,8 @@ nms_max_boxes = 2000
 in_out_img_size_ratio = 16
 
 # image channel-wise mean to subtract
-img_channel_mean =  [3.8131893e-07] #mean value of all patches
+#img_channel_mean =  [3.8131893e-07] #mean value of all patches
+img_channel_mean = [123.68, 116.779, 103.939]
 img_channel_max = 0.006585681
 img_channel_min = 0.0
 #img_channel_mean =  [2.1317146e-06] #mean value of all patches
