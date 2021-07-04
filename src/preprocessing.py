@@ -395,10 +395,11 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander = False )
 
 				print('starting shape: ', x_img.shape)
 				if not use_expander:
-					x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
+					x_img = np.tile(x_img,(3,1,1))
+					# x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
 					x_img = np.transpose(x_img, (1, 2, 0))
-					print('expanded shape: ', x_img.shape)
-					x_img = np.repeat(x_img, 3, axis=3)
+					# print('expanded shape: ', x_img.shape)
+					# x_img = np.repeat(x_img, 3, axis=3)
 					print('ending shape: ', x_img.shape)
 
 				# Zero-center by mean pixel, and preprocess image
@@ -408,9 +409,10 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander = False )
 				# print('zero-centering -- END')
 
 				# x_img /= C.img_scaling_factor
-				if use_expander:
-					x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
-				x_img = np.expand_dims(x_img, axis=3) # (1, 600, 600) --> (1, 600, 600, 1)
+
+				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
+				if use_expander:				
+					x_img = np.expand_dims(x_img, axis=3) # (1, 600, 600) --> (1, 600, 600, 1)
 
 				y_rpn_regr[:, y_rpn_regr.shape[1]//2:, :, :] *= C.std_scaling
 

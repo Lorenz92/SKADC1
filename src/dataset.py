@@ -380,39 +380,38 @@ class SKADataset:
 
         self.data_560Mhz_1000h_train_clipped = np.clip(self.data_560Mhz_1000h_train, a_min=0, a_max=np.max(self.image_data))
 
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 20)
-        print('20 percentile = ', p )
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 40)
-        print('40 percentile = ', p )
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 60)
-        print('60 percentile = ', p )
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 80)
-        print('80 percentile = ', p )
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 90)
-        print('90 percentile = ', p )
-        p = np.percentile(self.data_560Mhz_1000h_train_clipped, 99.8)
-        print('99.8 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 20)
+        # print('20 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 40)
+        # print('40 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 60)
+        # print('60 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 80)
+        # print('80 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 90)
+        # print('90 percentile = ', p )
+        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 99.8)
+        # print('99.8 percentile = ', p )
 
         std = self.convert_to_RGB(np.abs(neg_values), self.data_560Mhz_1000h_train_clipped)
         thresh_low = std * 2.5
         self.min_magnitude_order = int(np.log10(thresh_low)) -1
         self.max_magnitude_order = int(np.log10(max_val))
 
-        print(thresh_low, self.min_magnitude_order, self.max_magnitude_order) 
+        print('lower threshold',thresh_low)
+        print('min magnitude',  self.min_magnitude_order)
+        print('max magnitude', self.max_magnitude_order) 
 
         self.one_magnitude_range = int(np.floor(256/(self.max_magnitude_order - self.min_magnitude_order)))
         self.lndelta = np.linspace(0., 1., self.one_magnitude_range)
-
 
         return
 
     def convert_to_RGB(self, data, image):
         mu, std = self.compute_halfgaussian_noise(data, True)
-        # TODO: continua da qui
-        
-
-        
+    
         return std#image_rgb
+
 
     def compute_halfgaussian_noise(self, data, plot=False):
         # fit dist to data
@@ -513,7 +512,6 @@ class SKADataset:
                                 delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
                                 for rng in range(delta_ord_mag):
                                     real_deltas = np.power( 10., self.lndelta ) * np.power(10., self.min_magnitude_order + rng)
-                                    print(real_deltas)
                                     for inner_rng in range(self.one_magnitude_range-1):
                                         img_patch[ (img_patch > real_deltas[inner_rng]) & (img_patch < real_deltas[inner_rng+1]) ] = rgb_val
                                         rgb_val += 1
