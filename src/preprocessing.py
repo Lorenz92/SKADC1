@@ -333,7 +333,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 	return img_aug, img_data_aug
 
-def get_anchor_gt(patches_path, patch_list, mode='train', use_expander = False ):
+def get_anchor_gt(patches_path, patch_list, mode='train', use_expander=False):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -393,14 +393,14 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander = False )
 					y_rpn_regr = np.zeros((1,1,1,1))
 					num_pos = 0
 
-				print('starting shape: ', x_img.shape)
+				# print('starting shape: ', x_img.shape)
 				if not use_expander:
 					x_img = np.tile(x_img,(3,1,1))
 					# x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
 					x_img = np.transpose(x_img, (1, 2, 0))
 					# print('expanded shape: ', x_img.shape)
 					# x_img = np.repeat(x_img, 3, axis=3)
-					print('ending shape: ', x_img.shape)
+					# print('ending shape: ', x_img.shape)
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
@@ -433,66 +433,66 @@ def zero_centering(img_patch):
 	if(imageChannels == 1):
 		img_patch[:, :] -= C.img_channel_mean[0]
 	else:
-		print('three channels')
+		# print('three channels')
 		img_patch[:, :, 0] -= C.img_channel_mean[0]
 		img_patch[:, :, 1] -= C.img_channel_mean[1]
 		img_patch[:, :, 2] -= C.img_channel_mean[2]
 	return
 
 
-# The following is not currently used
-def generate_rpn(patches_path, patch_list):
+# # The following is not currently used
+# def generate_rpn(patches_path, patch_list):
 
-	h, v = [0,1], [0,1]
-	angle = [0,90,180,270]
-	df = {
-		'img_aug':[],
-		'y_rpn_cls':[],
-		'y_rpn_regr':[],
-		'num_pos':[]
-	}
-	cart_prod = list(itertools.product(h,v,angle))
+# 	h, v = [0,1], [0,1]
+# 	angle = [0,90,180,270]
+# 	df = {
+# 		'img_aug':[],
+# 		'y_rpn_cls':[],
+# 		'y_rpn_regr':[],
+# 		'num_pos':[]
+# 	}
+# 	cart_prod = list(itertools.product(h,v,angle))
 
-	for patch_id in tqdm(patch_list):
+# 	for patch_id in tqdm(patch_list):
 
-		print('Working on patch: ', patch_id)
+# 		print('Working on patch: ', patch_id)
 
-		# read in image, and optionally add augmentation
-		image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
-		image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
+# 		# read in image, and optionally add augmentation
+# 		image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
+# 		image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
 
-		for (hflip, vflip, angle) in tqdm(cart_prod):
-			print(f'Combination: {hflip}_{vflip}_{angle}')
-			x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
+# 		for (hflip, vflip, angle) in tqdm(cart_prod):
+# 			print(f'Combination: {hflip}_{vflip}_{angle}')
+# 			x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
 
-			(width, height) = x_img.shape
+# 			(width, height) = x_img.shape
 
-			try:
-				print('calc_rpn -- START')
-				y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) 
-				print('calc_rpn -- END')
+# 			try:
+# 				print('calc_rpn -- START')
+# 				y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) 
+# 				print('calc_rpn -- END')
 
-				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
-				df['y_rpn_cls'].append(y_rpn_cls)
-				df['y_rpn_regr'].append(y_rpn_regr)
-				df['num_pos'].append(num_pos)
+# 				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
+# 				df['y_rpn_cls'].append(y_rpn_cls)
+# 				df['y_rpn_regr'].append(y_rpn_regr)
+# 				df['num_pos'].append(num_pos)
 
-			except Exception as e:
-				print(e)
-				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
-				df['y_rpn_cls'].append([])
-				df['y_rpn_regr'].append([])
-				df['num_pos'].append('Error')
-				continue
+# 			except Exception as e:
+# 				print(e)
+# 				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
+# 				df['y_rpn_cls'].append([])
+# 				df['y_rpn_regr'].append([])
+# 				df['num_pos'].append('Error')
+# 				continue
 
 
-	df = pd.DataFrame.from_dict(df)
+# 	df = pd.DataFrame.from_dict(df)
 
-	path = f'{C.TRAIN_DATA_FOLDER}/rpn'
+# 	path = f'{C.TRAIN_DATA_FOLDER}/rpn'
 
-	if not os.path.exists(path):
-		os.makedirs(path)
+# 	if not os.path.exists(path):
+# 		os.makedirs(path)
 
-	df.to_pickle(f'{path}/rpn_dataframe.pkl')
+# 	df.to_pickle(f'{path}/rpn_dataframe.pkl')
 
-	return df
+# 	return df

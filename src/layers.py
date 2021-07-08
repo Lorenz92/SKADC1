@@ -3,6 +3,8 @@ import keras.backend as K
 import tensorflow as tf
 from keras.layers import Input, Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout
 import src.config as C
+import sys
+
 
 
 class Expander(Layer):
@@ -122,6 +124,8 @@ class RoiPoolingConv(Layer):
             h = K.cast(h, 'int32')
 
             # Resized roi of the image to pooling size (7x7)
+            # tf.print('img = ', img, output_stream=sys.stderr, sep=',')
+            
             rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size))
             outputs.append(rs)
                 

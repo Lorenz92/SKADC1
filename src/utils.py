@@ -1,3 +1,4 @@
+from shutil import Error
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -8,6 +9,8 @@ from matplotlib.patches import Rectangle
 import src.preprocessing as prep
 import copy
 import src.config as C
+import warnings
+
 
 
 def save_response_content(response, destination):
@@ -82,6 +85,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
     (rows, cols) = rpn_layer.shape[1:3]
 
     anchor_index = 0
+    print(rpn_layer.shape)
 
     # print(f'rpn_layer={rpn_layer.shape}' )
     # print(f'regr_layer={regr_layer.shape}' )
@@ -92,9 +96,13 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
     # => all 18x25x9=4050 anchors cooridnates
     A = np.zeros((4, rpn_layer.shape[1], rpn_layer.shape[2], rpn_layer.shape[3])) # (4, 12, 12, num_anchor)
 
+    # print(regr_layer)
+
 
     for anchor_size in anchor_sizes:
+        # print('anchor_size=',anchor_size)
         for anchor_ratio in anchor_ratios:      
+            # print('anchor_ratio=',anchor_ratio)
             # anchor_x = (128 * 1) / 16 = 8  => width of current anchor
             # anchor_y = (128 * 2) / 16 = 16 => height of current anchor
             anchor_x = (anchor_size * anchor_ratio[0])/C.rpn_stride
@@ -103,6 +111,10 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
             # anchor_index: 0~8 (9 anchors)
             # the Kth anchor of all position in the feature map (9th in total)
             regr = regr_layer[0, :, :, 4 * anchor_index:4 * anchor_index + 4] # shape => (12, 12, 4)
+            # print('REGR')
+            # print(regr)
+            
+        
             # print(f'regr={regr.shape}')
             regr = np.transpose(regr, (2, 0, 1)) # shape => (4, 12, 12)
 
@@ -130,13 +142,31 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
 
             # Avoid width and height exceeding 1 by clipping values
             A[2, :, :, anchor_index] = np.maximum(1, A[2, :, :, anchor_index]) #TODO: capire se tenere --> sembra non funzionare
+            # print(A[3, :, :, anchor_index])
+
             A[3, :, :, anchor_index] = np.maximum(1, A[3, :, :, anchor_index])
+            # print(A[3, :, :, anchor_index])
+            # print(A[1, :, :, anchor_index])
+
 
             # Convert (x, y , w, h) to (x1, y1, x2, y2)
             # x1, y1 is top left coordinate
             # x2, y2 is bottom right coordinate
             A[2, :, :, anchor_index] += A[0, :, :, anchor_index]
-            A[3, :, :, anchor_index] += A[1, :, :, anchor_index]
+            A[3, :, :, anchor_index] += A[1, :, :, anchor_index] #TODO: clip nan
+
+            # with warnings.catch_warnings():
+            #     warnings.filterwarnings('error')
+            #     try:
+            #         A[2, :, :, anchor_index] += A[0, :, :, anchor_index]
+            #         A[3, :, :, anchor_index] += A[1, :, :, anchor_index]
+            #     except Warning as w:
+            #         print(w)
+            #         print(A[2, :, :, anchor_index])
+            #         print(A[0, :, :, anchor_index])
+            #         print(A[3, :, :, anchor_index])
+            #         print(A[1, :, :, anchor_index])
+            #         return
 
             # Avoid bboxes drawn outside the feature map by clipping
             A[0, :, :, anchor_index] = np.maximum(0, A[0, :, :, anchor_index])
@@ -148,6 +178,12 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
 
     all_boxes = np.reshape(A.transpose((0, 3, 1, 2)), (4, -1)).transpose((1, 0))  # shape=(4320, 4)
     all_probs = rpn_layer.transpose((0, 3, 1, 2)).reshape((-1))                   # shape=(4320,)
+
+    # Clipping nan
+    nan_idx = np.where(np.isnan(all_boxes).sum(axis=1)>0)
+    all_boxes = np.delete(all_boxes, nan_idx, 0)
+    all_probs = np.delete(all_probs, nan_idx, 0)
+    ###
 
     x1 = all_boxes[:, 0]
     y1 = all_boxes[:, 1]
@@ -249,6 +285,8 @@ def apply_regr_np(X, T):
         X: regressed position and size for current anchor
     """
     try:
+        ppp = False #TODO: remove
+
         x = X[0, :, :]
         y = X[1, :, :]
         w = X[2, :, :]
@@ -264,6 +302,27 @@ def apply_regr_np(X, T):
         cx1 = tx * w + cx # Correzione dello shift del centro dovuta alla variazione di dimensione dell'ancora
         cy1 = ty * h + cy
 
+        # with warnings.catch_warnings():
+        #     warnings.filterwarnings('error')
+        #     try:
+        #         w1 = np.exp(tw.astype(np.float128)) * w
+        #     except Warning as warning:
+        #         print('il problema è la width')
+        #         np.save('./DEBUG/tw.npy', tw)
+        #         print(warning)
+        #         ppp=True
+
+        # with warnings.catch_warnings():
+        #     warnings.filterwarnings('error')
+        #     try:
+        #         h1 = np.exp(th.astype(np.float128)) * h
+        #     except Warning as warning:
+        #         print('Il problema è la height')
+        #         np.save('./DEBUG/th.npy', th)
+        #         print(warning)
+        #         ppp=True
+
+
         w1 = np.exp(tw.astype(np.float64)) * w
         h1 = np.exp(th.astype(np.float64)) * h
         x1 = cx1 - w1/2.
@@ -273,6 +332,11 @@ def apply_regr_np(X, T):
         y1 = np.round(y1)
         w1 = np.round(w1)
         h1 = np.round(h1)
+        if ppp:
+            print('w1')
+            print(w1)
+            print('h1')
+            print(h1)
         return np.stack([x1, y1, w1, h1])
     except Exception as e:
         print(e)

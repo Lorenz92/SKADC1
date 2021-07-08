@@ -2,6 +2,7 @@
 training/
 model/
 validation/
+DEBUG/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

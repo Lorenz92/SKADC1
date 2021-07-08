@@ -21,6 +21,10 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     class_mapping = {key:value for value, key in enumerate(class_list)}
     class_mapping['bg'] = len(class_mapping)
 
+
+    ######### shuffle image list
+    np.random.shuffle(train_patch_list)
+
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list)
     if val_patch_list is not None:
         val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list)
@@ -32,6 +36,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     start_time = time.time()
     num_epochs = num_epochs #config.num_epochs
     losses = np.zeros((epoch_length, 5))
+    # losses_to_save = np.zeros((1, 5))
 
 
     ######### resume training
@@ -39,7 +44,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     if resume_train:
         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
         best_loss = min(previous_losses[:,:-1].sum(axis=1))
-        print(f'Previous best loss: {best_loss}')
+        print(f'\nPrevious best loss: {best_loss}')
         del previous_losses
     else:
         if os.path.exists(f"./model/{backbone}/loss_history.npy"):
@@ -47,7 +52,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
         best_loss = np.Inf
 
     ######### (re-)start training
-
     for epoch in range(num_epochs):
 
         progbar = generic_utils.Progbar(epoch_length)
@@ -64,13 +68,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if mean_overlapping_bboxes == 0:
                         print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
                 
-
                 image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _ = next(train_datagen)
-
-                #if not use_expander:
-                    # print(image.shape)
-                    #image = np.repeat(image, 3, axis=3)
-                    # print(image.shape)
 
                 print('Starting rpn model training on batch')
 
@@ -174,8 +172,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     detector_class_acc = np.mean(losses[:, 4])
 
                     #TODO: debugguare qui
-                    losses_to_save = [loss_rpn_cls, loss_rpn_regr, loss_detector_cls, loss_detector_regr, detector_class_acc]
-
+                    print('1')
+                    losses_to_save = [[loss_rpn_cls, loss_rpn_regr, loss_detector_cls, loss_detector_regr, detector_class_acc]]
+                    print('2')
                     mean_overlapping_bboxes = float(sum(rpn_accuracy_for_epoch)) / len(rpn_accuracy_for_epoch)
                     rpn_accuracy_for_epoch = []
                     curr_loss = loss_rpn_cls + loss_rpn_regr + loss_detector_cls + loss_detector_regr
@@ -191,14 +190,12 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                     if resume_train:
                         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
-                        losses_to_save = np.concatenate((previous_losses, losses_to_save), axis=0)
-                        del previous_losses
+                        loss_hist = np.concatenate((previous_losses, losses_to_save), axis=0)
                     else:
-                        losses_to_save = losses_to_save
+                        loss_hist = losses_to_save
                         resume_train = True
 
-                    np.save(f"./model/{backbone}/loss_history.npy", losses_to_save)
-                    del losses_to_save
+                    np.save(f"./model/{backbone}/loss_history.npy", loss_hist)
 
                     iter_num = 0
 
@@ -213,6 +210,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
             except Exception as e:
                 print('Exception: {}'.format(e))
+                return
                 continue
 
     print('Training complete.')

@@ -454,9 +454,9 @@ class SKADataset:
 
         patches_list = []
         for i in tqdm(range(0, h, int(patch_dim/2))):
-            if i<=1:#*patch_dim:                           #TODO: remove this
+            if i<=10*patch_dim:                           #TODO: remove this
                 for j in tqdm(range(0, w, int(patch_dim/2))):
-                    if j <=  patch_dim*1 :                #TODO: remove this
+                    if j <=  patch_dim*1 :   #TODO: remove this
                         patch_xo = self.x_origin+j
                         patch_yo = self.y_origin+i
                         gt_id = []
@@ -491,7 +491,6 @@ class SKADataset:
                             patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
                             self._save_bbox_files(img_patch, patch_id, df_scaled)
                             patches_list.append(patch_id)    
-                            # return #TODO: remove this
 
                             if show_plot:
 
@@ -568,6 +567,7 @@ class SKADataset:
         img_patch[ img_patch>thrsld_max ] = 255
 
         delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
+        
         for rng in range(delta_ord_mag):
             real_deltas = np.power( np.power(10., self.min_magnitude_order + rng), self.lndelta )
             for inner_rng in range(self.one_magnitude_range-1):
@@ -576,7 +576,6 @@ class SKADataset:
         
 
         #img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
-
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
         df_scaled.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
         print('image saved')
