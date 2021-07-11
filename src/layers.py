@@ -49,6 +49,8 @@ def vgg16(input_image):
 
     return x
 
+def resent50():
+    ...
 
 
 class RpnNet(Layer):

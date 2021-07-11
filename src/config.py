@@ -16,9 +16,13 @@ IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
 MODEL_WEIGHTS = os.path.join(os.getcwd(), "model")
 
 required_files = [
+    # {
+    #     "file_name": "B1_training_SKA.txt",
+    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
+    # },
     {
-        "file_name": "B1_training_SKA.txt",
-        "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
+        "file_name": "B1_training_clean_SKA.txt",
+        "url": "https://owncloud.ia2.inaf.it/index.php/s/I4HL84Etgw9c2Le/download" #54Mb
     },
     # {
     #     "file_name": "PrimaryBeam_B1.fits",
@@ -32,14 +36,14 @@ required_files = [
         "file_name": "560Mhz_1000h.fits",
         "url": "https://owncloud.ia2.inaf.it/index.php/s/hbasFhd4YILNkCr/download" #4Gb
     },
-        {
-        "file_name": "B5_training_SKA.txt",
-        "url": "https://owncloud.ia2.inaf.it/index.php/s/Y5CIa5V3QiBu1M1/download" #54Mb
-    },
-    {
-        "file_name": "9200Mhz_1000h.fits",
-        "url":"https://owncloud.ia2.inaf.it/index.php/s/nK8Pqf3XIaXFuKD/download"
-    }
+    #     {
+    #     "file_name": "B5_training_SKA.txt",
+    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/Y5CIa5V3QiBu1M1/download" #54Mb
+    # },
+    # {
+    #     "file_name": "9200Mhz_1000h.fits",
+    #     "url":"https://owncloud.ia2.inaf.it/index.php/s/nK8Pqf3XIaXFuKD/download"
+    # }
 ]
 
 # Name of base network
@@ -108,6 +112,9 @@ rpn_stride = 16
 std_scaling = 4.0
 # classifier_regr_std = [8.0, 8.0, 4.0, 4.0]
 classifier_regr_std = [10.0, 10.0, 5.0, 5.0] #ICRAR
+
+pooling_regions = 7
+num_rois = 4
 
 # overlaps for RPN
 rpn_min_overlap = 0.3

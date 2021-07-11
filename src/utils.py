@@ -141,19 +141,15 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
                 A[:, :, :, anchor_index] = apply_regr_np(A[:, :, :, anchor_index], regr) # Ora A è l'ancora modificata
 
             # Avoid width and height exceeding 1 by clipping values
-            A[2, :, :, anchor_index] = np.maximum(1, A[2, :, :, anchor_index]) #TODO: capire se tenere --> sembra non funzionare
-            # print(A[3, :, :, anchor_index])
-
+            A[2, :, :, anchor_index] = np.maximum(1, A[2, :, :, anchor_index]) #TODO: capire se tenere --> sembra non funzionare            
             A[3, :, :, anchor_index] = np.maximum(1, A[3, :, :, anchor_index])
-            # print(A[3, :, :, anchor_index])
-            # print(A[1, :, :, anchor_index])
-
+            
 
             # Convert (x, y , w, h) to (x1, y1, x2, y2)
             # x1, y1 is top left coordinate
             # x2, y2 is bottom right coordinate
             A[2, :, :, anchor_index] += A[0, :, :, anchor_index]
-            A[3, :, :, anchor_index] += A[1, :, :, anchor_index] #TODO: clip nan
+            A[3, :, :, anchor_index] += A[1, :, :, anchor_index]
 
             # with warnings.catch_warnings():
             #     warnings.filterwarnings('error')

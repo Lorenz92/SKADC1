@@ -191,9 +191,11 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if resume_train:
                         previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
                         loss_hist = np.concatenate((previous_losses, losses_to_save), axis=0)
+                        counter = previous_losses.shape[0] + epoch
                     else:
                         loss_hist = losses_to_save
                         resume_train = True
+                        counter = epoch
 
                     np.save(f"./model/{backbone}/loss_history.npy", loss_hist)
 
@@ -203,7 +205,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if curr_loss < best_loss:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
-                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/frcnn_{backbone}.h5')
+                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/{counter}_frcnn_{backbone}.h5')
                     
                     start_time = time.time()
                     break
@@ -211,6 +213,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
             except Exception as e:
                 print('Exception: {}'.format(e))
                 return
-                continue
+                # continue
 
     print('Training complete.')
