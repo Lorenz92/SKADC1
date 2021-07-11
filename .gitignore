@@ -1,7 +1,7 @@
 # Data
 training/
 model/
-validation/
+predictions/
 DEBUG/
 
 # Byte-compiled / optimized / DLL files

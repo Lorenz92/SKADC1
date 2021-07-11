@@ -1,16 +1,12 @@
 # First net version
 import keras.backend as K
 import tensorflow as tf
-from keras.layers import Input, Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout
-import src.config as C
-import sys
-
-
+from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout, ZeroPadding2D, Convolution2D, BatchNormalization, Activation, Add
 
 class Expander(Layer):
     def __init__(self, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
         super(Expander, self).__init__(name=name)
-        self.conv2d = Conv2D(filters=channels, kernel_size=kernel_size, padding=padding, activation=activation, name=name) #TODO: parametrizzare tutto
+        self.conv2d = Conv2D(filters=channels, kernel_size=kernel_size, padding=padding, activation=activation, name=name)
 
     def call(self, inputs):
         x = self.conv2d(inputs)
@@ -49,9 +45,82 @@ def vgg16(input_image):
 
     return x
 
-def resent50():
-    ...
+def resnet50(input_image, train_stage2 = False, train_stage3 = False, train_stage4 = False):
 
+    # Stage 1
+    x = ZeroPadding2D((3, 3))(input_image)
+    x = Convolution2D(64, (7, 7), strides=(2, 2), name='conv1', trainable = False)(x)
+    x = BatchNormalization(axis=3, name='bn_conv1')(x)
+    x = Activation('relu')(x)
+    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
+
+    # Stage 2
+    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), trainable = train_stage2)
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b', trainable = train_stage2)
+    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', trainable = train_stage2)
+
+    # Stage 3
+    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', trainable = train_stage3)
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b', trainable = train_stage3)
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c', trainable = train_stage3)
+    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d', trainable = train_stage3)
+
+    # Stage 4
+    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a', trainable = train_stage4)
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b', trainable = train_stage4)
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c', trainable = train_stage4)
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d', trainable = train_stage4)
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e', trainable = train_stage4)
+    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f', trainable = train_stage4)
+
+    return x
+
+def identity_block(input_tensor, kernel_size, filters, stage, block, trainable=True):
+
+    nb_filter1, nb_filter2, nb_filter3 = filters
+
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+    x = Convolution2D(nb_filter1, (1, 1), name=conv_name_base + '2a', trainable=trainable)(input_tensor)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(nb_filter2, (kernel_size, kernel_size), padding='same', name=conv_name_base + '2b', trainable=trainable)(x)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(nb_filter3, (1, 1), name=conv_name_base + '2c', trainable=trainable)(x)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2c')(x)
+
+    x = Add()([x, input_tensor])
+    x = Activation('relu')(x)
+    return x
+
+def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2), trainable=True):
+
+    nb_filter1, nb_filter2, nb_filter3 = filters
+    
+    conv_name_base = 'res' + str(stage) + block + '_branch'
+    bn_name_base = 'bn' + str(stage) + block + '_branch'
+
+    x = Convolution2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', trainable=trainable)(input_tensor)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2a')(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(nb_filter2, (kernel_size, kernel_size), padding='same', name=conv_name_base + '2b', trainable=trainable)(x)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2b')(x)
+    x = Activation('relu')(x)
+
+    x = Convolution2D(nb_filter3, (1, 1), name=conv_name_base + '2c', trainable=trainable)(x)
+    x = BatchNormalization(axis=3, name=bn_name_base + '2c')(x)
+
+    shortcut = Convolution2D(nb_filter3, (1, 1), strides=strides, name=conv_name_base + '1', trainable=trainable)(input_tensor)
+    shortcut = BatchNormalization(axis=3, name=bn_name_base + '1')(shortcut)
+
+    x = Add()([x, shortcut])
+    x = Activation('relu')(x)
+    return x
 
 class RpnNet(Layer):
 

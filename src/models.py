@@ -1,9 +1,7 @@
 import os
-
-from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Detector #,resnet50
+from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Detector, resnet50
 import src.config as config
 import src.utils as utils
-
 import keras
 from keras.layers import Input
 from keras.optimizers import Adam
@@ -21,12 +19,10 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
         x = input_image
         
     if backbone == 'vgg16':
-        # Load pretrained VGG16 and remove last MaxPool layer
+        # Load pretrained VGG16 without last MaxPool layer
         x = vgg16(x)
     elif backbone == 'resnet50':
-        print('ResNet50 not implemented yet')
-        return # TODO: rimuovi
-        x = resnet50(x)
+        x = resnet50(x, train_stage2 = False, train_stage3 = True, train_stage4 = True)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, _ = RpnNet(anchor_num)(x)
@@ -56,13 +52,12 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
         x = input_image
 
     if backbone == 'vgg16':
-        # Load pretrained VGG16 and remove last MaxPool layer
         x = vgg16(x)
         input_shape_fmap = (37, 37, 512)
+
     elif backbone == 'resnet50':
-        print('ResNet50 not implemented yet')
-        return # TODO: rimuovi
         x = resnet50(x)
+        input_shape_fmap = (38, 38, 1024)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, shared_backbone = RpnNet(anchor_num)(x)
@@ -81,24 +76,28 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
     return rpn_model, detector_model, total_model
     # return rpn_model, detector_model
 
-def load_weigths(rpn_model, detector_model, backbone, resume_train=True):
+def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpoint=None):
 
     if resume_train:
-        weights = f'{config.MODEL_WEIGHTS}/{backbone}/frcnn_{backbone}.h5'
+        weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}_frcnn_{backbone}.h5'
 
     else:
         if backbone == 'vgg16':
             weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
-
             # Download VGG16 weights
             # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
             if not os.path.exists(weights):
                 utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
-                'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + '/vgg16')
+                'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
+        
         elif backbone == 'resnet50':
-            print('ResNet50 not implemented yet')
-            return # TODO: rimuovi
-            weights = f'{config.MODEL_WEIGHTS}/{backbone}/' #TODO: Completa qui
+            weights = f'{config.MODEL_WEIGHTS}/{backbone}/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            # Download ResNet50 weights
+            # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            if not os.path.exists(weights):
+                utils.download_data('resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5', 
+                'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
+            
         else:
             print('Please choose a valid model')
             raise ValueError

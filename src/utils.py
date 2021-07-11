@@ -1,15 +1,18 @@
-from shutil import Error
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import astropy.wcs as pywcs
-import os
 import requests
 from matplotlib.patches import Rectangle
 import src.preprocessing as prep
 import copy
-import src.config as C
-import warnings
+import src.config as config
+import time
+from sklearn.metrics import average_precision_score, precision_score, recall_score
+
+
+
 
 
 
@@ -66,7 +69,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
         regr_layer: output layer for rpn regression
             shape (1, feature_map.height, feature_map.width, num_anchors)
             Might be (1, 18, 25, 72) if resized image is 400 width and 300
-        C: config
+        config: config
         use_regr: Wether to use bboxes regression in rpn
         max_boxes: max bboxes number for non-max-suppression (NMS)
         overlap_thresh: If iou in NMS is larger than this threshold, drop the box
@@ -75,10 +78,10 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
         result: boxes from non-max-suppression (shape=(2000, 4))
             boxes: coordinates for bboxes (on the feature map)
     """
-    regr_layer = regr_layer / C.std_scaling
+    regr_layer = regr_layer / config.std_scaling
 
-    anchor_sizes = C.anchor_box_scales   # (3 in here)
-    anchor_ratios = C.anchor_box_ratios  # (3 in here)
+    anchor_sizes = config.anchor_box_scales   # (3 in here)
+    anchor_ratios = config.anchor_box_ratios  # (3 in here)
 
     assert rpn_layer.shape[0] == 1
 
@@ -105,8 +108,8 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
             # print('anchor_ratio=',anchor_ratio)
             # anchor_x = (128 * 1) / 16 = 8  => width of current anchor
             # anchor_y = (128 * 2) / 16 = 16 => height of current anchor
-            anchor_x = (anchor_size * anchor_ratio[0])/C.rpn_stride
-            anchor_y = (anchor_size * anchor_ratio[1])/C.rpn_stride
+            anchor_x = (anchor_size * anchor_ratio[0])/config.rpn_stride
+            anchor_y = (anchor_size * anchor_ratio[1])/config.rpn_stride
 
             # anchor_index: 0~8 (9 anchors)
             # the Kth anchor of all position in the feature map (9th in total)
@@ -381,10 +384,10 @@ def calc_iou(R, img_data, class_mapping):
     for box_index, bbox in img_data.iterrows():
         # get the GT box coordinates, and resize to account for image resizing
         # gta[box_index, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
-        gta[box_index, 0] = int(bbox['x1s']/C.rpn_stride)
-        gta[box_index, 1] = int(bbox['x2s']/C.rpn_stride)
-        gta[box_index, 2] = int(bbox['y1s']/C.rpn_stride)
-        gta[box_index, 3] = int(bbox['y2s']/C.rpn_stride)
+        gta[box_index, 0] = int(bbox['x1s']/config.rpn_stride)
+        gta[box_index, 1] = int(bbox['x2s']/config.rpn_stride)
+        gta[box_index, 2] = int(bbox['y1s']/config.rpn_stride)
+        gta[box_index, 3] = int(bbox['y2s']/config.rpn_stride)
 
     x_roi = []
     y_class_num = []
@@ -415,7 +418,7 @@ def calc_iou(R, img_data, class_mapping):
         
                 
         # Discard ROI if overlap is not sufficient
-        if best_iou < C.classifier_min_overlap:
+        if best_iou < config.classifier_min_overlap:
             continue
         else:
             w = x2 - x1
@@ -424,11 +427,11 @@ def calc_iou(R, img_data, class_mapping):
             IoUs.append(best_iou) # Quanto x_roi overlappa con la gt
 
 
-            if C.classifier_min_overlap <= best_iou < C.classifier_max_overlap:
+            if config.classifier_min_overlap <= best_iou < config.classifier_max_overlap:
                 # hard negative example
                 cls_name = 'bg'
 
-            elif C.classifier_max_overlap <= best_iou:
+            elif config.classifier_max_overlap <= best_iou:
                 cls_name = str(img_data.loc[box_index,'class_label'])
                 cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0
                 cyg = (gta[best_bbox, 2] + gta[best_bbox, 3]) / 2.0
@@ -453,7 +456,7 @@ def calc_iou(R, img_data, class_mapping):
         labels = [0.] * 4 * (len(class_mapping)-1) # -1 for the 'bg' class
         if cls_name != 'bg':
             label_pos = 4 * class_num
-            sx, sy, sw, sh = C.classifier_regr_std #TODO: da capire
+            sx, sy, sw, sh = config.classifier_regr_std #TODO: da capire
             coords[label_pos:4+label_pos] = [sx*tx, sy*ty, sw*tw, sh*th]
             labels[label_pos:4+label_pos] = [1, 1, 1, 1]
             y_class_regr_coords.append(copy.deepcopy(coords))
@@ -465,7 +468,7 @@ def calc_iou(R, img_data, class_mapping):
     if len(x_roi) == 0:
         return None, None, None, None
 
-    # bboxes that iou > C.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
+    # bboxes that iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
     X = np.array(x_roi)
     # one hot encode for bboxes from above => x_roi (X)
     Y1 = np.array(y_class_num)
@@ -509,3 +512,244 @@ def plot_loss(history):
     plt.show()
     
     return
+
+def get_real_coordinates(x1, y1, x2, y2):
+    ratio = config.resizeFinalDim / config.patch_dim
+    real_x1 = int(round(x1 // ratio))
+    real_y1 = int(round(y1 // ratio))
+    real_x2 = int(round(x2 // ratio))
+    real_y2 = int(round(y2 // ratio))
+
+    return (real_x1, real_y1, real_x2 ,real_y2)
+
+def get_detections(patch_id, bboxes, probs):
+    boxes_coords ={'x1s':[], 'y1s':[], 'x2s':[], 'y2s':[], 'class':[], 'prob':[]}
+    
+    for key in bboxes:
+        bbox = np.array(bboxes[key])
+
+        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
+       
+        for jk in range(new_boxes.shape[0]):
+            (x1, y1, x2, y2) = new_boxes[jk,:]
+            print((x1, y1, x2, y2))
+            (real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(x1, y1, x2, y2)
+
+            boxes_coords['x1s'].append(real_x1)
+            boxes_coords['y1s'].append(real_y1)
+            boxes_coords['x2s'].append(real_x2)
+            boxes_coords['y2s'].append(real_y2)
+            boxes_coords['class'].append(key)
+            boxes_coords['prob'].append(new_probs[jk])
+    
+    if not os.path.exists(os.path.join(config.VAL_PATCHES_FOLDER, f"{patch_id}")):
+        os.makedirs(os.path.join(config.VAL_PATCHES_FOLDER, f"{patch_id}/"))
+        a = pd.DataFrame.from_dict(boxes_coords)        
+        a.to_pickle(f'{config.VAL_PATCHES_FOLDER}/{patch_id}/{patch_id}.pkl')
+
+    return boxes_coords
+
+def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_model):
+    start = time.time()
+    class_mapping = {value:key for key, value in enumerate(class_list)}
+    class_mapping[len(class_mapping)] = 'bg'
+
+    print('Predict')
+
+    # get the feature maps and output from the RPN
+    [Y1, Y2, F] = rpn_model.predict_on_batch(image)
+    # [Y1, Y2] = rpn_model.predict_on_batch(image)
+
+    print('rpn_to_roi')
+
+    # print(Y1.shape, Y2.shape)
+
+    R = rpn_to_roi(Y1, Y2, overlap_thresh=0.5, max_boxes=2000)
+
+    # convert from (x1,y1,x2,y2) to (x,y,w,h)
+    R[:, 2] -= R[:, 0]
+    R[:, 3] -= R[:, 1]
+
+    bboxes = {}
+    probs = {}
+
+    for jk in range(R.shape[0] // config.num_rois + 1):
+        ROIs = np.expand_dims(R[config.num_rois * jk:config.num_rois * (jk + 1), :], axis=0)
+        if ROIs.shape[1] == 0:
+            break
+
+        if jk == R.shape[0] // config.num_rois:
+            # pad R
+            curr_shape = ROIs.shape
+            target_shape = (curr_shape[0], config.num_rois, curr_shape[2])
+            ROIs_padded = np.zeros(target_shape).astype(ROIs.dtype)
+            ROIs_padded[:, :curr_shape[1], :] = ROIs
+            ROIs_padded[0, curr_shape[1]:, :] = ROIs[0, 0, :]
+            ROIs = ROIs_padded
+
+        # print(ROIs)
+
+        [P_cls, P_regr] = detector_model.predict([F, ROIs])
+        # [P_cls, P_regr] = detector_model.predict([image, ROIs])
+        # print(P_cls)
+        # print(P_regr)
+        for ii in range(P_cls.shape[1]):
+            # if classification perc is too low OR it is. a 'bg' image THEN discard
+            if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
+                continue
+
+            cls_num = np.argmax(P_cls[0, ii, :])
+            cls_name = class_mapping[cls_num]
+
+            if cls_name not in bboxes:
+                bboxes[cls_name] = []
+                probs[cls_name] = []
+            (x,y,w,h) = ROIs[0,ii,:]
+            
+            try:
+                (tx, ty, tw, th) = P_regr[0, ii, 4*cls_num:4*(cls_num+1)]
+                tx /= config.classifier_regr_std[0]
+                ty /= config.classifier_regr_std[1]
+                tw /= config.classifier_regr_std[2]
+                th /= config.classifier_regr_std[3]
+                
+                X, T = np.zeros((4, 1, 1)), np.zeros((4, 1, 1))
+                
+                X[0,0,0] = x
+                X[1,0,0] = y
+                X[2,0,0] = w
+                X[3,0,0] = h
+                
+                T[0,0,0] = tx
+                T[1,0,0] = ty
+                T[2,0,0] = tw
+                T[3,0,0] = th
+                
+                [[[x]], [[y]], [[w]], [[h]]] = apply_regr_np(X, T)
+
+            except Exception as e:
+                print('Exception: {}'.format(e))
+                pass
+
+            bboxes[cls_name].append([config.rpn_stride*x, config.rpn_stride*y, config.rpn_stride*(x+w), config.rpn_stride*(y+h)])
+            probs[cls_name].append(np.max(P_cls[0, ii, :]))
+   
+    print(f'Elapsed:{time.time()-start}')
+    return bboxes, probs
+
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list):
+
+    preds = {}
+    mAP = []
+    mPrec = []
+    mRecall = []
+    val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False)
+
+    for patch in val_datagen:
+        image, _, _, _, _, patch_id = patch
+        bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
+        deterctions = get_detections(patch_id, bboxes, probs)
+        macro_AP, macro_prec, macro_recall = get_img_scores(deterctions, patch_id)
+        preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
+        mAP.append(macro_AP)
+        mPrec.append(macro_prec)
+        mRecall.append(macro_recall)
+
+
+    total_mAP = np.array(mAP).mean()
+    total_mPrec = np.array(mPrec).mean()
+    total_mRecall = np.array(mRecall).mean()
+
+    print(f'\nTotal model metrics: mAP: {total_mAP} - macro_precision: {total_mPrec} - macro_recall: {total_mRecall}')
+    return preds, total_mAP, total_mPrec, total_mRecall
+
+def compute_map(y_pred, gt_patch_id, data_folder):
+    T = {}
+    P = {}
+    f = config.patch_dim / float(config.resizeFinalDim)
+
+    gt = pd.read_pickle(f'{data_folder}/{gt_patch_id}/{gt_patch_id}.pkl')
+
+    gt['bbox_matched'] = False
+    pred_probs = np.array(y_pred['prob'])
+
+    box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
+
+    for box_idx in box_idx_sorted_by_prob:
+        pred_box = y_pred.iloc[box_idx,:]
+        pred_class = pred_box['class']
+        pred_x1 = pred_box['x1s']
+        pred_x2 = pred_box['x2s']
+        pred_y1 = pred_box['y1s']
+        pred_y2 = pred_box['y2s']
+        pred_prob = pred_box['prob']
+        if pred_class not in P:
+            P[pred_class] = []
+            T[pred_class] = []
+        P[pred_class].append(pred_prob)
+        found_match = False
+
+        for idx, gt_box in gt.iterrows():
+            gt_class = gt_box['class_label']
+            gt_seen = gt_box['bbox_matched']
+            if gt_class != pred_class:
+                continue
+            if gt_seen:
+                continue
+            gt_x1 = gt_box['x1s']/f
+            gt_x2 = gt_box['x2s']/f
+            gt_y1 = gt_box['y1s']/f
+            gt_y2 = gt_box['y2s']/f
+            iou = prep.iou((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
+            if iou >= 0.5:
+                found_match = True
+                gt_box['bbox_matched'] = True
+                break
+            else:
+                continue
+
+        T[pred_class].append(int(found_match))
+
+    for idx, gt_box in gt.iterrows():
+        if not gt_box['bbox_matched']:
+            if gt_box['class_label'] not in P:
+                P[gt_box['class_label']] = []
+                T[gt_box['class_label']] = []
+
+            T[gt_box['class_label']].append(1)
+            P[gt_box['class_label']].append(0)
+
+    return T, P
+
+def get_img_scores(detections, patch_id):
+    T = {}
+    P = {}
+    all_aps = []
+    all_prec = []
+    all_recall = []
+    
+    t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER)
+    
+    for key in t.keys():
+        if key not in T:
+            T[key] = []
+            P[key] = []
+        T[key].extend(t[key])
+        P[key].extend(p[key])
+
+
+    for key in T.keys():
+        ap = average_precision_score(T[key], P[key])
+        prec = precision_score(T[key], P[key], zero_division=0)
+        recall = recall_score(T[key], P[key])
+        # print('{} AP: {}'.format(key, ap))
+        all_aps.append(ap)
+        all_prec.append(prec)
+        all_recall.append(recall)
+
+    mAP=np.mean(np.array(all_aps))
+    macro_prec = np.mean(np.array(all_prec))
+    macro_recall =  np.mean(np.array(all_recall))
+
+    # print('mAP = {}'.format(mAP))
+    return mAP, macro_prec, macro_recall

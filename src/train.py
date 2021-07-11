@@ -25,9 +25,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     ######### shuffle image list
     np.random.shuffle(train_patch_list)
 
-    train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list)
+    train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone)
     if val_patch_list is not None:
-        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list)
+        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list, backbone)
 
     iter_num = 0
     epoch_length = 10
@@ -42,12 +42,12 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     ######### resume training
 
     if resume_train:
-        previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
+        previous_losses = np.load(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy")
         best_loss = min(previous_losses[:,:-1].sum(axis=1))
         print(f'\nPrevious best loss: {best_loss}')
         del previous_losses
     else:
-        if os.path.exists(f"./model/{backbone}/loss_history.npy"):
+        if os.path.exists(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy"):
             raise ValueError('There is already a loss history file. Please delete it first.')
         best_loss = np.Inf
 
@@ -68,18 +68,20 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     if mean_overlapping_bboxes == 0:
                         print('RPN is not producing bounding boxes that overlap the ground truth boxes. Check RPN settings or keep training.')
                 
-                image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _ = next(train_datagen)
-
-                print('Starting rpn model training on batch')
+                image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _, patch_id = next(train_datagen)
+                
+                print(f'Starting rpn model training on patch {patch_id}')
 
                 loss_rpn_tot, loss_rpn_cls, loss_rpn_regr = rpn_model.train_on_batch(image, [y_rpn_cls_true, y_rpn_reg_true])
-
+                print('1')
                 # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
                 P_rpn = rpn_model.predict_on_batch(image)
+                print('2')
 
                 # R: bboxes (shape=(300,4))
                 # Convert rpn layer to roi bboxes
                 R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
+                print('3')
                 
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
@@ -189,15 +191,15 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     print('Elapsed time: {}'.format(time.time() - start_time))
 
                     if resume_train:
-                        previous_losses = np.load(f"./model/{backbone}/loss_history.npy")
+                        previous_losses = np.load(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy")
                         loss_hist = np.concatenate((previous_losses, losses_to_save), axis=0)
-                        counter = previous_losses.shape[0] + epoch
+                        counter = previous_losses.shape[0] + 1
                     else:
                         loss_hist = losses_to_save
                         resume_train = True
                         counter = epoch
 
-                    np.save(f"./model/{backbone}/loss_history.npy", loss_hist)
+                    np.save(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy", loss_hist)
 
                     iter_num = 0
 

@@ -1,4 +1,5 @@
 import numpy as np
+from tensorflow.python.keras import backend
 import src.config as C
 import random
 import copy
@@ -46,7 +47,7 @@ def iou(a, b):
 	return float(area_i) / float(area_u + 1e-6)
 
 
-def calc_rpn(img_data, width, height):
+def calc_rpn(img_data, width, height, backbone):
 	"""(Important part!) Calculate the rpn for all anchors 
 		If feature map has shape 38x50=1900, there are 1900x9=17100 potential anchors
 	
@@ -71,7 +72,11 @@ def calc_rpn(img_data, width, height):
 	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x5=15
 
 	# calculate the output map size based on the network architecture
-	(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
+	# TODO: aggiungere if in base a backbone: per vgg16 600 -> 37; er resnet 600-> 38
+	if backbone == 'vgg16':
+		(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
+	elif backbone=='resnet50':
+		(output_width, output_height) = (int(np.ceil(width/C.in_out_img_size_ratio)), int(np.ceil(height/C.in_out_img_size_ratio)))
 	n_anchratios = len(anchor_ratios)    # 3
 	
 	# initialise empty output objectives
@@ -333,7 +338,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 	return img_aug, img_data_aug
 
-def get_anchor_gt(patches_path, patch_list, mode='train', use_expander=False):
+def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expander=False, infinite_loop=True):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -349,11 +354,10 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander=False):
 		debug_img: show image for debug
 		num_pos: show number of positive anchors for debug
 	"""
+	controller=True
+	while controller:
 
-	while True:
-
-		for patch_id in tqdm(patch_list):
-			print(patch_id)
+		for i, patch_id in enumerate(patch_list):
 			try:
 
 				# read in image, and optionally add augmentation
@@ -382,7 +386,7 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander=False):
 				if mode=='train':
 					try:
 						# print('calc_rpn -- START')
-						y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
+						y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height, backbone) # es.: (1, 60, 12, 12), (1, 240, 12, 12), 64
 						# print('calc_rpn -- END')
 
 					except Exception as e:
@@ -418,8 +422,11 @@ def get_anchor_gt(patches_path, patch_list, mode='train', use_expander=False):
 
 				y_rpn_cls = np.transpose(y_rpn_cls, (0, 2, 3, 1)) # (1, 60, 12, 12) --> (1, 12, 12, 60)
 				y_rpn_regr = np.transpose(y_rpn_regr, (0, 2, 3, 1)) # (1, 240, 12, 12) --> (1, 12, 12, 240)
-
-				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos
+				
+				if (i==len(patch_list)-1 and not infinite_loop):
+					controller=False
+				
+				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos, patch_id
 
 			except Exception as e:
 				print('exception get_anchor', e)
