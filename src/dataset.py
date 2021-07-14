@@ -355,7 +355,7 @@ class SKADataset:
             print('Enlarging bboxes...')
             self.cleaned_train_df= copy.copy(cleaned_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1))
             print('DONE - Enlarging bboxes...')
-        return
+        return 
 
     def cut_preprocess_image(self, plot_Noise_Hist = False):
         self.x_origin = int(np.floor(min(self.cleaned_train_df['x1'])))
@@ -380,38 +380,41 @@ class SKADataset:
 
         self.data_560Mhz_1000h_train_clipped = np.clip(self.data_560Mhz_1000h_train, a_min=0, a_max=np.max(self.image_data))
 
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 20)
-        # print('20 percentile = ', p )
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 40)
-        # print('40 percentile = ', p )
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 60)
-        # print('60 percentile = ', p )
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 80)
-        # print('80 percentile = ', p )
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 90)
-        # print('90 percentile = ', p )
-        # p = np.percentile(self.data_560Mhz_1000h_train_clipped, 99.8)
-        # print('99.8 percentile = ', p )
+        self.compute_RGB_scale(np.abs(neg_values), max_val)
 
-        std = self.convert_to_RGB(np.abs(neg_values), self.data_560Mhz_1000h_train_clipped)
+        return
+
+    def compute_RGB_scale(self, data, max_val):
+        mu, std = self.compute_halfgaussian_noise(data, True)
         thresh_low = std * 2.5
         self.min_magnitude_order = int(np.log10(thresh_low)) -1
         self.max_magnitude_order = int(np.log10(max_val))
 
-        print('lower threshold',thresh_low)
-        print('min magnitude',  self.min_magnitude_order)
-        print('max magnitude', self.max_magnitude_order) 
+        # print('lower threshold',thresh_low)
+        # print('min magnitude',  self.min_magnitude_order)
+        # print('max magnitude', self.max_magnitude_order) 
 
         self.one_magnitude_range = int(np.floor(256/(self.max_magnitude_order - self.min_magnitude_order)))
         self.lndelta = np.linspace(0., 1., self.one_magnitude_range)
+        return 
 
-        return
+    def _img_from_float_to_RGB(self, img_patch):
+        rgb_val = 0
+        thrsld_min = np.power(10., self.min_magnitude_order)
+        thrsld_max = np.power(10., self.max_magnitude_order)
 
-    def convert_to_RGB(self, data, image):
-        mu, std = self.compute_halfgaussian_noise(data, True)
-    
-        return std#image_rgb
+        img_patch[ img_patch<thrsld_min ] = rgb_val
+        img_patch[ img_patch>thrsld_max ] = 255
 
+        delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
+        
+        for rng in range(delta_ord_mag):
+            real_deltas = np.power( 10., self.lndelta ) * np.power(10., self.min_magnitude_order + rng)
+            for inner_rng in range(self.one_magnitude_range-1):
+                img_patch[ ((img_patch > real_deltas[inner_rng]) & (img_patch < real_deltas[inner_rng+1])) ] = rgb_val
+                rgb_val += 1
+        
+        return img_patch
 
     def compute_halfgaussian_noise(self, data, plot=False):
         # fit dist to data
@@ -428,15 +431,15 @@ class SKADataset:
             plt.plot(x, p, 'k', linewidth=2)
         return mu, std
 
-    def generate_patches(self, plot_patches = False):
+    def generate_patches(self, convert_to_RGB =False , plot_patches = False):
         #  split in patch
         # add class list as class property
         self.patch_list = {}
-        self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches)
+        self.patch_list = self._split_in_patch( config.patch_dim, convert_to_RGB = convert_to_RGB, show_plot=plot_patches)
         return
     
 
-    def _split_in_patch(self, patch_dim=100, is_multiple=False, show_plot=False):
+    def _split_in_patch(self, patch_dim=100, convert_to_RGB = False,  is_multiple=False, show_plot=False):
 
         self.cleaned_train_df
         h, w = self.data_560Mhz_1000h_train_clipped.shape
@@ -489,38 +492,18 @@ class SKADataset:
 
                             self.proc_train_df = self.proc_train_df.append(df_scaled)
                             patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
-                            self._save_bbox_files(img_patch, patch_id, df_scaled)
+                            self._save_bbox_files(img_patch, patch_id, df_scaled, convert_to_RGB)
                             patches_list.append(patch_id)    
 
                             if show_plot:
-
-                                # Create figure and axes
                                 fig, ax = plt.subplots()
-
-                                # Display the image
-                                # plt.imshow(img_patch * (1.0 / percentileThresh))
-                                #plt.imshow(np.power(img_patch/np.max(img_patch), config.gamma), cmap='viridis', vmax=1, vmin=0)
-
-                                rgb_val = 0
-                                thrsld_min = np.power(10., self.min_magnitude_order)
-                                thrsld_max = np.power(10., self.max_magnitude_order)
-
-                                img_patch[ img_patch<thrsld_min ] = rgb_val
-                                img_patch[ img_patch>thrsld_max ] = 255
-
-                                delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
-                                for rng in range(delta_ord_mag):
-                                    real_deltas = np.power( 10., self.lndelta ) * np.power(10., self.min_magnitude_order + rng)
-                                    for inner_rng in range(self.one_magnitude_range-1):
-                                        img_patch[ (img_patch > real_deltas[inner_rng]) & (img_patch < real_deltas[inner_rng+1]) ] = rgb_val
-                                        rgb_val += 1
-
+                                if(convert_to_RGB):
+                                    plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
+                                else:
+                                    #plt.imshow(img_patch * (1.0 / percentileThresh))
+                                    plt.imshow(np.power(img_patch/np.max(img_patch), config.gamma), cmap='viridis', vmax=1, vmin=0)
                                 
                                 print('max gray level val = ', img_patch.max())
-                                plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
-
-
-
                                 for box_index in gt_id:
                                     box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
                                     plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
@@ -555,25 +538,12 @@ class SKADataset:
 
         return x
 
-    def _save_bbox_files(self, img_patch, patch_id, df_scaled):
+    def _save_bbox_files(self, img_patch, patch_id, df_scaled, convert_to_RGB):
         if not os.path.exists(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
             os.makedirs(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
 
-        rgb_val = 0
-        thrsld_min = np.power(10., self.min_magnitude_order)
-        thrsld_max = np.power(10., self.max_magnitude_order)
-
-        img_patch[ img_patch<thrsld_min ] = rgb_val
-        img_patch[ img_patch>thrsld_max ] = 255
-
-        delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
-        
-        for rng in range(delta_ord_mag):
-            real_deltas = np.power( np.power(10., self.min_magnitude_order + rng), self.lndelta )
-            for inner_rng in range(self.one_magnitude_range-1):
-                img_patch[ ((img_patch > real_deltas[inner_rng]) & (img_patch < real_deltas[inner_rng+1])) ] = rgb_val
-                rgb_val += 1
-        
+        if(convert_to_RGB):
+            img_patch = self._img_from_float_to_RGB(img_patch)
 
         #img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
@@ -596,7 +566,7 @@ class SKADataset:
 
     def analyze_class_distribution(self):
 
-        # num of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
+        # number of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
         self.num_combinations = pow(2, self.num_classes) - 1  
 
         patch_class_list = []
@@ -644,7 +614,7 @@ class SKADataset:
         plt.show()
         return
 
-    def split_train_val(self, random_state, val_portion=.2):
+    def split_train_val_stratification(self, random_state, val_portion=.2):
 
         self.train_patch_list = []
         self.val_patch_list = []
@@ -668,3 +638,30 @@ class SKADataset:
 
         return
 
+    def split_train_val(self, random_state, val_portion=.2):
+        # self.train_patch_list_no_strat = []
+        # self.val_patch_list_no_strat = []
+        train_class_distribution =[]
+
+        train, val = train_test_split(self.patch_list,  test_size = val_portion, random_state=random_state)
+
+        for idx in range(1, self.num_combinations+1):
+            common_ID = set(train) & set(self.patch_list_per_class['key_{}'.format(idx)])
+
+            if(len(self.patch_list_per_class['key_{}'.format(idx)])!=0):
+                print("len of class:", format(idx), len(self.patch_list_per_class['key_{}'.format(idx)]))              
+                print("len of common ID:", len(common_ID))
+                train_class_distribution.append((len(common_ID)/len(self.patch_list_per_class['key_{}'.format(idx)]))*100)
+            else:
+                train_class_distribution.append(0)
+
+        x_val= list(range(1, len(self.patch_list_per_class.keys())+1))
+        # print("x", x_val)
+        # print("y", train_class_distribution)
+        # print("name",self.patch_list_per_class.keys() )
+        plt.bar(x_val, train_class_distribution, tick_label =list(self.patch_list_per_class.keys()), width = 0.8)
+        #plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
+        plt.xlabel("classes ratio")
+        plt.ylabel("num patches")
+        plt.title("Histogram")
+        plt.show() 
