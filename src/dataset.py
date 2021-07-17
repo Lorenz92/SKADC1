@@ -131,12 +131,12 @@ class SKADataset:
 
         self.image_filename = fits_image.filename()
         self.image_data = fits_image[0].data[0,0]
-        self.image_header = fits_image[0].header;
+        self.image_header = fits_image[0].header
         
         if load_pb:
             fits_image = fits.open(image_path)  
             self.primary_beam_data =  primary_beam[0].data[0,0]
-            self.primary_beam_header =  primary_beam[0].header;
+            self.primary_beam_header =  primary_beam[0].header
 
         #TODO: add plot function
     
@@ -368,53 +368,56 @@ class SKADataset:
         data_flat = self.data_560Mhz_1000h_train.flatten()
 
         neg_values = data_flat[data_flat < 0]
-        min_val = min(data_flat)
         max_val = max(data_flat)
-        print('min val =',min_val )
         print('max val =',max_val )
 
         # # histogram of noise (- noise, + noise)
         if plot_Noise_Hist:
         # # we know that negative values are due to noise, and we assume a gaussian noise distribution
-            plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))#abs(min_val)))
+            min_val = min(data_flat)
+            print('min val =',min_val )
+            # plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))
+            plt.hist(data_flat, bins = 40, range = (abs(min_val), max_val))
 
-        self.data_560Mhz_1000h_train_clipped = np.clip(self.data_560Mhz_1000h_train, a_min=0, a_max=np.max(self.image_data))
+        clipped_img = np.clip(self.data_560Mhz_1000h_train, a_min=0, a_max=np.max(self.image_data))
 
-        self.compute_RGB_scale(np.abs(neg_values), max_val)
-
+        self._compute_RGB_scale(clipped_img, np.abs(neg_values), max_val)
+        
         return
 
-    def compute_RGB_scale(self, data, max_val):
+    def _compute_RGB_scale(self, clipped_img, data, max_val):
         mu, std = self.compute_halfgaussian_noise(data, True)
         thresh_low = std * 2.5
-        self.min_magnitude_order = int(np.log10(thresh_low)) -1
-        self.max_magnitude_order = int(np.log10(max_val))
+        min_magnitude_order = int(np.log10(thresh_low)) -1
+        max_magnitude_order = int(np.log10(max_val))
 
         # print('lower threshold',thresh_low)
-        # print('min magnitude',  self.min_magnitude_order)
-        # print('max magnitude', self.max_magnitude_order) 
+        # print('min magnitude',  min_magnitude_order)
+        # print('max magnitude', max_magnitude_order) 
 
-        self.one_magnitude_range = int(np.floor(256/(self.max_magnitude_order - self.min_magnitude_order)))
-        self.lndelta = np.linspace(0., 1., self.one_magnitude_range)
+        one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
+        lndelta = np.linspace(0., 1., one_magnitude_range)
+        self.training_image = self._img_from_float_to_RGB(clipped_img, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order)
+        self.pixel_mean = np.repeat(int(np.mean(self.training_image)), 3)
         return 
 
-    def _img_from_float_to_RGB(self, img_patch):
+    def _img_from_float_to_RGB(self, img, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order):
         rgb_val = 0
-        thrsld_min = np.power(10., self.min_magnitude_order)
-        thrsld_max = np.power(10., self.max_magnitude_order)
+        thrsld_min = np.power(10., min_magnitude_order)
+        thrsld_max = np.power(10., max_magnitude_order)
 
-        img_patch[ img_patch<thrsld_min ] = rgb_val
-        img_patch[ img_patch>thrsld_max ] = 255
+        img[ img<thrsld_min ] = rgb_val
+        img[ img>thrsld_max ] = 255
 
-        delta_ord_mag = self.max_magnitude_order - self.min_magnitude_order
+        delta_ord_mag = max_magnitude_order - min_magnitude_order
         
         for rng in range(delta_ord_mag):
-            real_deltas = np.power( 10., self.lndelta ) * np.power(10., self.min_magnitude_order + rng)
-            for inner_rng in range(self.one_magnitude_range-1):
-                img_patch[ ((img_patch > real_deltas[inner_rng]) & (img_patch < real_deltas[inner_rng+1])) ] = rgb_val
+            real_deltas = np.power( 10., lndelta ) * np.power(10., min_magnitude_order + rng)
+            for inner_rng in range(one_magnitude_range-1):
+                img[ ((img > real_deltas[inner_rng]) & (img < real_deltas[inner_rng+1])) ] = rgb_val
                 rgb_val += 1
         
-        return img_patch
+        return img
 
     def compute_halfgaussian_noise(self, data, plot=False):
         # fit dist to data
@@ -431,18 +434,16 @@ class SKADataset:
             plt.plot(x, p, 'k', linewidth=2)
         return mu, std
 
-    def generate_patches(self, plot_patches = False):
-        #  split in patch
-        # add class list as class property
+    def generate_patches(self, limit, plot_patches = False):
         self.patch_list = {}
-        self.patch_list = self._split_in_patch( config.patch_dim, config.convert_to_RGB, show_plot=plot_patches)
+        self.patch_list = self._split_in_patch( config.patch_dim, show_plot=plot_patches, limit=limit)
         return
     
 
-    def _split_in_patch(self, patch_dim=100, convert_to_RGB = False,  is_multiple=False, show_plot=False):
+    def _split_in_patch(self, patch_dim=100, is_multiple=False, show_plot=False, limit=None):
 
         self.cleaned_train_df
-        h, w = self.data_560Mhz_1000h_train_clipped.shape
+        h, w = self.training_image.shape
         fits_filename = self.image_filename.split('/')[-1].split('.')[0]
 
         # Add new columns to df
@@ -457,9 +458,9 @@ class SKADataset:
 
         patches_list = []
         for i in tqdm(range(0, h, int(patch_dim/2))):
-            if i<=10*patch_dim:                           #TODO: remove this
-                for j in tqdm(range(0, w, int(patch_dim/2))):
-                    if j <=  patch_dim*1 :   #TODO: remove this
+            if i<=limit*patch_dim:                           #TODO: remove this
+                for j in range(0, w, int(patch_dim/2)):
+                    if j <=  limit*patch_dim :   #TODO: remove this
                         patch_xo = self.x_origin+j
                         patch_yo = self.y_origin+i
                         gt_id = []
@@ -468,7 +469,7 @@ class SKADataset:
 
                         if len(gt_id) > 0:
                             filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                            img_patch = self.data_560Mhz_1000h_train_clipped[i:i+patch_dim, j:j+patch_dim].copy()
+                            img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
 
                             # Cut bboxes that fall outside the patch
                             df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(self._cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
@@ -492,23 +493,16 @@ class SKADataset:
 
                             self.proc_train_df = self.proc_train_df.append(df_scaled)
                             patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
-                            self._save_bbox_files(img_patch, patch_id, df_scaled, convert_to_RGB)
+                            self._save_bbox_files(img_patch, patch_id, df_scaled)
                             patches_list.append(patch_id)    
 
                             if show_plot:
-                                fig, ax = plt.subplots()
-                                if(convert_to_RGB):
-                                    plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
-                                else:
-                                    #plt.imshow(img_patch * (1.0 / percentileThresh))
-                                    plt.imshow(np.power(img_patch/np.max(img_patch), config.gamma), cmap='viridis', vmax=1, vmin=0)
-                                
+                                plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                 print('max gray level val = ', img_patch.max())
                                 for box_index in gt_id:
                                     box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
                                     plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
                                     plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
-                                
                                 plt.show()
 
         # # TODO: trasfromare in attributo della classe dataset
@@ -538,20 +532,13 @@ class SKADataset:
 
         return x
 
-    def _save_bbox_files(self, img_patch, patch_id, df_scaled, convert_to_RGB):
+    def _save_bbox_files(self, img_patch, patch_id, df_scaled):
         if not os.path.exists(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}")):
             os.makedirs(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/"))
 
-        if(convert_to_RGB):
-            img_patch = self._img_from_float_to_RGB(img_patch)
-
-        #img_patch = np.power(img_patch/np.max(img_patch), config.gamma)
         np.save(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.npy"), img_patch)
         df_scaled.to_pickle(os.path.join(config.TRAIN_PATCHES_FOLDER, f"{patch_id}/{patch_id}.pkl"))
-        print('image saved')
-
-        #print(df_scaled[[ 'patch_xo','bbox_w', 'patch_yo']].describe())
-
+        print(f'Patch {patch_id} saved')
         return
             
     def _find_gt_in_patch(self, patch_xo, patch_yo, patch_dim, gt_df):

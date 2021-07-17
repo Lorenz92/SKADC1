@@ -14,7 +14,7 @@ np.random.seed(config.RANDOM_SEED)
 
 # Training loop
 
-def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, resume_train=True):
+def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, pixel_mean=None, resume_train=True):
 
     ######### build class_mapping
 
@@ -25,9 +25,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     ######### shuffle image list
     np.random.shuffle(train_patch_list)
 
-    train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone)
+    train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
     if val_patch_list is not None:
-        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list, backbone)
+        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list, backbone, pixel_mean=pixel_mean)
 
     iter_num = 0
     epoch_length = 10
@@ -73,15 +73,12 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 print(f'Starting rpn model training on patch {patch_id}')
 
                 loss_rpn_tot, loss_rpn_cls, loss_rpn_regr = rpn_model.train_on_batch(image, [y_rpn_cls_true, y_rpn_reg_true])
-                print('1')
                 # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
                 P_rpn = rpn_model.predict_on_batch(image)
-                print('2')
 
                 # R: bboxes (shape=(300,4))
                 # Convert rpn layer to roi bboxes
                 R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
-                print('3')
                 
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes

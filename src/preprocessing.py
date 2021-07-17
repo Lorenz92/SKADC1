@@ -9,7 +9,8 @@ import os
 import PIL
 from PIL import Image
 from tqdm import tqdm
-import itertools
+import matplotlib.pyplot as plt
+
 
 # def get_img_output_length(width, height):
 #     def get_output_length(input_length):
@@ -72,7 +73,6 @@ def calc_rpn(img_data, width, height, backbone):
 	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x5=15
 
 	# calculate the output map size based on the network architecture
-	# TODO: aggiungere if in base a backbone: per vgg16 600 -> 37; er resnet 600-> 38
 	if backbone == 'vgg16':
 		(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
 	elif backbone=='resnet50':
@@ -338,7 +338,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 	return img_aug, img_data_aug
 
-def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expander=False, infinite_loop=True):
+def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander=False, infinite_loop=True, pixel_mean=None):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -363,6 +363,8 @@ def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expande
 				# read in image, and optionally add augmentation
 				image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
 				image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
+
+				#TODO: aggiungere if backbone per manipolare i pixel
 
 				if mode == 'train':
 					# print('Augmenting -- START')
@@ -390,7 +392,7 @@ def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expande
 						# print('calc_rpn -- END')
 
 					except Exception as e:
-						print(e)
+						print('Exception in calc_rpn: ', e)
 						continue
 				else:
 					y_rpn_cls = np.zeros((1,1,1,1))
@@ -408,12 +410,12 @@ def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expande
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
-
-				zero_centering(x_img)
-				# print('zero-centering -- END')
-
-				# x_img /= C.img_scaling_factor
-
+				
+				zero_centering(x_img, pixel_mean)
+				
+				if backbone == 'resnet50':
+					normalize_pixel_values(x_img)
+				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
 				if use_expander:				
 					x_img = np.expand_dims(x_img, axis=3) # (1, 600, 600) --> (1, 600, 600, 1)
@@ -429,77 +431,31 @@ def get_anchor_gt(patches_path, patch_list, backbone,  mode='train', use_expande
 				yield np.copy(x_img), [np.copy(y_rpn_cls), np.copy(y_rpn_regr)], img_data_aug, debug_img, num_pos, patch_id
 
 			except Exception as e:
-				print('exception get_anchor', e)
+				print('Exception in get_anchor', e)
 				continue
 
 
-def zero_centering(img_patch):
+def zero_centering(img_patch, pixel_mean=None):
+	if pixel_mean is None:
+		img_channel_mean = C.img_channel_mean
+	else:
+		img_channel_mean = pixel_mean
+
     #in order to manage images with 3 channels. ours should be 1
 	imageChannels = 1 if len(img_patch.shape)== 2 else 3
     
 	if(imageChannels == 1):
-		img_patch[:, :] -= C.img_channel_mean[0]
+		img_patch[:, :] -= img_channel_mean[0]
 	else:
 		# print('three channels')
-		img_patch[:, :, 0] -= C.img_channel_mean[0]
-		img_patch[:, :, 1] -= C.img_channel_mean[1]
-		img_patch[:, :, 2] -= C.img_channel_mean[2]
+		img_patch[:, :, 0] -= img_channel_mean[0]
+		img_patch[:, :, 1] -= img_channel_mean[1]
+		img_patch[:, :, 2] -= img_channel_mean[2]
 	return
 
+def normalize_pixel_values(img_patch):
+	img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
+	img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
+	img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
 
-# # The following is not currently used
-# def generate_rpn(patches_path, patch_list):
-
-# 	h, v = [0,1], [0,1]
-# 	angle = [0,90,180,270]
-# 	df = {
-# 		'img_aug':[],
-# 		'y_rpn_cls':[],
-# 		'y_rpn_regr':[],
-# 		'num_pos':[]
-# 	}
-# 	cart_prod = list(itertools.product(h,v,angle))
-
-# 	for patch_id in tqdm(patch_list):
-
-# 		print('Working on patch: ', patch_id)
-
-# 		# read in image, and optionally add augmentation
-# 		image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
-# 		image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
-
-# 		for (hflip, vflip, angle) in tqdm(cart_prod):
-# 			print(f'Combination: {hflip}_{vflip}_{angle}')
-# 			x_img, img_data_aug  = augment(image_path, image_data_path, augment=True, hflip=hflip, vflip=vflip, angle=angle)
-
-# 			(width, height) = x_img.shape
-
-# 			try:
-# 				print('calc_rpn -- START')
-# 				y_rpn_cls, y_rpn_regr, num_pos = calc_rpn(img_data_aug, width, height) 
-# 				print('calc_rpn -- END')
-
-# 				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
-# 				df['y_rpn_cls'].append(y_rpn_cls)
-# 				df['y_rpn_regr'].append(y_rpn_regr)
-# 				df['num_pos'].append(num_pos)
-
-# 			except Exception as e:
-# 				print(e)
-# 				df['img_aug'].append(f'{patch_id}_{hflip}_{vflip}_{angle}')
-# 				df['y_rpn_cls'].append([])
-# 				df['y_rpn_regr'].append([])
-# 				df['num_pos'].append('Error')
-# 				continue
-
-
-# 	df = pd.DataFrame.from_dict(df)
-
-# 	path = f'{C.TRAIN_DATA_FOLDER}/rpn'
-
-# 	if not os.path.exists(path):
-# 		os.makedirs(path)
-
-# 	df.to_pickle(f'{path}/rpn_dataframe.pkl')
-
-# 	return df
+	return

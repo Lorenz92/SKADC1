@@ -8,7 +8,7 @@ DATA_FOLDER = os.path.join(os.getcwd(), "data")
 TRAIN_DATA_FOLDER = os.path.join(DATA_FOLDER, "training")
 VAL_DATA_FOLDER = os.path.join(DATA_FOLDER, "predictions")
 TRAIN_PATCHES_FOLDER = os.path.join(TRAIN_DATA_FOLDER, "patches")
-VAL_PATCHES_FOLDER = os.path.join(VAL_DATA_FOLDER, "patches")
+EVAL_RESULTS = os.path.join(VAL_DATA_FOLDER, "patches")
 TRAIN_SET_PATH_CLEANED = os.path.join(TRAIN_DATA_FOLDER, "B1_training_clean_SKA.txt") #TODO: fix this
 TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_SKA.txt") #TODO: fix this
 IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
@@ -79,7 +79,6 @@ in_out_img_size_ratio = 16
 convert_to_RGB = True 
 
 # image channel-wise mean to subtract
-#img_channel_mean =  [3.8131893e-07] #mean value of all patches
 img_channel_mean = [123.68, 116.779, 103.939]
 #img_channel_max = 0.006585681
 #img_channel_min = 0.0

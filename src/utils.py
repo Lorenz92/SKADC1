@@ -350,17 +350,24 @@ def print_img(img_folder, img_name, data_folder=None):
     else:
         img_data = f'{data_folder}/{img_name}/{img_name}.pkl'
     
-    if(config.convert_to_RGB):
-        plt.imshow(img, cmap='viridis', vmax=255, vmin=0)   
-    else:
-    #img must be a numpy.ndarray img
-        normalized_data = img * (1.0 /img.max())
+    # if(config.convert_to_RGB):
+    #     plt.imshow(img, cmap='viridis', vmax=255, vmin=0)   
+    # else:
+    # #img must be a numpy.ndarray img
+    #     normalized_data = img * (1.0 /img.max())
 
-        # Create figure and axes
-        fig, ax = plt.subplots()
+    #     # Create figure and axes
+    #     fig, ax = plt.subplots()
 
-        # Display the image
-        ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
+    #     # Display the image
+    #     ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
+
+    # Create figure and axes
+    fig, ax = plt.subplots()
+
+    # Display the image
+    ax.imshow(img, cmap='viridis', vmax=255, vmin=0)
+
 
     if img_data is None:
         return
@@ -531,7 +538,7 @@ def get_detections(patch_id, bboxes, probs):
     for key in bboxes:
         bbox = np.array(bboxes[key])
 
-        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5)
+        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5) #TODO: sposta soglia in config
        
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
@@ -545,10 +552,10 @@ def get_detections(patch_id, bboxes, probs):
             boxes_coords['class'].append(key)
             boxes_coords['prob'].append(new_probs[jk])
     
-    if not os.path.exists(os.path.join(config.VAL_PATCHES_FOLDER, f"{patch_id}")):
-        os.makedirs(os.path.join(config.VAL_PATCHES_FOLDER, f"{patch_id}/"))
+    if not os.path.exists(os.path.join(config.EVAL_RESULTS, f"{patch_id}")):
+        os.makedirs(os.path.join(config.EVAL_RESULTS, f"{patch_id}/"))
         a = pd.DataFrame.from_dict(boxes_coords)        
-        a.to_pickle(f'{config.VAL_PATCHES_FOLDER}/{patch_id}/{patch_id}.pkl')
+        a.to_pickle(f'{config.EVAL_RESULTS}/{patch_id}/{patch_id}.pkl')
 
     return boxes_coords
 
@@ -651,8 +658,8 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
-        deterctions = get_detections(patch_id, bboxes, probs)
-        macro_AP, macro_prec, macro_recall = get_img_scores(deterctions, patch_id)
+        detections = get_detections(patch_id, bboxes, probs)
+        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
