@@ -431,11 +431,11 @@ class SKADataset:
             plt.plot(x, p, 'k', linewidth=2)
         return mu, std
 
-    def generate_patches(self, convert_to_RGB =False , plot_patches = False):
+    def generate_patches(self, plot_patches = False):
         #  split in patch
         # add class list as class property
         self.patch_list = {}
-        self.patch_list = self._split_in_patch( config.patch_dim, convert_to_RGB = convert_to_RGB, show_plot=plot_patches)
+        self.patch_list = self._split_in_patch( config.patch_dim, config.convert_to_RGB, show_plot=plot_patches)
         return
     
 

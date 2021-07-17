@@ -350,14 +350,17 @@ def print_img(img_folder, img_name, data_folder=None):
     else:
         img_data = f'{data_folder}/{img_name}/{img_name}.pkl'
     
+    if(config.convert_to_RGB):
+        plt.imshow(img, cmap='viridis', vmax=255, vmin=0)   
+    else:
     #img must be a numpy.ndarray img
-    normalized_data = img * (1.0 /img.max())
+        normalized_data = img * (1.0 /img.max())
 
-    # Create figure and axes
-    fig, ax = plt.subplots()
+        # Create figure and axes
+        fig, ax = plt.subplots()
 
-    # Display the image
-    ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
+        # Display the image
+        ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
 
     if img_data is None:
         return
