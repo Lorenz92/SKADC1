@@ -193,8 +193,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                         counter = previous_losses.shape[0] + 1
                     else:
                         loss_hist = losses_to_save
-                        resume_train = True
                         counter = 1
+                        resume_train = True
 
                     np.save(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy", loss_hist)
 
