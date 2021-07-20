@@ -763,3 +763,20 @@ def get_img_scores(detections, patch_id):
 
     # print('mAP = {}'.format(mAP))
     return mAP, macro_prec, macro_recall
+
+def get_model_last_checkpoint(backbone):
+    model_cp_dict = dict()
+    model_dir = f'{config.MODEL_WEIGHTS}/{backbone}'
+    print(f'Checking model checkpoints in directory {config.MODEL_WEIGHTS}/{backbone}')
+    for file in os.listdir(model_dir):
+        if file.endswith(f"{backbone}.h5"):
+            print(os.path.join(model_dir, file))
+            key = file.split('_')[0]
+            model_cp_dict[file] = int(key)
+
+    try:
+        cp = max(model_cp_dict, key=model_cp_dict.get)
+    except:
+        cp = None
+    
+    return cp

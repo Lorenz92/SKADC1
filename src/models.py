@@ -74,11 +74,13 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
     total_model = keras.Model([input_image, input_roi, input_fmap], [rpn_cls, rpn_reg, out_class, out_regr], name='End2end_model')
 
     return rpn_model, detector_model, total_model
-    # return rpn_model, detector_model
+    
 
 def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpoint=None):
 
     if resume_train:
+        if checkpoint is None:
+            raise ValueError('Invalid "resume_train" and "checkpoint" combination...')
         weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}_frcnn_{backbone}.h5'
 
     else:
@@ -99,8 +101,7 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
                 'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
             
         else:
-            print('Please choose a valid model')
-            raise ValueError
+            raise ValueError('Please choose a valid model')
 
     rpn_model.load_weights(weights, by_name=True)
     detector_model.load_weights(weights, by_name=True)
@@ -122,4 +123,4 @@ def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_
     detector_model.compile(optimizer=detector_optimizer, loss=[detector_loss_cls, detector_loss_regr(len(class_list))], metrics=['accuracy'])
     total_model.compile(optimizer='sgd', loss='mae')
 
-    return #rpn_model, detector_model, total_model
+    return
