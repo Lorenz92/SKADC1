@@ -16,10 +16,10 @@ IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
 MODEL_WEIGHTS = os.path.join(os.getcwd(), "model")
 
 required_files = [
-    # {
-    #     "file_name": "B1_training_SKA.txt",
-    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
-    # },
+    {
+        "file_name": "B1_training_SKA.txt",
+        "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
+    },
     {
         "file_name": "B1_training_clean_SKA.txt",
         "url": "https://owncloud.ia2.inaf.it/index.php/s/I4HL84Etgw9c2Le/download" #54Mb
