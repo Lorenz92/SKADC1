@@ -8,14 +8,14 @@ from keras.optimizers import Adam
 
 def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, num_rois, num_classes, backbone='vgg16', use_expander=True):
 
+    
     if use_expander:    
         # Add custom input-layer to expand from 1 to 3 channels
-        input_image  = Input(shape=input_shape_1, name='input_1')
-
+        input_image  = Input(shape=(input_shape_1, input_shape_1, 1), name='input_1')
         x = Expander()(input_image)
     else:
         # In order to use this input layer we replicate the same input image 3 times because we have 1-channel images
-        input_image = Input(shape=(600,600,3), name='input_1')
+        input_image  = Input(shape=(input_shape_1, input_shape_1, 3), name='input_1')
         x = input_image
         
     if backbone == 'vgg16':
@@ -88,7 +88,24 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
         weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}_frcnn_{backbone}.h5'
 
     else:
-        if backbone == 'vgg16':
+        if backbone == 'baseline_8':
+            weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            # Download VGG16 weights
+            # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            if not os.path.exists(weights):
+                utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
+                'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
+        
+        elif backbone == 'baseline_16':
+            weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            # Download VGG16 weights
+            # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
+            if not os.path.exists(weights):
+                utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
+                'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
+
+        
+        elif backbone == 'vgg16':
             weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
             # Download VGG16 weights
             # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'

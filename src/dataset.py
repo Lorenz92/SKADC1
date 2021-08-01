@@ -496,7 +496,6 @@ class SKADataset:
                 idx2 = filtered_df['ID'].tolist()
                 return idx2
 
-            self.cleaned_train_df
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
 
@@ -520,6 +519,8 @@ class SKADataset:
                             gt_id = []
 
                             gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
+
+                            # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
 
                             if len(gt_id) > 0:
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'

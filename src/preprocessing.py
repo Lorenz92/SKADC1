@@ -73,10 +73,16 @@ def calc_rpn(img_data, width, height, backbone):
 	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x5=15
 
 	# calculate the output map size based on the network architecture
-	if backbone == 'vgg16':
+	if backbone == 'baseline_8':
+		(output_width, output_height) = (width//2, height//2)
+	elif backbone == 'baseline_16':
+		(output_width, output_height) = (width//4, height//4)
+	elif backbone == 'vgg16':
 		(output_width, output_height) = (width//C.in_out_img_size_ratio, height//C.in_out_img_size_ratio)
 	elif backbone=='resnet50':
 		(output_width, output_height) = (int(np.ceil(width/C.in_out_img_size_ratio)), int(np.ceil(height/C.in_out_img_size_ratio)))
+	
+	
 	n_anchratios = len(anchor_ratios)    # 3
 	
 	# initialise empty output objectives
@@ -89,8 +95,8 @@ def calc_rpn(img_data, width, height, backbone):
 	num_anchors_for_bbox = np.zeros(num_bboxes).astype(int)
 	best_anchor_for_bbox = -1*np.ones((num_bboxes, 4)).astype(int)
 	best_iou_for_bbox = np.zeros(num_bboxes).astype(np.float32)
-	best_x_for_bbox = np.zeros((num_bboxes, 4)).astype(int) #TOTRY: commentare astype
-	best_dx_for_bbox = np.zeros((num_bboxes, 4)).astype(np.float32) #TOTRY: commentare astype
+	best_x_for_bbox = np.zeros((num_bboxes, 4)).astype(int) #TODO: commentare astype
+	best_dx_for_bbox = np.zeros((num_bboxes, 4)).astype(np.float32) #TODO: commentare astype
 
 	# get the GT box coordinates, and resize to account for image resizing
 	gta = np.zeros((num_bboxes, 4))
@@ -264,11 +270,10 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 	img_orig = np.load(img_path)
 	img_data_orig = pd.read_pickle(img_data_path)
 
-	# img_aug = copy.copy(img_orig)
 	img_data_aug = copy.deepcopy(img_data_orig)
 
 	# resize paches, the final dimension is the one set in the config (C.resizeFinalDim)
-	if C.resizePatch :
+	if C.resizePatch:
 		img_aug, width_percent = rescale_image(img_orig)
 
 		for index, row in img_data_aug.iterrows():			
@@ -280,6 +285,8 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 			img_data_aug.at[index,'x2s']= x2
 			img_data_aug.at[index,'y1s']= y1
 			img_data_aug.at[index,'y2s']= y2
+	else:
+		img_aug = copy.copy(img_orig)
 
 	if augment:
 		rows, cols = img_aug.shape[:2]
@@ -376,6 +383,8 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 					# print('Augmenting -- END')
 				else:
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
+
+				print(x_img.shape)
 
 				img_data_aug['x1s'] = img_data_aug['x1s'].astype(int)
 				img_data_aug['x2s'] = img_data_aug['x2s'].astype(int)

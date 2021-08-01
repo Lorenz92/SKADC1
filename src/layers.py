@@ -20,6 +20,8 @@ def baseline_8(input_image):
     x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv3', trainable=True)(x) # RF = 7
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 8
 
+    return x
+
 def baseline_16(input_image):
 
     # Block 1
@@ -32,6 +34,7 @@ def baseline_16(input_image):
     x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x) # RF = 14
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) # RF = 16
 
+    return x
 
 
 def vgg16(input_image):

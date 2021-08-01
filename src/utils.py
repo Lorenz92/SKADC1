@@ -392,6 +392,7 @@ def calc_iou(R, img_data, class_mapping):
     gta = np.zeros((img_data.shape[0], 4))
 
     for box_index, bbox in img_data.iterrows():
+        
         # get the GT box coordinates, and resize to account for image resizing
         # gta[box_index, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
         gta[box_index, 0] = int(bbox['x1s']/config.rpn_stride)
@@ -418,6 +419,7 @@ def calc_iou(R, img_data, class_mapping):
         best_bbox = -1
         # Iterate through all the ground-truth bboxes to calculate the iou
         for box_index in range(img_data.shape[0]):
+
             # print(f'box_index={box_index}')
             curr_iou = prep.iou([gta[box_index, 0], gta[box_index, 2], gta[box_index, 1], gta[box_index, 3]], [x1, y1, x2, y2])
 
@@ -524,7 +526,7 @@ def plot_loss(history):
     return
 
 def get_real_coordinates(x1, y1, x2, y2):
-    ratio = config.resizeFinalDim / config.patch_dim
+    ratio = config.resizeFinalDim / config.patch_dim #TODO change according to model backbone
     real_x1 = int(round(x1 // ratio))
     real_y1 = int(round(y1 // ratio))
     real_x2 = int(round(x2 // ratio))
@@ -765,16 +767,17 @@ def get_img_scores(detections, patch_id):
     return mAP, macro_prec, macro_recall
 
 def get_model_last_checkpoint(backbone):
-    model_cp_dict = dict()
-    model_dir = f'{config.MODEL_WEIGHTS}/{backbone}'
-    print(f'Checking model checkpoints in directory {config.MODEL_WEIGHTS}/{backbone}')
-    for file in os.listdir(model_dir):
-        if file.endswith(f"{backbone}.h5"):
-            print(os.path.join(model_dir, file))
-            key = file.split('_')[0]
-            model_cp_dict[file] = int(key)
-
     try:
+    
+        model_cp_dict = dict()
+        model_dir = f'{config.MODEL_WEIGHTS}/{backbone}'
+        print(f'Checking model checkpoints in directory {config.MODEL_WEIGHTS}/{backbone}')
+        for file in os.listdir(model_dir):
+            if file.endswith(f"{backbone}.h5"):
+                print(os.path.join(model_dir, file))
+                key = file.split('_')[0]
+                model_cp_dict[file] = int(key)
+
         cp = max(model_cp_dict, key=model_cp_dict.get)
     except:
         cp = None
