@@ -3,6 +3,7 @@ from IPython.core.display import display
 import itertools
 import numpy as np
 import scipy.stats as st
+from scipy.special import erfinv
 import pandas as pd
 import astropy.wcs as pywcs
 from astropy.io import fits
@@ -28,15 +29,17 @@ class SKADataset:
     TODO: scrivere meglio qui
     """
 
-    def __init__(self, primary_beam=None, print_info=False, load_pb=False):
+    def __init__(self, k, print_info=False, use_pb=False):
         
         # Save training and test set
         self.train_set_path = config.TRAIN_SET_PATH_CLEANED
+        # self.train_set_path = config.TRAIN_SET_PATH
         self.train_df_path = f"{os.path.splitext(self.train_set_path)[0]}.pkl"
 
         self.test_set_path = None
         self.subset = config.DATA_SUBSET
         self.image_path = config.IMAGE_PATH
+        self.primary_beam_path = config.PRIMARY_BEAM_PATH
 
         # Save column names
         self.col_names = ['ID',
@@ -72,6 +75,9 @@ class SKADataset:
         # Process the training set
         self.cleaned_train_df = pd.DataFrame()
         self.proc_train_df = pd.DataFrame()
+
+        # Constant used for dataset cleaning
+        mad2sigma = np.sqrt(2) * erfinv(2 * 0.75 - 1)
 
         # Internal preprocessing methods
         
@@ -135,7 +141,7 @@ class SKADataset:
             
             return raw_train_df
 
-        def load_train_image(primary_beam=None, print_info=False, load_pb=False):
+        def load_train_image(print_info=False, use_pb=False):
             fits_image = fits.open(self.image_path)
             if print_info:
                 print(fits_image.info())
@@ -146,8 +152,8 @@ class SKADataset:
             image_data = fits_image[0].data[0,0]
             image_header = fits_image[0].header
             
-            if load_pb:
-                fits_image = fits.open(self.image_path)  
+            if use_pb:
+                primary_beam = fits.open(self.primary_beam_path)  
                 self.primary_beam_data =  primary_beam[0].data[0,0]
                 self.primary_beam_header =  primary_beam[0].header
 
@@ -155,38 +161,37 @@ class SKADataset:
 
             return image_filename, image_data, image_header
 
-        def process_dataset(use_pb=False, b='b5', fancy=True):
+        def process_dataset(use_pb=False, k=2.5, fancy=True):
             """
             TODO: write desc
             """
-            def _apply_primary_beam_correction(b, box, area_pixel):
+            def _apply_primary_beam_correction(k, box, area_pixel, x1, y1, x2, y2):
                 # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
-                num_sigma = 0.05
+                
+                # bbox_region = self.image_data[int(np.floor(y1)):int(np.floor(y2)), int(np.floor(x1)):int(np.floor(x2))]
 
-                if b == 'b5':
-                    b5_sigma = 3.8465818166348711e-08
-                    b5_median = -5.2342429e-11
-                    b_n_sigma = b5_median + num_sigma * b5_sigma
+                # med = np.nanmedian(bbox_region)
+                # mad = np.nanmedian(np.abs(bbox_region - med))
+                # sigma = mad / mad2sigma
 
-                if b == 'b1':
-                    # these are for training map only
-                    b1_sigma = 3.8185009938219004e-07 #
-                    b1_median = -1.9233363e-07 #
-                    b_n_sigma = b1_median + num_sigma * b1_sigma
+                # threshold = med + k * sigma
+                # print('threshold:', threshold)
+
+                threshold = k*255.0E-9
 
                 pbwc = pywcs.WCS(self.primary_beam_header)
 
                 total_flux = float(box['FLUX'])
                 total_flux = _primary_beam_gridding(pbwc, total_flux, box['RA (centroid)'], box['DEC (centroid)'], self.primary_beam_data)
-                total_flux /= area_pixel
-                return total_flux, b_n_sigma
+                # total_flux /= area_pixel
+                return total_flux, threshold
 
 
-            def _primary_beam_gridding(pbwc, total_flux, ra, dec, primary_beam):
+            def _primary_beam_gridding(pbwc, total_flux, ra, dec, primary_beam_data):
                 # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
                 # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
                 x, y = pbwc.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
-                pb_data = primary_beam[0].data[0][0]
+                pb_data = primary_beam_data
                 pbv = pb_data[int(y)][int(x)]
                 return total_flux / pbv
 
@@ -245,7 +250,6 @@ class SKADataset:
                 bmin = box['BMIN']
 
                 if (fancy):
-                    #TODO use w1, w2 to replace bmaj, bmin
                     if (2 == box['SIZE']): 
                         if (box['CLASS'] in [1, 3]): # extended source
                             # don't change anything
@@ -266,8 +270,6 @@ class SKADataset:
                             w2 = bmin
                         else:
                             raise Exception('unknown combination')
-                    
-                    #TODO calculate b1 and b2 from w1 and w2 for gridded sky model
                     b1 = np.sqrt(w1 ** 2 + self.g2) * self.psf_bmaj_ratio
                     b2 = np.sqrt(w2 ** 2 + self.g2) * self.psf_bmin_ratio
                 else:
@@ -289,8 +291,9 @@ class SKADataset:
                 
                 #TODO: remove this and related variables after the last cleaning attempt
                 if use_pb:
-                    total_flux, b_n_sigma = _apply_primary_beam_correction(idx, b, area_pixel)
-                    if (total_flux < b_n_sigma):
+                    # print('Applying primary beam correction...\n')
+                    total_flux, threshold = _apply_primary_beam_correction( k, box, area_pixel, x1, y1, x2, y2)
+                    if (total_flux < threshold):
                         id_to_delete.append(idx)
                         faint += 1
                         continue
@@ -423,20 +426,20 @@ class SKADataset:
                 utils.download_data(download_info['file_name'], download_info['url'], config.DOWNLOAD_FOLDER)
 
         self.raw_train_df = load_dataset()
-        self.image_filename, self.image_data, self.image_header = load_train_image(primary_beam=primary_beam, print_info=print_info, load_pb=load_pb)
+        self.image_filename, self.image_data, self.image_header = load_train_image(print_info=print_info, use_pb=use_pb)
         self.wc = pywcs.WCS(self.image_header)
         self.image_width = self.image_header['NAXIS1']
         self.image_height = self.image_header['NAXIS2']
         self.pixel_res_x_arcsec = abs(float(self.image_header['CDELT1'])) * 3600
         self.pixel_res_y_arcsec = abs(float(self.image_header['CDELT2'])) * 3600
-        self.BMAJ = float(self.image_header['BMAJ']) #2.53611124208E-05
-        self.BMIN = float(self.image_header['BMIN']) #2.53611124208E-05
+        self.BMAJ = float(self.image_header['BMAJ'])
+        self.BMIN = float(self.image_header['BMIN'])
         self.psf_bmaj_ratio = (self.BMAJ / self.pixel_res_x_arcsec) * 3600.0
         self.psf_bmin_ratio = (self.BMIN / self.pixel_res_y_arcsec) * 3600.0
         self.g = 2 * self.pixel_res_x_arcsec # gridding kernel size as per specs
         self.g2 = self.g ** 2
 
-        self.cleaned_train_df = process_dataset()
+        self.cleaned_train_df = process_dataset(use_pb, k)
         self.x1_min = int(np.floor(min(self.cleaned_train_df['x1'])))
         self.y1_min = int(np.floor(min(self.cleaned_train_df['y1'])))
         self.x2_max = int(np.floor(max(self.cleaned_train_df['x2'])))
@@ -509,9 +512,9 @@ class SKADataset:
 
             patches_list = []
             for i in tqdm(range(0, h, int(patch_dim/2))):
-                if i<=limit*patch_dim:
+                if (i<=limit*patch_dim or limit == None):
                     for j in range(0, w, int(patch_dim/2)):
-                        if j <=  limit*patch_dim:
+                        if j <=  (limit*patch_dim or limit == None):
                             patch_xo = self.x1_min+j
                             patch_yo = self.y1_min+i
                             gt_id = []

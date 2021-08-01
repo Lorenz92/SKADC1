@@ -1,5 +1,5 @@
 import os
-from src.layers import Expander, vgg16, RpnNet, RoiPoolingConv, Detector, resnet50
+from src.layers import Expander, RpnNet, RoiPoolingConv, Detector, vgg16, resnet50, baseline_8, baseline_16
 import src.config as config
 import src.utils as utils
 import keras
@@ -23,6 +23,10 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
         x = vgg16(x)
     elif backbone == 'resnet50':
         x = resnet50(x, train_stage2 = False, train_stage3 = True, train_stage4 = True)
+    elif backbone == 'baseline_8':
+        x = baseline_8(x)
+    elif backbone == 'baseline_16':
+        x = baseline_16(x)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, _ = RpnNet(anchor_num)(x)

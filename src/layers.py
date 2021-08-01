@@ -12,36 +12,57 @@ class Expander(Layer):
         x = self.conv2d(inputs)
         return x
 
+def baseline_8(input_image):
+
+    # Block 1
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x) # RF = 5
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv3', trainable=True)(x) # RF = 7
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 8
+
+def baseline_16(input_image):
+
+    # Block 1
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x) # RF = 5
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 6
+
+    # Block 2
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=False)(x) # RF = 10
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x) # RF = 14
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) # RF = 16
+
+
 
 def vgg16(input_image):
 
     # Block 1
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image)
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x)
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x) # RF = 5
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 6
 
     # Block 2
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=False)(x)
-    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x)
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=False)(x) # RF = 10
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x) # RF = 14
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) # RF = 16
 
     # Block 3
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x)
-    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x)
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x) # RF = 24
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x) # RF = 32
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x) # RF = 40
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x) # RF = 44
 
     # Block 4
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x)
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv1')(x) # RF = 60
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv2')(x) # RF = 76
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block4_conv3')(x) # RF = 92
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block4_pool')(x) # RF = 100
 
     # Block 5
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x)
-    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x)
-    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x)
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv1')(x) # RF = 132
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv2')(x) # RF = 164
+    x = Conv2D(512, (3, 3), activation='relu', padding='same', name='block5_conv3')(x) # RF = 196
+    # x = MaxPooling2D((2, 2), strides=(2, 2), name='block5_pool')(x) # RF = 212
 
     return x
 

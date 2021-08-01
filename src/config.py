@@ -12,22 +12,23 @@ EVAL_RESULTS = os.path.join(VAL_DATA_FOLDER, "patches")
 TRAIN_SET_PATH_CLEANED = os.path.join(TRAIN_DATA_FOLDER, "B1_training_clean_SKA.txt") #TODO: fix this
 TRAIN_SET_PATH = os.path.join(TRAIN_DATA_FOLDER, "B1_training_SKA.txt") #TODO: fix this
 IMAGE_PATH = os.path.join(TRAIN_DATA_FOLDER, '560Mhz_1000h.fits')
+PRIMARY_BEAM_PATH = os.path.join(TRAIN_DATA_FOLDER, 'PrimaryBeam_B1.fits')
 
 MODEL_WEIGHTS = os.path.join(os.getcwd(), "model")
 
 required_files = [
-    # {
-    #     "file_name": "B1_training_SKA.txt",
-    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
-    # },
+    {
+        "file_name": "B1_training_SKA.txt",
+        "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
+    },
     {
         "file_name": "B1_training_clean_SKA.txt",
         "url": "https://owncloud.ia2.inaf.it/index.php/s/I4HL84Etgw9c2Le/download" #54Mb
     },
-    # {
-    #     "file_name": "PrimaryBeam_B1.fits",
-    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/ZbaSDe7zGBYgxL1/download" #300Kb
-    # },
+    {
+        "file_name": "PrimaryBeam_B1.fits",
+        "url": "https://owncloud.ia2.inaf.it/index.php/s/ZbaSDe7zGBYgxL1/download" #300Kb
+    },
     # {
     #     "file_name": "SynthesBeam_B1.fits",
     #     "url": "https://owncloud.ia2.inaf.it/index.php/s/cwzf1BO2pyg9TVv/download" #4Gb
