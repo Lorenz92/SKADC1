@@ -1,4 +1,6 @@
 # First net version
+import sys
+
 import keras.backend as K
 import tensorflow as tf
 from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout, ZeroPadding2D, Convolution2D, BatchNormalization, Activation, Add
@@ -155,6 +157,7 @@ class RpnNet(Layer):
         self.conv2d = Conv2D(filters=512, kernel_size=(3, 3), padding='same', kernel_initializer='normal', activation='relu', name='18_RPN_Conv1')
         self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), activation='sigmoid', kernel_initializer='uniform', name='19_Anchor_Cls_Conv')
         self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), activation='linear', kernel_initializer='zero', name='19_Anchor_Reg_Conv')
+    
     def call(self, backbone):
         x = self.conv2d(backbone)
         cls_pred = self.cls_pred(x) #output of layer 20
@@ -206,6 +209,9 @@ class RoiPoolingConv(Layer):
 
         outputs = []
 
+        # tf.print('img shape = ', img.shape, output_stream=sys.stderr, sep=',')
+        # tf.print('img = ', img[0,...,0], output_stream=sys.stderr, sep=',')
+
         for roi_idx in range(self.num_rois):
 
             x = rois[0, roi_idx, 0]
@@ -219,16 +225,29 @@ class RoiPoolingConv(Layer):
             h = K.cast(h, 'int32')
 
             # Resized roi of the image to pooling size (7x7)
-            # tf.print('img = ', img, output_stream=sys.stderr, sep=',')
+            max_dim = K.maximum(w, h)
+            # tf.print('roi shape = ', rois[0, roi_idx, :], output_stream=sys.stderr, sep=',')
+            # tf.print('img = ', img[0, ..., 0], output_stream=sys.stderr, sep=',')
+
+            # if max_dim > self.pool_size:
+
+            #     rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size), method='bilinear', antialias=False)
+            # else:
             
-            rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size))
+            #     offset = (self.pool_size - max_dim)//2
+            #     rs = tf.image.pad_to_bounding_box(img[:, y:y+h, x:x+w, :], offset, offset, self.pool_size, self.pool_size)
+            #     # tf.print('rs shape = ', rs.shape, output_stream=sys.stderr, sep=',')
+            #     # tf.print('rs = ', rs[0,...,0], output_stream=sys.stderr, sep=',')
+
+            rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size), method='bilinear', antialias=False)
+            
             outputs.append(rs)
                 
 
         final_output = K.concatenate(outputs, axis=0)
 
         # Reshape to (1, num_rois, pool_size, pool_size, channels)
-        # Might be (1, 4, 7, 7, 3)
+        # Might be (1, 4, 7, 7, # feature maps)
         final_output = K.reshape(final_output, (1, self.num_rois, self.pool_size, self.pool_size, self.channels))
 
         # permute_dimensions is similar to transpose

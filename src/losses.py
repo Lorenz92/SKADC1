@@ -64,6 +64,11 @@ def detector_loss_regr(num_classes):
                            x_abs - 0.5 (otherwise)
     """
     def detector_loss_regr_fixed_num(y_true, y_pred):
+        # tf.print('y_true shape = ', y_true.shape, output_stream=sys.stderr, sep=',', summarize=-1)
+        # tf.print('y_true = ', y_true[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
+        # tf.print('y_pred shape = ', y_pred.shape, output_stream=sys.stderr, sep=',', summarize=-1)
+        # tf.print('y_pred = ', y_pred[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
+
         x = y_true[:, :, 4*num_classes:] - y_pred # Here <y_true[:, :, 4*num_classes:]> is the y_class_regr_coords of Y2 in calc_iou, so it represents the roi coordinates
         x_abs = K.abs(x)
         x_bool = K.cast(K.less_equal(x_abs, 1.0), 'float32')

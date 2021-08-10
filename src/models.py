@@ -47,21 +47,27 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
     
     if use_expander:    
         # Add custom input-layer to expand from 1 to 3 channels
-        input_image  = Input(shape=input_shape_1, name='input_1')
+        input_image  = Input(shape=(input_shape_1, input_shape_1, 1), name='input_1')
 
         x = Expander()(input_image)
     else:
         # In order to use this input layer we replicate the same input image 3 times because we have 1-channel images
-        input_image = Input(shape=(600,600,3), name='input_1')
+        input_image  = Input(shape=(input_shape_1, input_shape_1, 3), name='input_1')
+
         x = input_image
 
     if backbone == 'vgg16':
         x = vgg16(x)
         input_shape_fmap = (37, 37, 512)
-
     elif backbone == 'resnet50':
         x = resnet50(x)
         input_shape_fmap = (38, 38, 1024)
+    elif backbone == 'baseline_8':
+        x = baseline_8(x)        
+        input_shape_fmap = (50, 50, 64)
+    elif backbone == 'baseline_16':
+        x = baseline_16(x)
+        input_shape_fmap = (25, 25, 128)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, shared_backbone = RpnNet(anchor_num)(x)

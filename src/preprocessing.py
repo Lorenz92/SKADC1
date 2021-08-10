@@ -420,9 +420,9 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
 				
-				zero_centering(x_img, pixel_mean)
+				zero_centering(x_img, pixel_mean) 
 				
-				if backbone == 'resnet50':
+				if (backbone == 'resnet50' or backbone =='baseline_16'):
 					normalize_pixel_values(x_img)
 				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
@@ -463,8 +463,14 @@ def zero_centering(img_patch, pixel_mean=None):
 	return
 
 def normalize_pixel_values(img_patch):
-	img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
-	img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
-	img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
+
+	if False:
+		img_patch[:, :, 0] /= 255
+		img_patch[:, :, 1] /= 255
+		img_patch[:, :, 2] /= 255
+	else:
+		img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
+		img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
+		img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
 
 	return

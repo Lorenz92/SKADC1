@@ -47,9 +47,6 @@ required_files = [
     # }
 ]
 
-# Name of base network
-network = 'vgg'
-
 # Dimensions of patches
 patch_dim = 100
 
@@ -61,16 +58,14 @@ rot_90 = True
 # Anchor box scales
 # Note that if im_size is smaller, anchor_box_scales should be scaled
 # Original anchor_box_scales in the paper is [128, 256, 512]
-# anchor_box_scales = [16, 32]
-# anchor_box_scales = [16, 32, 64, 128, 256]
-anchor_box_scales = [2, 4, 8, 16]
+anchor_box_scales = None
 
 # Anchor box ratios
 # anchor_box_ratios = [[1, 1], [1./math.sqrt(2), 2./math.sqrt(2)], [2./math.sqrt(2), 1./math.sqrt(2)]]
 anchor_box_ratios = [[2, 1], [1, 2], [1,1]]
 # anchor_box_ratios = [[2, 1]]
 
-anchor_num = len(anchor_box_ratios)*len(anchor_box_scales)
+anchor_num = None
 
 #NMS max boxes
 nms_max_boxes = 2000
@@ -108,15 +103,15 @@ resizePatch = True
 resizeFinalDim = 600
 
 # number of ROIs at once
-num_rois = 4
+num_rois = None
 
 # stride at the RPN (this depends on the network configuration)
-rpn_stride = 16
+# rpn_stride = 16
 
 # scaling the stdev
 std_scaling = 4.0
-# classifier_regr_std = [8.0, 8.0, 4.0, 4.0]
-classifier_regr_std = [10.0, 10.0, 5.0, 5.0] #ICRAR
+classifier_regr_std = [8.0, 8.0, 4.0, 4.0]
+# classifier_regr_std = [10.0, 10.0, 5.0, 5.0] #ICRAR
 
 pooling_regions = 7
 num_rois = 4

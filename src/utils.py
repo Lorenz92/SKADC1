@@ -88,7 +88,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
     (rows, cols) = rpn_layer.shape[1:3]
 
     anchor_index = 0
-    print(rpn_layer.shape)
+    # print(rpn_layer.shape)
 
     # print(f'rpn_layer={rpn_layer.shape}' )
     # print(f'regr_layer={regr_layer.shape}' )
@@ -390,15 +390,17 @@ def calc_iou(R, img_data, class_mapping):
     """
     
     gta = np.zeros((img_data.shape[0], 4))
+    # print(R)
+    # print(img_data)
 
     for box_index, bbox in img_data.iterrows():
         
         # get the GT box coordinates, and resize to account for image resizing
         # gta[box_index, 0] = (40 * (600 / 800)) / 16 = int(round(1.875)) = 2 (x in feature map)
-        gta[box_index, 0] = int(bbox['x1s']/config.rpn_stride)
-        gta[box_index, 1] = int(bbox['x2s']/config.rpn_stride)
-        gta[box_index, 2] = int(bbox['y1s']/config.rpn_stride)
-        gta[box_index, 3] = int(bbox['y2s']/config.rpn_stride)
+        gta[box_index, 0] = int(round(bbox['x1s']/config.rpn_stride))
+        gta[box_index, 1] = int(round(bbox['x2s']/config.rpn_stride))
+        gta[box_index, 2] = int(round(bbox['y1s']/config.rpn_stride))
+        gta[box_index, 3] = int(round(bbox['y2s']/config.rpn_stride))
 
     x_roi = []
     y_class_num = []
@@ -422,7 +424,6 @@ def calc_iou(R, img_data, class_mapping):
 
             # print(f'box_index={box_index}')
             curr_iou = prep.iou([gta[box_index, 0], gta[box_index, 2], gta[box_index, 1], gta[box_index, 3]], [x1, y1, x2, y2])
-
             # Find out the corresponding ground-truth box_index with larget iou
             if curr_iou > best_iou:
                 best_iou = curr_iou
@@ -438,27 +439,39 @@ def calc_iou(R, img_data, class_mapping):
             x_roi.append([x1, y1, w, h]) # ROI proposta dal network
             IoUs.append(best_iou) # Quanto x_roi overlappa con la gt
 
-
+            # bg=0
             if config.classifier_min_overlap <= best_iou < config.classifier_max_overlap:
                 # hard negative example
                 cls_name = 'bg'
+                # bg+=1
 
             elif config.classifier_max_overlap <= best_iou:
                 cls_name = str(img_data.loc[box_index,'class_label'])
+                # print(best_bbox)
+                # print('!',gta[best_bbox])
                 cxg = (gta[best_bbox, 0] + gta[best_bbox, 1]) / 2.0
                 cyg = (gta[best_bbox, 2] + gta[best_bbox, 3]) / 2.0
 
+                # print('cg:', cxg,cyg)
+
                 cx = x1 + w / 2.0
                 cy = y1 + h / 2.0
+
+                # print('c:', cx,cy)
 
                 tx = (cxg - cx) / float(w)
                 ty = (cyg - cy) / float(h)
                 tw = np.log((gta[best_bbox, 1] - gta[best_bbox, 0]) / float(w))
                 th = np.log((gta[best_bbox, 3] - gta[best_bbox, 2]) / float(h))
+                
+                # print(x1, x2, y1, y2)
+                # print(tx, ty, tw, th)
+
             else:
                 print('roi = {}'.format(best_iou))
                 raise RuntimeError
-
+        
+        # print('bg=',bg)
         # One-hot encodig array of class
         class_num = class_mapping[cls_name]
         class_label = len(class_mapping) * [0] #[0,0,0,..]
@@ -526,7 +539,7 @@ def plot_loss(history):
     return
 
 def get_real_coordinates(x1, y1, x2, y2):
-    ratio = config.resizeFinalDim / config.patch_dim #TODO change according to model backbone
+    ratio = config.resizeFinalDim / config.patch_dim if config.resizePatch else 1.
     real_x1 = int(round(x1 // ratio))
     real_y1 = int(round(y1 // ratio))
     real_x2 = int(round(x2 // ratio))
@@ -563,8 +576,10 @@ def get_detections(patch_id, bboxes, probs):
 
 def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_model):
     start = time.time()
-    class_mapping = {value:key for key, value in enumerate(class_list)}
+    class_mapping = {key:value for key, value in enumerate(class_list)}
     class_mapping[len(class_mapping)] = 'bg'
+
+    print(class_mapping)
 
     print('Predict')
 
@@ -576,7 +591,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
 
     # print(Y1.shape, Y2.shape)
 
-    R = rpn_to_roi(Y1, Y2, overlap_thresh=0.5, max_boxes=2000)
+    R = rpn_to_roi(Y1, Y2, overlap_thresh=0.5, max_boxes=64)
 
     # convert from (x1,y1,x2,y2) to (x,y,w,h)
     R[:, 2] -= R[:, 0]
@@ -603,8 +618,8 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
 
         [P_cls, P_regr] = detector_model.predict([F, ROIs])
         # [P_cls, P_regr] = detector_model.predict([image, ROIs])
-        # print(P_cls)
-        # print(P_regr)
+        print(P_cls)
+        print(P_regr)
         for ii in range(P_cls.shape[1]):
             # if classification perc is too low OR it is. a 'bg' image THEN discard
             if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
@@ -660,6 +675,9 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
+        
+        print(bboxes, probs)
+        
         detections = get_detections(patch_id, bboxes, probs)
         macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
@@ -678,7 +696,7 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
 def compute_map(y_pred, gt_patch_id, data_folder):
     T = {}
     P = {}
-    f = config.patch_dim / float(config.resizeFinalDim)
+    f = config.patch_dim / float(config.resizeFinalDim) if config.resizePatch else 1.
 
     gt = pd.read_pickle(f'{data_folder}/{gt_patch_id}/{gt_patch_id}.pkl')
 
@@ -688,13 +706,13 @@ def compute_map(y_pred, gt_patch_id, data_folder):
     box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
 
     for box_idx in box_idx_sorted_by_prob:
-        pred_box = y_pred.iloc[box_idx,:]
-        pred_class = pred_box['class']
-        pred_x1 = pred_box['x1s']
-        pred_x2 = pred_box['x2s']
-        pred_y1 = pred_box['y1s']
-        pred_y2 = pred_box['y2s']
-        pred_prob = pred_box['prob']
+        # pred_box = y_pred.iloc[box_idx,:]
+        pred_class = y_pred['class'][box_idx]
+        pred_x1 = y_pred['x1s'][box_idx]
+        pred_x2 = y_pred['x2s'][box_idx]
+        pred_y1 = y_pred['y1s'][box_idx]
+        pred_y2 = y_pred['y2s'][box_idx]
+        pred_prob = y_pred['prob'][box_idx]
         if pred_class not in P:
             P[pred_class] = []
             T[pred_class] = []

@@ -7,7 +7,8 @@ import src.config as config
 import src.utils as utils
 
 from keras.utils import generic_utils
-
+import tensorflow as tf
+import sys
 
 np.random.seed(config.RANDOM_SEED)
 
@@ -24,6 +25,11 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
     ######### shuffle image list
     np.random.shuffle(train_patch_list)
+
+
+    ######### Only fo debug
+    # train_patch_list = ['1550_16376_16779_100']
+    #########
 
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
     if val_patch_list is not None:
@@ -71,7 +77,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _, patch_id = next(train_datagen)
                 
                 print(f'Starting rpn model training on patch {patch_id}')
-                print(image.shape)
+                # print(img_data_aug)
 
                 loss_rpn_tot, loss_rpn_cls, loss_rpn_regr = rpn_model.train_on_batch(image, [y_rpn_cls_true, y_rpn_reg_true])
                 # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
@@ -80,14 +86,22 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 # R: bboxes (shape=(300,4))
                 # Convert rpn layer to roi bboxes
                 R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
-
+     
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
                 # # Y1: one hot encode for bboxes from above => x_roi (X)
                 # # Y2: corresponding labels and corresponding gt bboxes
                 X2, Y1, Y2, IoUs = utils.calc_iou(R, img_data_aug, class_mapping)
 
-                print(f'Best IoU found in this run: {max(IoUs)}')
+                # tf.print('Y2 shape = ', Y2.shape, output_stream=sys.stderr, sep=',', summarize=-1)
+
+                
+                # print(IoUs)
+                if IoUs is not None:
+                    print(f'Best IoU found in this run: {max(IoUs)}')
+
+                # print(X2, Y1, Y2)
+                # print(Y2)
 
                 # If X2 is None means there are no matching bboxes
                 if X2 is None:
@@ -98,6 +112,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 # Find out the positive anchors and negative anchors
                 neg_samples = np.where(Y1[0, :, -1] == 1) # --> these are bg anchors
                 pos_samples = np.where(Y1[0, :, -1] == 0)
+
+                # tf.print('Y2 = ', Y2[0,pos_samples,...], output_stream=sys.stderr, sep=',', summarize=-1)
+
 
                 if len(neg_samples) > 0:
                     neg_samples = neg_samples[0]
@@ -112,12 +129,20 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 rpn_accuracy_rpn_monitor.append(len(pos_samples))
                 rpn_accuracy_for_epoch.append((len(pos_samples)))
 
-                if config.num_rois > 1:
+                # Here we select 64 proposals in the 1:3 ratio:
+                # 64/4*3 positive and 64/4*1 negative
+                num_pos_samples=(config.num_rois//4)*3
+
+                # print('config.num_rois:',config.num_rois)
+                # print('pos threshold:',num_pos_samples)
+                # print('neg threshold:',(config.num_rois//4))
+
+                if config.num_rois > 1: #TODO: remove this if
                     # If number of positive anchors is larger than 4//2 = 2, randomly choose 2 pos samples
-                    if len(pos_samples) < config.num_rois//2:
+                    if len(pos_samples) < num_pos_samples:
                         selected_pos_samples = pos_samples.tolist()
                     else:
-                        selected_pos_samples = np.random.choice(pos_samples, config.num_rois//2, replace=False).tolist()
+                        selected_pos_samples = np.random.choice(pos_samples, num_pos_samples, replace=False).tolist()
                     
                     # Randomly choose (num_rois - num_pos) neg samples
                     try:
@@ -143,10 +168,13 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 #  Y1[:, sel_samples, :] => one hot encode for num_rois bboxes which contains selected neg and pos
                 #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
                 print('Starting detector model training on batch')
+                # print('sel_samples:', sel_samples)
 
                 # print(f'X2 shape: {X2.shape}')
-
+                # print('Y2:',Y2[:, sel_samples, :])
                 loss_detector_tot, loss_detector_cls, loss_detector_regr, detector_class_acc, _ = detector_model.train_on_batch([image, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]) 
+                # [P_cls, P_regr] = detector_model.predict([image, X2[:, sel_samples, :]])
+                # print(P_regr)
 
                 losses[iter_num, 0] = loss_rpn_cls
                 losses[iter_num, 1] = loss_rpn_regr
@@ -158,13 +186,14 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 iter_num += 1
 
                 progbar.update(iter_num, [
-                ('rpn_cls', np.mean(losses[:iter_num, 0])), 
-                ('rpn_regr', np.mean(losses[:iter_num, 1])), 
-                ('detector_cls', np.mean(losses[:iter_num, 2])), 
-                ('detector_regr', np.mean(losses[:iter_num, 3])), 
+                ('rpn_cls', np.mean(losses[iter_num-1, 0])), 
+                ('rpn_regr', np.mean(losses[iter_num-1, 1])), 
+                ('detector_cls', np.mean(losses[iter_num-1, 2])), 
+                ('detector_regr', np.mean(losses[iter_num-1, 3])), 
                 ("average number of objects", len(selected_pos_samples))])
 
                 if iter_num == epoch_length:
+
                     loss_rpn_cls = np.mean(losses[:, 0])
                     loss_rpn_regr = np.mean(losses[:, 1])
                     loss_detector_cls = np.mean(losses[:, 2])
@@ -209,7 +238,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
             except Exception as e:
                 print('Exception: {}'.format(e))
-                # return
-                continue
+                return
+                # continue
 
     print('Training complete.')
