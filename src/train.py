@@ -137,7 +137,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 # print('pos threshold:',num_pos_samples)
                 # print('neg threshold:',(config.num_rois//4))
 
-                if config.num_rois > 1: #TODO: remove this if
+                if config.num_rois > 1:
                     # If number of positive anchors is larger than 4//2 = 2, randomly choose 2 pos samples
                     if len(pos_samples) < num_pos_samples:
                         selected_pos_samples = pos_samples.tolist()
@@ -160,6 +160,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                         sel_samples = np.random.choice(neg_samples)
                     else:
                         sel_samples = np.random.choice(pos_samples)
+
+                print('Selected pos samples:', len(selected_pos_samples))
+                print('Selected neg samples:', len(selected_neg_samples))
 
                 # training_data          => [X, X2[:, sel_samples, :]]
                 # labels                 => [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]

@@ -342,7 +342,7 @@ def apply_regr_np(X, T):
         return X
 
 
-def print_img(img_folder, img_name, data_folder=None):
+def print_img(img_folder, img_name, data_folder=None, show_data=False):
     img = f'{img_folder}/{img_name}/{img_name}.npy'
     img = np.load(img)
     if data_folder==None:
@@ -373,6 +373,8 @@ def print_img(img_folder, img_name, data_folder=None):
         return
     else:
         img_data = pd.read_pickle(img_data)
+        if show_data: 
+            display(img_data.iloc[:,20:])
         for _, box in img_data.iterrows():
             #box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
             ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.1, edgecolor='r',facecolor='none'))
@@ -553,7 +555,7 @@ def get_detections(patch_id, bboxes, probs):
     for key in bboxes:
         bbox = np.array(bboxes[key])
 
-        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.5) #TODO: sposta soglia in config
+        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.2) #TODO: sposta soglia in config
        
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
@@ -664,7 +666,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list):
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold):
 
     preds = {}
     mAP = []
@@ -676,10 +678,10 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
         image, _, _, _, _, patch_id = patch
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
         
-        print(bboxes, probs)
+        # print(bboxes, probs)
         
         detections = get_detections(patch_id, bboxes, probs)
-        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id)
+        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id, metric_threshold)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
@@ -704,6 +706,9 @@ def compute_map(y_pred, gt_patch_id, data_folder):
     pred_probs = np.array(y_pred['prob'])
 
     box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
+
+    # print('708')
+    # print(y_pred)
 
     for box_idx in box_idx_sorted_by_prob:
         # pred_box = y_pred.iloc[box_idx,:]
@@ -733,11 +738,11 @@ def compute_map(y_pred, gt_patch_id, data_folder):
             iou = prep.iou((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
             if iou >= 0.5:
                 found_match = True
-                gt_box['bbox_matched'] = True
+                gt.at[idx,'bbox_matched'] = True
                 break
             else:
                 continue
-
+        # display(gt)
         T[pred_class].append(int(found_match))
 
     for idx, gt_box in gt.iterrows():
@@ -751,15 +756,18 @@ def compute_map(y_pred, gt_patch_id, data_folder):
 
     return T, P
 
-def get_img_scores(detections, patch_id):
+def get_img_scores(detections, patch_id, metric_threshold):
     T = {}
     P = {}
+    P_tresh = {}
     all_aps = []
     all_prec = []
     all_recall = []
     
     t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER)
-    
+    # print('762')
+    # print(t, p)
+
     for key in t.keys():
         if key not in T:
             T[key] = []
@@ -770,8 +778,12 @@ def get_img_scores(detections, patch_id):
 
     for key in T.keys():
         ap = average_precision_score(T[key], P[key])
-        prec = precision_score(T[key], P[key], zero_division=0)
-        recall = recall_score(T[key], P[key])
+        # print('773')
+        # print(T[key], P[key])
+        P_tresh[key] = np.where(np.array(P[key]) > metric_threshold, 1, 0)
+
+        prec = precision_score(T[key], P_tresh[key], zero_division=0)
+        recall = recall_score(T[key], P_tresh[key])
         # print('{} AP: {}'.format(key, ap))
         all_aps.append(ap)
         all_prec.append(prec)

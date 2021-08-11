@@ -18,7 +18,7 @@ def rpn_loss_regr(num_anchors):
     Returns:
         Smooth L1 loss function 
                            0.5*x*x (if x_abs < 1)
-                           x_abx - 0.5 (otherwise)
+                           x_abs - 0.5 (otherwise)
     """
     def rpn_loss_regr_fixed_num(y_true, y_pred):
 
@@ -49,7 +49,7 @@ def rpn_loss_cls(num_anchors):
         # tf.print('pred = ', y_pred.shape, output_stream=sys.stderr, sep=',')
         # tf.print('true = ', y_true.shape, output_stream=sys.stderr, sep=',')
 
-        return lambda_rpn_class * K.sum(y_true[:, :, :, :num_anchors] * K.binary_crossentropy(y_pred[:, :, :, :], y_true[:, :, :, num_anchors:])) / K.sum(epsilon + y_true[:, :, :, :num_anchors])
+        return lambda_rpn_class * K.sum(y_true[:, :, :, :num_anchors] * K.binary_crossentropy(y_pred[:, :, :, :], y_true[:, :, :, num_anchors:])) / K.sum(epsilon + y_true[:, :, :, :num_anchors]) # Stiamo dividendo per 256
             
 
     return rpn_loss_cls_fixed_num

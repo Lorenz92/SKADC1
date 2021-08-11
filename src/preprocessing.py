@@ -67,6 +67,11 @@ def calc_rpn(img_data, width, height, backbone):
 			final shape: (None, num_anchors*anchors_ratio*2*4, final_net_layer_x, final_net_layer_y)
 
 	"""
+
+	print('71 - width:', width)
+	print('72 - height:', height)
+	display(img_data.iloc[: , 20:])
+
 	downscale = float(C.rpn_stride)
 	anchor_sizes = C.anchor_box_scales   # [32, 64, 128, 256, 512]
 	anchor_ratios = C.anchor_box_ratios  # 1:1, 1:2, 2:1
@@ -120,7 +125,7 @@ def calc_rpn(img_data, width, height, backbone):
 				x2_anc = downscale * (ix + 0.5) + anchor_x / 2	
 				
 				# ignore boxes that go across image boundaries					
-				if x1_anc < 0 or x2_anc > width:
+				if (x1_anc < 0 or x2_anc > width):
 					continue
 					
 				for jy in range(output_height):
@@ -130,7 +135,7 @@ def calc_rpn(img_data, width, height, backbone):
 					y2_anc = downscale * (jy + 0.5) + anchor_y / 2
 
 					# ignore boxes that go across image boundaries
-					if y1_anc < 0 or y2_anc > height:
+					if (y1_anc < 0 or y2_anc > height):
 						continue
 
 					# bbox_type indicates whether an anchor should be a target
@@ -142,9 +147,15 @@ def calc_rpn(img_data, width, height, backbone):
 					best_iou_for_loc = 0.0
 
 					for bbox_num in range(num_bboxes):
+
+						# print('box_num', bbox_num)
+						# print('anchor_x', anchor_x)
+						# print('anchor_y', anchor_y)
 						
 						# get IOU of the current GT box and the current anchor box
 						curr_iou = iou([gta[bbox_num, 0], gta[bbox_num, 2], gta[bbox_num, 1], gta[bbox_num, 3]], [x1_anc, y1_anc, x2_anc, y2_anc])
+						# print('anchor coords:', [x1_anc, y1_anc, x2_anc, y2_anc])
+						# print('iou:',curr_iou)
 						# calculate the regression targets if they will be needed
 						if curr_iou > best_iou_for_bbox[bbox_num] or curr_iou > C.rpn_max_overlap: #Al primo giro best_iou_for_bbox[bbox_num] è 0, poi viene aggiornato e verrà ricontrollato al prossimo giro del for padre
 							cx = (gta[bbox_num, 0] + gta[bbox_num, 1]) / 2.0        # Qui stiamo lavorando nelle dimensioni originali (es. 600x600)
@@ -156,8 +167,8 @@ def calc_rpn(img_data, width, height, backbone):
 							ty = (cy - cya) / (y2_anc - y1_anc)
 							# tw = np.log((gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc))
 							# th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
-							tw = (gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc)
-							th = (gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc)
+							tw = 1.*(gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc)
+							th = 1.*(gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc)
 							
 							
 						if img_data.loc[bbox_num]['class_label'] != 'bg':
@@ -208,7 +219,7 @@ def calc_rpn(img_data, width, height, backbone):
 			if best_anchor_for_bbox[idx, 0] == -1:
 				continue
 			y_is_box_valid[
-				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], best_anchor_for_bbox[idx,2] + n_anchratios *
+				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], best_anchor_for_bbox[idx,2] + n_anchratios * # y,x , anchor index
 				best_anchor_for_bbox[idx,3]] = 1
 			y_rpn_overlap[
 				best_anchor_for_bbox[idx,0], best_anchor_for_bbox[idx,1], best_anchor_for_bbox[idx,2] + n_anchratios *
@@ -231,23 +242,56 @@ def calc_rpn(img_data, width, height, backbone):
 	y_rpn_regr = np.transpose(y_rpn_regr, (2, 0, 1))
 	y_rpn_regr = np.expand_dims(y_rpn_regr, axis=0)
 
-	pos_locs = np.where(np.logical_and(y_rpn_overlap[0, :, :, :] == 1, y_is_box_valid[0, :, :, :] == 1))
+	pos_locs = np.where(np.logical_and(y_rpn_overlap[0, :, :, :] == 1, y_is_box_valid[0, :, :, :] == 1)) #ritorna 3 array: il primo sono gli indici di ancora, secondo e terzo le coordinate
 	neg_locs = np.where(np.logical_and(y_rpn_overlap[0, :, :, :] == 0, y_is_box_valid[0, :, :, :] == 1))
 
+	# print('238', y_rpn_overlap[0, :, :, :] == 1)
 	num_pos = len(pos_locs[0])
+	num_neg = len(neg_locs[0])
 
+	print('239', pos_locs)
+	print('240', num_pos)
+	print('241', num_neg)	
+	
 	# one issue is that the RPN has many more negative than positive regions, so we turn off some of the negative
 	# regions. We also limit it to 256 regions.
 	num_regions = 256
 
 	if len(pos_locs[0]) > num_regions/2:
 		val_locs = random.sample(range(len(pos_locs[0])), len(pos_locs[0]) - num_regions/2)
+		print('249', val_locs)
 		y_is_box_valid[0, pos_locs[0][val_locs], pos_locs[1][val_locs], pos_locs[2][val_locs]] = 0
 		num_pos = num_regions/2
+	else:
+		# Qui campioniamo num_regions/2 - len(pos_locs[0] volte ancore positive per bilanciare il batch tra pos e neg.
+		# Alla fine possiamo semplicemente concatenare ad y_is_box_valid e y_rpn_overlap perchè poi la loss_cls filtra le ancore non valide
+		new_pos = np.random.choice(len(pos_locs[0]), int(num_regions/2 - len(pos_locs[0])))
+
+		print('new_pos:', len(new_pos), new_pos)
+		print(y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+		print(y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+
+		# pos_y_is_box_valid = y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
+		# pos_y_rpn_overlap = y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
+		# double_check = np.where(np.logical_and(pos_y_rpn_overlap[0, :, :, :] == 1, pos_y_is_box_valid[0, :, :, :] == 1))
+
+		# print('double check:', len(double_check[0]))
+		# print('pos_y_is_box_valid shape',pos_y_is_box_valid.shape)
+		# print('pos_y_rpn_overlap shape',pos_y_rpn_overlap.shape)
+
+		# num_pos = new_pos + num_pos
+
 
 	if len(neg_locs[0]) + num_pos > num_regions:
 		val_locs = random.sample(range(len(neg_locs[0])), len(neg_locs[0]) - num_pos)
+		print('255', val_locs)
 		y_is_box_valid[0, neg_locs[0][val_locs], neg_locs[1][val_locs], neg_locs[2][val_locs]] = 0
+
+	# Estendiamo y_is_box_valid e y_rpn_overlap
+	print('y_is_box_valid shape',y_is_box_valid.shape)
+	print('y_rpn_overlap shape',y_rpn_overlap.shape)
+	print('regr:', y_rpn_regr.shape)
+
 
 	y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=1)
 	y_rpn_regr = np.concatenate([np.repeat(y_rpn_overlap, 4, axis=1), y_rpn_regr], axis=1)
@@ -373,7 +417,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 
 				#TODO: aggiungere if backbone per manipolare i pixel
 
-				if mode == 'train':
+				if False:#mode == 'train':
 					# print('Augmenting -- START')
 					hflip = np.random.randint(0, 2)
 					vflip = np.random.randint(0, 2)
@@ -420,7 +464,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
 				
-				zero_centering(x_img, pixel_mean) 
+				zero_centering(x_img, pixel_mean) #TODO: cambiare in zero cent per patch
 				
 				if (backbone == 'resnet50' or backbone =='baseline_16'):
 					normalize_pixel_values(x_img)

@@ -48,7 +48,7 @@ required_files = [
 ]
 
 # Dimensions of patches
-patch_dim = 100
+patch_dim = 20
 
 # Setting for data augmentation
 use_horizontal_flips = True
@@ -69,8 +69,6 @@ anchor_num = None
 
 #NMS max boxes
 nms_max_boxes = 2000
-
-in_out_img_size_ratio = 16
 
 #convert from float (0,1) images to int(0, 255)
 convert_to_RGB = True 
@@ -100,7 +98,7 @@ gamma = 0.7
 resizePatch = True
 
 # final dimension of the patch
-resizeFinalDim = 600
+resizeFinalDim = None
 
 # number of ROIs at once
 num_rois = None

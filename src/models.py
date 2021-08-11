@@ -91,7 +91,7 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
     if resume_train:
         if checkpoint is None:
             raise ValueError('Invalid "resume_train" and "checkpoint" combination...')
-        weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}_frcnn_{backbone}.h5'
+        weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}'
 
     else:
         if backbone == 'baseline_8':

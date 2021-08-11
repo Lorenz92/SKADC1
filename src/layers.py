@@ -225,9 +225,9 @@ class RoiPoolingConv(Layer):
             h = K.cast(h, 'int32')
 
             # Resized roi of the image to pooling size (7x7)
-            max_dim = K.maximum(w, h)
-            # tf.print('roi shape = ', rois[0, roi_idx, :], output_stream=sys.stderr, sep=',')
-            # tf.print('img = ', img[0, ..., 0], output_stream=sys.stderr, sep=',')
+            # max_dim = K.maximum(w, h)
+            # # tf.print('roi shape = ', rois[0, roi_idx, :], output_stream=sys.stderr, sep=',')
+            # # tf.print('img = ', img[0, ..., 0], output_stream=sys.stderr, sep=',')
 
             # if max_dim > self.pool_size:
 
@@ -236,8 +236,8 @@ class RoiPoolingConv(Layer):
             
             #     offset = (self.pool_size - max_dim)//2
             #     rs = tf.image.pad_to_bounding_box(img[:, y:y+h, x:x+w, :], offset, offset, self.pool_size, self.pool_size)
-            #     # tf.print('rs shape = ', rs.shape, output_stream=sys.stderr, sep=',')
-            #     # tf.print('rs = ', rs[0,...,0], output_stream=sys.stderr, sep=',')
+            # #     # tf.print('rs shape = ', rs.shape, output_stream=sys.stderr, sep=',')
+            # #     # tf.print('rs = ', rs[0,...,0], output_stream=sys.stderr, sep=',')
 
             rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size), method='bilinear', antialias=False)
             

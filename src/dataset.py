@@ -499,6 +499,9 @@ class SKADataset:
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
 
+            print(f'\nTraining image dimensions: {w} x {h}')
+            print(f'Cutting training image in patches of dim {patch_dim}')
+
             # Add new columns to df
             self.cleaned_train_df['x1s'] = None
             self.cleaned_train_df['y1s'] = None
@@ -512,8 +515,10 @@ class SKADataset:
             patches_list = []
             for i in tqdm(range(0, h, int(patch_dim/2))):
                 if (i<=limit*patch_dim or limit == None):
+
                     for j in range(0, w, int(patch_dim/2)):
-                        if j <=  (limit*patch_dim or limit == None):
+                        if (j<=limit*patch_dim or limit == None):
+
                             patch_xo = self.x1_min+j
                             patch_yo = self.y1_min+i
                             gt_id = []
@@ -542,7 +547,7 @@ class SKADataset:
                                 df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
-                                df_scaled['class_label'] = df_scaled[['SIZE', 'SELECTION']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+                                df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
 
                                 patch_index = i * (h // patch_dim) +j
 
