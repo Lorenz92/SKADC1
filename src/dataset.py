@@ -385,17 +385,17 @@ class SKADataset:
         print()
         print('-'*10)
         print('Starting training image preprocessing...')
-        self.training_image, self.pixel_mean = self.preprocess_train_image()
+        self.training_image, self.pixel_mean = self.preprocess_train_image(self.original_cropped_image, use_patch = False, plot_noise = print_info )
         print('End of training image preprocessing.')
 
         return
     
-    def preprocess_train_image(self, plot_noise=False):
+    def preprocess_train_image(self, img_orig, use_patch =False, plot_noise=False):
         """
         TODO: write desc
         """      
         print('\nComputing max and min pixel value in order to scale image to RGB range')
-        data_flat = self.original_cropped_image.flatten()
+        data_flat = img_orig.flatten()
         neg_values = data_flat[data_flat < 0]
         max_val = max(data_flat)
         print(f'Max pixel value = {max_val}')
@@ -408,16 +408,21 @@ class SKADataset:
             plt.hist(data_flat, bins = 40, range = (abs(min_val), max_val))
         
         print('Removing negative noise...')
-        self.original_cropped_image_clipped = np.clip(self.original_cropped_image, a_min=0, a_max=np.max(self.image_data))
+        
+        img_orig_clipped = np.clip(img_orig, a_min=0, a_max=np.max(self.image_data))
+        # saved the original cropped image as class parameter
+        if not use_patch:
+            self.original_cropped_image_clipped = img_orig_clipped.copy()
         print('Converting to RGB...')
-        training_image, pixel_mean = self.convert_to_RGB(self.original_cropped_image_clipped, np.abs(neg_values), max_val)
+        training_image, pixel_mean = self.convert_to_RGB(img_orig, np.abs(neg_values), max_val, use_patch)
         
         return training_image, pixel_mean
        
-    def convert_to_RGB(self, image, data, max_val):
+    def convert_to_RGB(self, image, data, max_val, use_patch):
         print('Removing positive noise and rescaling to 0-255 interval...')
-        mu, stdev = self._compute_halfgaussian_noise(data, True)
-        thresh_low = stdev * 2.5
+        if not use_patch:
+            mu, self.stdev = self._compute_halfgaussian_noise(data, True)
+        thresh_low = self.stdev * 2.5
         min_magnitude_order = int(np.log10(thresh_low)) -1
         max_magnitude_order = int(np.log10(max_val))
         one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
@@ -564,8 +569,13 @@ class SKADataset:
 
                             if len(gt_id) > 0:
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                                img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
-
+                                #img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
+                                img_patch = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()
+                                print(img_patch)
+                                print('type',type(img_patch))                               
+                                img_patch, mean = self.preprocess_train_image( img_patch, use_patch =True, plot_noise=False)
+                                print(img_patch)
+                                print('type',type(img_patch))  
                                 # Cut bboxes that fall outside the patch
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
                                 df_scaled = df_scaled.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
@@ -593,7 +603,7 @@ class SKADataset:
                                 patches_list.append(patch_id)    
 
                                 if show_plot:
-                                    plt.imshow(img_patch, cmap='viridis')#, vmax=255, vmin=0)
+                                    plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     #img = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()
                                     #plt.imshow(img, cmap='viridis')
 
