@@ -390,7 +390,7 @@ class SKADataset:
 
         return
     
-    def preprocess_train_image(self, img_orig, use_patch =False, plot_noise=False):
+    def preprocess_train_image(self, img_orig, use_log_scale =True, use_patch =False, plot_noise=False):
         """
         TODO: write desc
         """      
@@ -414,21 +414,32 @@ class SKADataset:
         if not use_patch:
             self.original_cropped_image_clipped = img_orig_clipped.copy()
         print('Converting to RGB...')
-        training_image, pixel_mean = self.convert_to_RGB(img_orig, np.abs(neg_values), max_val, use_patch)
+        training_image, pixel_mean = self.convert_to_RGB(img_orig, np.abs(neg_values), max_val, use_log_scale, use_patch)
         
         return training_image, pixel_mean
        
-    def convert_to_RGB(self, image, data, max_val, use_patch):
+    def convert_to_RGB(self, image, data, max_val, use_log_scale, use_patch):
         print('Removing positive noise and rescaling to 0-255 interval...')
         if not use_patch:
             mu, self.stdev = self._compute_halfgaussian_noise(data, True)
         thresh_low = self.stdev * 2.5
-        min_magnitude_order = int(np.log10(thresh_low)) -1
-        max_magnitude_order = int(np.log10(max_val))
-        one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
-        lndelta = np.linspace(0., 1., one_magnitude_range)
-        training_image = self._RGB_to_FLOAT(image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order)
-        pixel_mean = np.repeat(int(np.mean(training_image)), 3)
+
+        if use_log_scale:
+            min_magnitude_order = int(np.log10(thresh_low)) -1
+            max_magnitude_order = int(np.log10(max_val))
+            one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
+            lndelta = np.linspace(0., 1., one_magnitude_range)
+            training_image = self._RGB_to_FLOAT(image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order)
+            pixel_mean = np.repeat(int(np.mean(training_image)), 3)
+        else:
+            #max_val = max(image.flatten())
+            #min_val = min(image.flatten())
+            image[image< thresh_low] = 0.
+            training_image = pow((image/max_val), 0.6)*255
+            pixel_mean = np.mean(training_image.flatten())
+
+        print('mean RGB val=' , pixel_mean)
+
         return training_image, pixel_mean
 
     def _RGB_to_FLOAT(self, image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order):
@@ -466,7 +477,7 @@ class SKADataset:
         return mu, stdev
 
    ####################
-    def generate_patches(self, limit, plot_patches=False):
+    def generate_patches(self, limit, patch_RGB_norm = False, use_log_scale =True, plot_patches=False):
        
         def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None):
         
@@ -569,13 +580,13 @@ class SKADataset:
 
                             if len(gt_id) > 0:
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                                #img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
-                                img_patch = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()
-                                print(img_patch)
-                                print('type',type(img_patch))                               
-                                img_patch, mean = self.preprocess_train_image( img_patch, use_patch =True, plot_noise=False)
-                                print(img_patch)
-                                print('type',type(img_patch))  
+
+                                if patch_RGB_norm:                        
+                                    img_patch = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()                           
+                                    img_patch, mean = self.preprocess_train_image( img_patch, use_log_scale, use_patch =True, plot_noise=False)
+                                else:
+                                    img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
+
                                 # Cut bboxes that fall outside the patch
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
                                 df_scaled = df_scaled.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
