@@ -8,8 +8,11 @@ import pandas as pd
 import astropy.wcs as pywcs
 from astropy.io import fits
 import copy
+import math
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+import matplotlib.cm as cm
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
@@ -346,78 +349,6 @@ class SKADataset:
             
             display(cleaned_train_df.head())
             return cleaned_train_df
-        
-        def preprocess_train_image(plot_noise=False):
-            """
-            TODO: write desc
-            """
-            def _convert_to_RGB(image, data, max_val):
-                print('Removing positive noise and rescaling to 0-255 interval...')
-                mu, stdev = _compute_halfgaussian_noise(data, True)
-                thresh_low = stdev * 2.5
-                min_magnitude_order = int(np.log10(thresh_low)) -1
-                max_magnitude_order = int(np.log10(max_val))
-
-                one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
-                lndelta = np.linspace(0., 1., one_magnitude_range)
-                training_image = _RGB_to_FLOAT(image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order)
-                pixel_mean = np.repeat(int(np.mean(training_image)), 3)
-                return training_image, pixel_mean
-
-            def _RGB_to_FLOAT(img, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order):
-                rgb_val = 0
-                thrsld_min = np.power(10., min_magnitude_order)
-                thrsld_max = np.power(10., max_magnitude_order)
-
-                img[img < thrsld_min] = rgb_val
-                img[img > thrsld_max] = 255
-
-                delta_ord_mag = max_magnitude_order - min_magnitude_order
-                
-                for rng in range(delta_ord_mag):
-                    real_deltas = np.power(10., lndelta) * np.power(10., min_magnitude_order + rng)
-                    for inner_rng in range(one_magnitude_range - 1):
-                        img[((img > real_deltas[inner_rng]) & (img < real_deltas[inner_rng+1]))] = rgb_val
-                        rgb_val += 1
-                
-                return img
-
-            def _compute_halfgaussian_noise(data, plot=False):
-                # fit dist to data
-                mu, stdev = st.halfnorm.fit(data)
-
-                print(f'\nMean and stdev of the half-gaussian that best fits with noise distribution:\nmu={mu}, stdev={stdev}')
-
-                if plot:
-                    plt.hist(data, bins = 40, range = (0., max(data)))
-                    # Plot the PDF.
-                    xmin, xmax = plt.xlim()
-                    x = np.linspace(xmin, xmax, 100)
-                    p = st.halfnorm.pdf(x, mu, stdev)
-                    plt.plot(x, p, 'k', linewidth=2)
-                return mu, stdev
-
-            print('\nComputing max and min pixel value in order to scale image to RGB range')
-            data_flat = self.original_cropped_image.flatten()
-            neg_values = data_flat[data_flat < 0]
-            max_val = max(data_flat)
-            print(f'Max pixel value = {max_val}')
-
-            # # histogram of noise (- noise, + noise)
-            if plot_noise:
-            # # we know that negative values are due to noise, and we assume a gaussian noise distribution
-                min_val = min(data_flat)
-                print(f'Min pixel value = {min_val}')
-                # plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))
-                plt.hist(data_flat, bins = 40, range = (abs(min_val), max_val))
-            
-            print('Removing negative noise...')
-            original_cropped_image_clipped = np.clip(self.original_cropped_image, a_min=0, a_max=np.max(self.image_data))
-            print('Converting to RGB...')
-            training_image, pixel_mean = _convert_to_RGB(original_cropped_image_clipped, np.abs(neg_values), max_val)
-            
-            return training_image, pixel_mean
-        #####################
 
 
         # Downloading assets  
@@ -448,13 +379,107 @@ class SKADataset:
         print()
         print('-'*10)
         print('Starting training image preprocessing...')
-        self.training_image, self.pixel_mean = preprocess_train_image()
+        self.training_image, self.pixel_mean = self.preprocess_train_image(self.original_cropped_image, use_patch = False, plot_noise = print_info )
         print('End of training image preprocessing.')
 
         return
+    
+    def preprocess_train_image(self, img_orig, use_log_scale =True, use_patch =False, plot_noise=False):
+        """
+        TODO: write desc
+        """      
+        print('\nComputing max and min pixel value in order to scale image to RGB range')
+        data_flat = img_orig.flatten()
+        neg_values = data_flat[data_flat < 0]
+        max_val = max(data_flat)
+        print(f'Max pixel value = {max_val}')
+        # # histogram of noise (- noise, + noise)
+        if plot_noise:
+        # # we know that negative values are due to noise, and we assume a gaussian noise distribution
+            min_val = min(data_flat)
+            print(f'Min pixel value = {min_val}')
+            # plt.hist(data_flat, bins = 40, range = (0.0001, 0.006))
+            plt.hist(data_flat, bins = 40, range = (abs(min_val), max_val))
+        
+        print('Removing negative noise...')
+        
+        img_orig_clipped = np.clip(img_orig, a_min=0, a_max=np.max(self.image_data))
+        # saved the original cropped image as class parameter
+        if not use_patch:
+            self.original_cropped_image_clipped = img_orig_clipped.copy()
+        print('Converting to RGB...')
+        training_image, pixel_mean = self.convert_to_RGB(img_orig, np.abs(neg_values), max_val, use_log_scale, use_patch)
+        
+        return training_image, pixel_mean
+       
+    def convert_to_RGB(self, image, data, max_val, use_log_scale, use_patch):
+        self.log_base = 10.
+        print('Removing positive noise and rescaling to 0-255 interval...')
+        # minimum magnitude order is computed looking at the noise of the whole training image, even if the RGB conversion is done for each patch
+        if not use_patch:
+            mu, self.stdev = self._compute_halfgaussian_noise(data, True)
+        thresh_low = self.stdev * 2.5
 
-    def generate_patches(self, limit, plot_patches=False):
+        if use_log_scale:
+            min_magnitude_order = int(math.log(thresh_low,self.log_base)) -1
+            max_magnitude_order = int(math.log(max_val, self.log_base))
+            one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
+            print('one magnitude range', one_magnitude_range)
+            #lndelta = np.linspace(0., 1., one_magnitude_range)
+            training_image = self._RGB_to_FLOAT(image, one_magnitude_range, min_magnitude_order, max_magnitude_order)
+            pixel_mean = np.repeat(int(np.mean(training_image)), 3)
+        else:
+            #max_val = max(image.flatten())
+            #min_val = min(image.flatten())
+            #image[image< thresh_low] = 0.
+            training_image = pow((image/max_val), 0.7)*255
+            pixel_mean = np.mean(training_image.flatten())
 
+        print('mean RGB val=' , pixel_mean)
+
+        return training_image, pixel_mean
+
+    def _RGB_to_FLOAT(self, image, one_magnitude_range, min_magnitude_order, max_magnitude_order):
+        rgb_val = 0
+        img=image.copy()
+        thrsld_min = np.power(float(self.log_base), min_magnitude_order)
+        thrsld_max = np.power(float(self.log_base), max_magnitude_order)
+        img[img < thrsld_min] = rgb_val
+        img[img > thrsld_max] = 255
+        delta_ord_mag = max_magnitude_order - min_magnitude_order
+        
+        lndelta = np.linspace(1., float(self.log_base), one_magnitude_range)
+        #print('lndelta', lndelta)
+        #lndelta = np.logspace(0.1, 1, num=delta_ord_mag, base= self.log_base)
+        for rng in range(delta_ord_mag):
+            # 
+            #real_deltas = np.power(float(self.log_base), lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
+            # linear jumps inside the same order of magnitude
+            real_deltas = (lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
+            print('range', rng)
+            #print('lndelta', real_deltas)
+            for inner_rng in range(one_magnitude_range - 1):
+                img[((img > real_deltas[inner_rng]) & (img < real_deltas[inner_rng+1]))] = rgb_val
+                rgb_val += 1
+        
+        return img
+    
+    def _compute_halfgaussian_noise(self, data, plot=False):
+        # fit dist to data
+        mu, stdev = st.halfnorm.fit(data)
+        print(f'\nMean and stdev of the half-gaussian that best fits with noise distribution:\nmu={mu}, stdev={stdev}')
+        if plot:
+            plt.hist(data, bins = 40, range = (0., max(data)))
+            # Plot the PDF.
+            xmin, xmax = plt.xlim()
+            x = np.linspace(xmin, xmax, 100)
+            p = st.halfnorm.pdf(x, mu, stdev)
+            plt.plot(x, p, 'k', linewidth=2)
+        return mu, stdev
+
+   ####################
+    def generate_patches(self, limit, patch_RGB_norm = False, use_log_scale =True, plot_patches=False):
+       
         def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None):
         
             def _cut_bbox(x, patch_xo, patch_yo, patch_dim):
@@ -496,6 +521,33 @@ class SKADataset:
                 idx2 = filtered_df['ID'].tolist()
                 return idx2
 
+            def _filter_snr_gt(gt_df_patch):
+
+                def filter_func(img, x1, y1, x2, y2, flux):
+                    img_box = img[ y1 - self.y1_min : y2 -self.y1_min, x1 -self.x1_min: x2 - self.x1_min ].copy()
+                    data_flat = img_box.flatten()
+                    if(len(data_flat)< 1):
+                        return False
+                    # if flux < 3 * 255.0E-9:
+                    #      return False
+                    return np.mean(data_flat)< flux
+    
+                img = self.original_cropped_image_clipped.copy()
+                high_snr_ID =[]
+                for idx, row in gt_df_patch.iterrows() :
+                    high_snr_ID.append(filter_func(img, int(row['x1']), int(row['y1']), int(row['x2']), int(row['y2']), row['FLUX'] ))
+
+                id_cleaned = gt_df_patch['ID'].loc[high_snr_ID]
+
+                print( 'ground truth len', len(gt_df_patch))
+                if not high_snr_ID:
+                    print('empty')
+                else:
+                    print( 'high snr box number', len(id_cleaned))    
+
+                return id_cleaned
+
+
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
 
@@ -529,7 +581,12 @@ class SKADataset:
 
                             if len(gt_id) > 0:
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                                img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
+
+                                if patch_RGB_norm:                        
+                                    img_patch = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()                           
+                                    img_patch, mean = self.preprocess_train_image( img_patch, use_log_scale, use_patch =True, plot_noise=False)
+                                else:
+                                    img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
 
                                 # Cut bboxes that fall outside the patch
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
