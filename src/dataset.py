@@ -456,7 +456,6 @@ class SKADataset:
             #real_deltas = np.power(float(self.log_base), lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
             # linear jumps inside the same order of magnitude
             real_deltas = (lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
-            print('range', rng)
             #print('lndelta', real_deltas)
             for inner_rng in range(one_magnitude_range - 1):
                 img[((img > real_deltas[inner_rng]) & (img < real_deltas[inner_rng+1]))] = rgb_val
