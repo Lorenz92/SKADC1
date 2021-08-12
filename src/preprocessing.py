@@ -68,9 +68,9 @@ def calc_rpn(img_data, width, height, backbone):
 
 	"""
 
-	print('71 - width:', width)
-	print('72 - height:', height)
-	display(img_data.iloc[: , 20:])
+	# print('71 - width:', width)
+	# print('72 - height:', height)
+	# display(img_data.iloc[: , 20:])
 
 	downscale = float(C.rpn_stride)
 	anchor_sizes = C.anchor_box_scales   # [32, 64, 128, 256, 512]
@@ -169,7 +169,11 @@ def calc_rpn(img_data, width, height, backbone):
 							# th = np.log((gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc))
 							tw = 1.*(gta[bbox_num, 1] - gta[bbox_num, 0]) / (x2_anc - x1_anc)
 							th = 1.*(gta[bbox_num, 3] - gta[bbox_num, 2]) / (y2_anc - y1_anc)
-							
+						## debug
+						# if(ix==17 and jy==17):
+						# 	print('17', (tx, ty, tw, th))
+						# 	print(curr_iou)
+						# 	print(anchor_ratio_idx + n_anchratios * anchor_size_idx)
 							
 						if img_data.loc[bbox_num]['class_label'] != 'bg':
 
@@ -249,9 +253,10 @@ def calc_rpn(img_data, width, height, backbone):
 	num_pos = len(pos_locs[0])
 	num_neg = len(neg_locs[0])
 
-	print('239', pos_locs)
-	print('240', num_pos)
-	print('241', num_neg)	
+	# print('239', pos_locs)
+	# print('240', num_pos)
+	# print('241', num_neg)
+	# print('pos_reg', np.where(y_rpn_regr[0, :, :, :] > 0))
 	
 	# one issue is that the RPN has many more negative than positive regions, so we turn off some of the negative
 	# regions. We also limit it to 256 regions.
@@ -259,7 +264,7 @@ def calc_rpn(img_data, width, height, backbone):
 
 	if len(pos_locs[0]) > num_regions/2:
 		val_locs = random.sample(range(len(pos_locs[0])), len(pos_locs[0]) - num_regions/2)
-		print('249', val_locs)
+		# print('249', val_locs)
 		y_is_box_valid[0, pos_locs[0][val_locs], pos_locs[1][val_locs], pos_locs[2][val_locs]] = 0
 		num_pos = num_regions/2
 	else:
@@ -267,9 +272,9 @@ def calc_rpn(img_data, width, height, backbone):
 		# Alla fine possiamo semplicemente concatenare ad y_is_box_valid e y_rpn_overlap perchè poi la loss_cls filtra le ancore non valide
 		new_pos = np.random.choice(len(pos_locs[0]), int(num_regions/2 - len(pos_locs[0])))
 
-		print('new_pos:', len(new_pos), new_pos)
-		print(y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
-		print(y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+		# print('new_pos:', len(new_pos), new_pos)
+		# print(y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+		# print(y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
 
 		# pos_y_is_box_valid = y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
 		# pos_y_rpn_overlap = y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
@@ -280,17 +285,49 @@ def calc_rpn(img_data, width, height, backbone):
 		# print('pos_y_rpn_overlap shape',pos_y_rpn_overlap.shape)
 
 		# num_pos = new_pos + num_pos
+	
+	# Estendiamo y_is_box_valid e y_rpn_overlap
+	not_valids = np.where(y_is_box_valid[0, :, :, :] == 0)
+	replacing_indexes = int(num_regions/2 - len(pos_locs[0]))
+	not_valid_to_be_replaced = np.array([not_valids[0][:replacing_indexes], not_valids[1][:replacing_indexes], not_valids[2][:replacing_indexes]])
+
+	# print('not val', len(not_valids[0]))
+	# print('not val', not_valid_to_be_replaced.shape)
+	# print('not val', not_valid_to_be_replaced[0])
+	# print('not val', 4*not_valid_to_be_replaced[0])
+	# print('not val', 4*not_valid_to_be_replaced[0]+4)
+	# print(type(y_rpn_regr))
+
+	y_is_box_valid[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
+	y_rpn_overlap[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
+
+	for idx in range(len(not_valid_to_be_replaced[0])):
+		# print('?'*9)
+		new_regr_values = new_pos[idx]
+		# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
+		# print(y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]])
+		y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]] = y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]]
+		# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
+	
+	num_pos += len(new_pos)
+	# print('new num pos:', num_pos)
 
 
 	if len(neg_locs[0]) + num_pos > num_regions:
 		val_locs = random.sample(range(len(neg_locs[0])), len(neg_locs[0]) - num_pos)
-		print('255', val_locs)
+		# print('255', len(val_locs))
 		y_is_box_valid[0, neg_locs[0][val_locs], neg_locs[1][val_locs], neg_locs[2][val_locs]] = 0
 
-	# Estendiamo y_is_box_valid e y_rpn_overlap
-	print('y_is_box_valid shape',y_is_box_valid.shape)
-	print('y_rpn_overlap shape',y_rpn_overlap.shape)
-	print('regr:', y_rpn_regr.shape)
+	# # debug
+	# print('y_is_box_valid shape',y_is_box_valid.shape)
+	# print('y_is_box_valid shape',y_is_box_valid[0,14,17,17])
+	# print('y_is_box_valid shape',y_is_box_valid[0,0,0,1])
+	# print('y_rpn_overlap shape',y_rpn_overlap.shape)
+	# print('y_rpn_overlap shape',y_rpn_overlap[0,14,17,17])
+	# print('regr:', y_rpn_regr.shape)
+	# print('regr:', y_rpn_regr[0,4*14:4*14+4,17,17])
+	# print('new pos locs',len(np.where(np.logical_and(y_rpn_overlap[0, :, :, :] == 1, y_is_box_valid[0, :, :, :] == 1))[0])) #ritorna 3 array: il primo sono gli indici di ancora, secondo e terzo le coordinate
+	# print('new neg locs',len(np.where(np.logical_and(y_rpn_overlap[0, :, :, :] == 0, y_is_box_valid[0, :, :, :] == 1))[0]))
 
 
 	y_rpn_cls = np.concatenate([y_is_box_valid, y_rpn_overlap], axis=1)
