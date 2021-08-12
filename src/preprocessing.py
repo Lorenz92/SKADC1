@@ -389,7 +389,7 @@ def augment(img_path, img_data_path, augment=True, **kwargs):
 
 	return img_aug, img_data_aug
 
-def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander=False, infinite_loop=True, pixel_mean=None):
+def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander=False, infinite_loop=True, pixel_mean=None, single_patch_norm = False ):
 	""" Yield the ground-truth anchors as Y (labels)
 		
 	Args:
@@ -463,11 +463,16 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
+<<<<<<< HEAD
 				
 				zero_centering(x_img, pixel_mean) #TODO: cambiare in zero cent per patch
 				
+=======
+>>>>>>> d86b73d (plot delle classi, RGB conversion : parametrizzata la base del log, preprocessing: modifica a zero centering e normalizzazione)
 				if (backbone == 'resnet50' or backbone =='baseline_16'):
-					normalize_pixel_values(x_img)
+					normalize_pixel_values(x_img, single_patch_norm)	
+
+				zero_centering(x_img, single_patch_norm, pixel_mean) 
 				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
 				if use_expander:				
@@ -488,11 +493,17 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				continue
 
 
-def zero_centering(img_patch, pixel_mean=None):
-	if pixel_mean is None:
+def zero_centering(img_patch, single_patch_norm, pixel_mean = None):
+
+	if pixel_mean is None and not single_patch_norm:
 		img_channel_mean = C.img_channel_mean
+		print('zero centering channel mean from config', img_channel_mean)
+	elif pixel_mean is None and single_patch_norm:
+		img_channel_mean = np.repeat(np.mean(img_patch.flatten()),3)
+		print('zero centering computed channel mean:', img_channel_mean)
 	else:
 		img_channel_mean = pixel_mean
+		print('zero centering passed channel mean:', img_channel_mean)	
 
     #in order to manage images with 3 channels. ours should be 1
 	imageChannels = 1 if len(img_patch.shape)== 2 else 3
@@ -506,15 +517,20 @@ def zero_centering(img_patch, pixel_mean=None):
 		img_patch[:, :, 2] -= img_channel_mean[2]
 	return
 
-def normalize_pixel_values(img_patch):
+def normalize_pixel_values(img_patch, single_patch_norm):
 
-	if False:
-		img_patch[:, :, 0] /= 255
-		img_patch[:, :, 1] /= 255
-		img_patch[:, :, 2] /= 255
+	if single_patch_norm:
+		max_val = np.max(img_patch.flatten())
+		img_patch[:, :, 0] /= max_val
+		img_patch[:, :, 1] /= max_val
+		img_patch[:, :, 2] /= max_val
 	else:
-		img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
-		img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
-		img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
+		img_patch[:, :, 0] = img_patch[:, :, 0]/C.img_channel_mean[0]
+		img_patch[:, :, 1] = img_patch[:, :, 1]/C.img_channel_mean[1]
+		img_patch[:, :, 2] = img_patch[:, :, 2]/C.img_channel_mean[2]
+
+		# img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
+		# img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
+		# img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
 
 	return

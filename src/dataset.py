@@ -8,8 +8,11 @@ import pandas as pd
 import astropy.wcs as pywcs
 from astropy.io import fits
 import copy
+import math
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
+import matplotlib.cm as cm
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
 
@@ -69,7 +72,8 @@ class SKADataset:
             'width':[],
             'height':[],
             'area_orig':[],
-            'area_cropped':[]
+            'area_cropped':[],
+            'class_label':[]
             }
     
         # Process the training set
@@ -326,8 +330,9 @@ class SKADataset:
                 self.coords['height'].append(abs(y2-y1))
                 self.coords['area_orig'].append(orig_area)
                 self.coords['area_cropped'].append(new_area)
-                
-
+                box_size= box['SIZE'].astype(int).astype(object)
+                box_class= box['CLASS'].astype(int).astype(object)
+                self.coords['class_label'].append(f'{box_size}_{box_class}')
 
 
             print(f'Initial dataset shape: {boxes_dataframe.shape}')
@@ -341,11 +346,56 @@ class SKADataset:
             print()
 
             if plot_analysis:
+                # histogram of height and width
                 plt.figure(figsize=(8,6))
                 plt.hist(cleaned_df['width'], bins=400, alpha=0.5, label="width ")
                 plt.hist(cleaned_df['height'], bins=200, alpha=0.5, label="height")
                 plt.ylim((0, 11500))
                 plt.xlim((0, 50))
+
+                #scatter plot of class 
+                patch_class_list = cleaned_df['class_label'].unique() 
+
+                print(cleaned_df.groupby('class_label').count())
+                print (patch_class_list)
+
+                #fig = plt.figure(figsize=(8,8))
+                #ax1 = fig.add_subplot(111)
+                colors = cm.rainbow(np.linspace(0, 1, len(patch_class_list)))
+                fig, axs = plt.subplots(1, len(patch_class_list), figsize=(4*len(patch_class_list),4))
+                for idx, c in zip(range(len(patch_class_list)), colors):
+                    #fig = plt.figure(figsize=(4,4))
+                    clean_cass = cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[idx]), :]
+                    axs[idx].scatter(clean_cass['width'], clean_cass['height'], s=10,color=c, label=patch_class_list[idx])
+                    axs[idx].set_xlim([0, 100])
+                    axs[idx].set_ylim([0, 100])
+                    axs[idx].title.set_text( f'width vs height of class: { patch_class_list[idx]}')
+                    # plt.ylim((0, 100))
+                    # plt.xlim((0, 100))
+                    #plt.legend(loc='upper left')
+                # clean_cass2= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[4]), :]
+                # clean_cass1= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[3]), :]
+                # clean_cass3= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[2]), :]
+                # clean_cass4= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[1]), :]
+                # clean_cass5= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[0]), :]
+                # fig = plt.figure(figsize=(8,8))
+
+                # ax1 = fig.add_subplot(111)
+                # ax1.scatter(clean_cass2['width'], clean_cass2['height'], s=10, c='b', label=patch_class_list[4])
+                # ax1.scatter(clean_cass1['width'], clean_cass1['height'], s=10, c='r', label=patch_class_list[3])
+                # ax1.scatter(clean_cass3['width'], clean_cass3['height'], s=10, c='g', label=patch_class_list[2])
+                # ax1.scatter(clean_cass5['width'], clean_cass5['height'], s=10, c='c', label=patch_class_list[0])
+                # ax1.scatter(clean_cass4['width'], clean_cass4['height'], s=10, c='y', label=patch_class_list[1])
+                plt.ylim((0, 100))
+                plt.xlim((0, 100))
+                plt.legend(loc='upper left')
+                #colors = ['red','green','blue']          
+                #ax1.scatter(clean_cass2['width'], clean_cass2['height'], c='b')# cmap=matplotlib.colors.ListedColormap(colors))
+                
+                #cb = plt.colorbar()
+                # loc = np.arange(0,max(clean_cass2['class_label']),max(clean_cass2['class_label'])/float(len(colors)))
+                # cb.set_ticks(loc)
+                # cb.set_ticklabels(colors)
 
             if config.enlarge_bbox:
                 print('Enlarging bboxes...')
@@ -419,44 +469,51 @@ class SKADataset:
         return training_image, pixel_mean
        
     def convert_to_RGB(self, image, data, max_val, use_log_scale, use_patch):
+        self.log_base = 10.
         print('Removing positive noise and rescaling to 0-255 interval...')
+        # minimum magnitude order is computed looking at the noise of the whole training image, even if the RGB conversion is done for each patch
         if not use_patch:
             mu, self.stdev = self._compute_halfgaussian_noise(data, True)
         thresh_low = self.stdev * 2.5
 
         if use_log_scale:
-            min_magnitude_order = int(np.log10(thresh_low)) -1
-            max_magnitude_order = int(np.log10(max_val))
+            min_magnitude_order = int(math.log(thresh_low,self.log_base)) -1
+            max_magnitude_order = int(math.log(max_val, self.log_base))
             one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
-            lndelta = np.linspace(0., 1., one_magnitude_range)
-            training_image = self._RGB_to_FLOAT(image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order)
+            print('one magnitude range', one_magnitude_range)
+            #lndelta = np.linspace(0., 1., one_magnitude_range)
+            training_image = self._RGB_to_FLOAT(image, one_magnitude_range, min_magnitude_order, max_magnitude_order)
             pixel_mean = np.repeat(int(np.mean(training_image)), 3)
         else:
             #max_val = max(image.flatten())
             #min_val = min(image.flatten())
-            image[image< thresh_low] = 0.
-            training_image = pow((image/max_val), 0.6)*255
+            #image[image< thresh_low] = 0.
+            training_image = pow((image/max_val), 0.7)*255
             pixel_mean = np.mean(training_image.flatten())
 
         print('mean RGB val=' , pixel_mean)
 
         return training_image, pixel_mean
 
-    def _RGB_to_FLOAT(self, image, lndelta, one_magnitude_range, min_magnitude_order, max_magnitude_order):
+    def _RGB_to_FLOAT(self, image, one_magnitude_range, min_magnitude_order, max_magnitude_order):
         rgb_val = 0
         img=image.copy()
-        thrsld_min = np.power(10., min_magnitude_order)
-        thrsld_max = np.power(10., max_magnitude_order)
+        thrsld_min = np.power(float(self.log_base), min_magnitude_order)
+        thrsld_max = np.power(float(self.log_base), max_magnitude_order)
         img[img < thrsld_min] = rgb_val
         img[img > thrsld_max] = 255
         delta_ord_mag = max_magnitude_order - min_magnitude_order
         
-        lndelta = np.linspace(1., 10., one_magnitude_range)
+        lndelta = np.linspace(1., float(self.log_base), one_magnitude_range)
+        #print('lndelta', lndelta)
+        #lndelta = np.logspace(0.1, 1, num=delta_ord_mag, base= self.log_base)
         for rng in range(delta_ord_mag):
             # 
-            # real_deltas = np.power(10., lndelta) * np.power(10., min_magnitude_order + rng)
+            #real_deltas = np.power(float(self.log_base), lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
             # linear jumps inside the same order of magnitude
-            real_deltas = (lndelta) * np.power(10., min_magnitude_order + rng)
+            real_deltas = (lndelta) * np.power(float(self.log_base), min_magnitude_order + rng)
+            print('range', rng)
+            #print('lndelta', real_deltas)
             for inner_rng in range(one_magnitude_range - 1):
                 img[((img > real_deltas[inner_rng]) & (img < real_deltas[inner_rng+1]))] = rgb_val
                 rgb_val += 1
@@ -523,7 +580,6 @@ class SKADataset:
             def _filter_snr_gt(gt_df_patch):
 
                 def filter_func(img, x1, y1, x2, y2, flux):
-                # print('x1', x1,'y1', y1,'x2', x2,'y2', y2)
                     img_box = img[ y1 - self.y1_min : y2 -self.y1_min, x1 -self.x1_min: x2 - self.x1_min ].copy()
                     data_flat = img_box.flatten()
                     if(len(data_flat)< 1):
@@ -604,7 +660,11 @@ class SKADataset:
                                 df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
+<<<<<<< HEAD
                                 df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+=======
+                                #df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+>>>>>>> d86b73d (plot delle classi, RGB conversion : parametrizzata la base del log, preprocessing: modifica a zero centering e normalizzazione)
 
                                 patch_index = i * (h // patch_dim) +j
 
@@ -614,6 +674,7 @@ class SKADataset:
                                 patches_list.append(patch_id)    
 
                                 if show_plot:
+                                    plt.figure(figsize=(10,10))
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     #img = self.original_cropped_image_clipped[i:i+patch_dim, j:j+patch_dim].copy()
                                     #plt.imshow(img, cmap='viridis')
