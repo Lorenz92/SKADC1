@@ -463,12 +463,6 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
-<<<<<<< HEAD
-				
-				zero_centering(x_img, pixel_mean) #TODO: cambiare in zero cent per patch
-				
-=======
->>>>>>> d86b73d (plot delle classi, RGB conversion : parametrizzata la base del log, preprocessing: modifica a zero centering e normalizzazione)
 				if (backbone == 'resnet50' or backbone =='baseline_16'):
 					normalize_pixel_values(x_img, single_patch_norm)	
 

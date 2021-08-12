@@ -660,11 +660,6 @@ class SKADataset:
                                 df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
-<<<<<<< HEAD
-                                df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
-=======
-                                #df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
->>>>>>> d86b73d (plot delle classi, RGB conversion : parametrizzata la base del log, preprocessing: modifica a zero centering e normalizzazione)
 
                                 patch_index = i * (h // patch_dim) +j
 
