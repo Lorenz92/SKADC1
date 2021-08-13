@@ -477,9 +477,9 @@ class SKADataset:
         return mu, stdev
 
    ####################
-    def generate_patches(self, limit, patch_RGB_norm = False, use_log_scale =True, plot_patches=False):
+    def generate_patches(self, limit, patch_dim = config.patch_dim, patch_RGB_norm = False,  use_log_scale =True, bbox_min = None, bbox_max= None, plot_patches=False):
        
-        def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None):
+        def _split_in_patch(patch_dim=100, is_multiple=False, bbox_min_dim= None, bbox_max_dim= None, show_plot=False, limit=None):
         
             def _cut_bbox(x, patch_xo, patch_yo, patch_dim):
                 x.x1 = max(x.x1, patch_xo)
@@ -546,7 +546,19 @@ class SKADataset:
                     print( 'high snr box number', len(id_cleaned))    
 
                 return id_cleaned
+            
+            print('original size ', self.cleaned_train_df.shape )
+            cleaned_df = self.cleaned_train_df.copy()
+            print('original size copied ', cleaned_df.shape )
+            print('min dim = ', bbox_min_dim)
 
+            if bbox_min_dim != None :
+                cleaned_df =cleaned_df[(cleaned_df['width'] > bbox_min_dim) | (cleaned_df['height'] > bbox_min_dim)]
+                print('size after min ', cleaned_df.shape )
+
+            if bbox_max_dim != None :
+                cleaned_df = cleaned_df[(cleaned_df['width'] < bbox_max_dim) & (cleaned_df['height'] < bbox_max_dim)]
+                print('size after max ', cleaned_df.shape )
 
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
@@ -558,11 +570,16 @@ class SKADataset:
             print(f'Cutting training image in patches of dim {patch_dim} from a square of {hlim}x{wlim} pixels')
 
             # Add new columns to df
-            self.cleaned_train_df['x1s'] = None
-            self.cleaned_train_df['y1s'] = None
-            self.cleaned_train_df['x2s'] = None
-            self.cleaned_train_df['y2s'] = None
-            self.cleaned_train_df['class_label'] = None
+            # self.cleaned_train_df['x1s'] = None
+            # self.cleaned_train_df['y1s'] = None
+            # self.cleaned_train_df['x2s'] = None
+            # self.cleaned_train_df['y2s'] = None
+            # self.cleaned_train_df['class_label'] = None
+            cleaned_df['x1s'] = None
+            cleaned_df['y1s'] = None
+            cleaned_df['x2s'] = None
+            cleaned_df['y2s'] = None
+            cleaned_df['class_label'] = None
 
             if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
                 raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
@@ -580,7 +597,7 @@ class SKADataset:
                             patch_yo = self.y1_min+i*int(patch_dim/2)
                             gt_id = []
 
-                            gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
+                            gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, cleaned_df)
 
                             # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
 
@@ -595,8 +612,8 @@ class SKADataset:
                                     img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
 
                                 # Cut bboxes that fall outside the patch
-                                df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
-                                df_scaled = df_scaled.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
+                                df_scaled = cleaned_df.loc[cleaned_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
+                                df_scaled = df_scaled.loc[cleaned_df['ID'].isin(gt_id)].apply(_from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
                                 
                                 df_scaled["patch_name"] = filename
                                 df_scaled["patch_xo"] = patch_xo
@@ -616,8 +633,9 @@ class SKADataset:
 
                                 self.proc_train_df = self.proc_train_df.append(df_scaled)
                                 patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
-                                _save_bbox_files(img_patch, patch_id, df_scaled)
-                                patches_list.append(patch_id)  
+                                if(len(df_scaled)>0):
+                                    _save_bbox_files(img_patch, patch_id, df_scaled)
+                                    patches_list.append(patch_id)    
 
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
@@ -640,7 +658,6 @@ class SKADataset:
                     break  # only executed if the inner loop DID break
 
             self.class_list = self.proc_train_df['class_label'].unique()
-            print()
             print(f'Class list: {self.class_list}')
             self.num_classes = len(self.proc_train_df['class_label'].unique())
             print(f'Number of distinct class labels: {self.num_classes}')
@@ -648,32 +665,31 @@ class SKADataset:
             print(f'Patches with no gt: {patches_without_gt}')
             return patches_list
 
-        self.patch_list = {}
-        self.patch_list = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit)
-        return
-
-
-   #TODO rivedere questa funzione usando un dict
-    def analyze_class_distribution(self):
+        #self.patch_list = {}
+        patch_list = {}
+        patch_list = _split_in_patch(patch_dim, bbox_min_dim = bbox_min, bbox_max_dim = bbox_max, show_plot=plot_patches, limit=limit)
+        return patch_list
+    
+    def analyze_class_distribution(self, patch_list ):
 
         # number of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
         self.num_combinations = pow(2, self.num_classes) - 1  
-
+        print('comb num', self.num_combinations)
         patch_class_list = []
         patch_class_bool = []
         patch_class_int = []
         self.patch_list_per_class = {}
 
-        for j in range(1,self.num_combinations+1):
+        for j in range(1, self.num_combinations+1):
             key_j = 'key_{}'.format(j)
             self.patch_list_per_class[key_j] = []
 
-        for patch_id in self.patch_list:
+        for patch_id in patch_list: #self.patch_list:
             img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
             img_data_patch = pd.read_pickle(img_data_path)
 
             patch_class_list = img_data_patch['class_label'].unique() 
-            
+
             for class_idx in self.class_list:
                 if class_idx in patch_class_list:
                     patch_class_bool.append('1')
@@ -683,6 +699,8 @@ class SKADataset:
             patch_class_2=''.join(patch_class_bool)
             b = (int(patch_class_2, base=2))
             patch_class_int.append(b)
+            print('patch class', patch_class_2, 'b=', b, 'patch int =',patch_class_int )
+
             self.patch_list_per_class['key_{}'.format(b)].append(patch_id)           
             #print (b, patch_class_list)
             patch_class_bool.clear()
@@ -728,12 +746,12 @@ class SKADataset:
 
         return
 
-    def split_train_val(self, random_state, val_portion=.2):
+    def split_train_val(self,patch_list, random_state, val_portion=.2):
         # self.train_patch_list_no_strat = []
         # self.val_patch_list_no_strat = []
         train_class_distribution =[]
 
-        train, val = train_test_split(self.patch_list,  test_size = val_portion, random_state=random_state)
+        train, val = train_test_split(patch_list,  test_size = val_portion, random_state=random_state)
 
         for idx in range(1, self.num_combinations+1):
             common_ID = set(train) & set(self.patch_list_per_class['key_{}'.format(idx)])
