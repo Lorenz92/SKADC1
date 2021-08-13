@@ -138,9 +138,12 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 # print('neg threshold:',(config.num_rois//4))
 
                 if config.num_rois > 1:
-                    # If number of positive anchors is larger than 4//2 = 2, randomly choose 2 pos samples
+                    # If number of positive anchors is smaller than num_rois*3/4, take all positive samples and then resample until num_rois*3/4; 
+                    # else randomly choose num_pos_samples pos samples
                     if len(pos_samples) < num_pos_samples:
                         selected_pos_samples = pos_samples.tolist()
+                        selected_pos_samples += np.random.choice(pos_samples, num_pos_samples-len(pos_samples), replace=True).tolist()
+
                     else:
                         selected_pos_samples = np.random.choice(pos_samples, num_pos_samples, replace=False).tolist()
                     

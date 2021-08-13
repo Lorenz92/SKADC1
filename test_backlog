@@ -1,0 +1,5 @@
+Test su singola patch 20x20 20_16396_16729_20:
+
+-baseline 16: 500 epoche + 16 roi senza ripetizione pos + 256 rpn + resize7x7 in RoiPoolingConv + 1) zero centering 2) normalizzazione forzando da -1 a +1 L
+-baseline 16: 500 epoche + 128 roi con ripetizione pos + 256 rpn + resize7x7 in RoiPoolingConv + 1) zero centering 2) normalizzazione forzando da -1 a +1 L
+-baseline 16: 500 epoche + 16 roi senza ripetizione pos+ 256 rpn + resize7x7 in RoiPoolingConv + 1) normalizzazione dividento tutto per il valore massimo della patch 2) zero centering calcolando la media per patch A
