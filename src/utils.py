@@ -363,6 +363,7 @@ def print_img(img_folder, img_name, data_folder=None, show_data=False):
     #     ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
 
     # Create figure and axes
+    fig = plt.figure(figsize=(12,12))
     fig, ax = plt.subplots()
 
     # Display the image
@@ -666,13 +667,13 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold):
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold, single_patch_norm = False):
 
     preds = {}
     mAP = []
     mPrec = []
     mRecall = []
-    val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False)
+    val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False,  single_patch_norm = single_patch_norm)
 
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
