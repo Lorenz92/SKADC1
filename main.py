@@ -12,12 +12,12 @@
       "name": "python",
       "nbconvert_exporter": "python",
       "pygments_lexer": "ipython3",
-      "version": "3.8.2"
+      "version": "3.8.8"
     },
     "orig_nbformat": 2,
     "kernelspec": {
       "name": "python3",
-      "display_name": "Python 3.8.2 64-bit"
+      "display_name": "Python 3.8.8 64-bit"
     },
     "colab": {
       "name": "main.ipynb",
@@ -29,7 +29,7 @@
       }
     },
     "interpreter": {
-      "hash": "31f2aee4e71d21fbe5cf8b01ff0e069b9275f58929596ceb00d14d90e3e16cd6"
+      "hash": "2d04b9be2429acaaca541b9fd5f04e1d13e142a6d8a3b01163614a22cbe6d5d6"
     }
   },
   "cells": [
@@ -37,8 +37,8 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# !git clone 'https://github.com/Lorenz92/SKADC1.git'\n",
-        "# % cd SKADC1\n",
+        "# !git clone 'https://github.com/Lorenz92/SKADC1.git'\r\n",
+        "# % cd SKADC1\r\n",
         "# !echo $PWD"
       ],
       "outputs": [],
@@ -48,19 +48,19 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "import pandas as pd\n",
-        "import numpy as np\n",
-        "\n",
-        "import src.dataset as dataset\n",
-        "import src.config as config \n",
-        "from src.utils import *\n",
-        "import src.models as models\n",
-        "import src.losses as loss\n",
-        "\n",
-        "path = config.TRAIN_PATCHES_FOLDER\n",
-        "%load_ext autoreload\n",
-        "%autoreload 2\n",
-        "\n",
+        "import pandas as pd\r\n",
+        "import numpy as np\r\n",
+        "\r\n",
+        "import src.dataset as dataset\r\n",
+        "import src.config as config \r\n",
+        "from src.utils import *\r\n",
+        "import src.models as models\r\n",
+        "import src.losses as loss\r\n",
+        "\r\n",
+        "path = config.TRAIN_PATCHES_FOLDER\r\n",
+        "%load_ext autoreload\r\n",
+        "%autoreload 2\r\n",
+        "\r\n",
         "np.random.seed(config.RANDOM_SEED)"
       ],
       "outputs": [],
@@ -76,11 +76,11 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "if 'google.colab' in str(get_ipython()):\n",
-        "  use_colab = True\n",
-        "  print('Running on CoLab')\n",
-        "else:\n",
-        "  use_colab = False\n",
+        "if 'google.colab' in str(get_ipython()):\r\n",
+        "  use_colab = True\r\n",
+        "  print('Running on CoLab')\r\n",
+        "else:\r\n",
+        "  use_colab = False\r\n",
         "  print('Not running on CoLab')"
       ],
       "outputs": [],
@@ -90,11 +90,11 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "if use_colab:\n",
-        "    # Read file from Colab Notebook\n",
-        "    from google.colab import drive\n",
-        "    drive.mount('/content/drive')\n",
-        "    config.MODEL_WEIGHTS = \"/content/drive/My Drive/Colab Notebooks/SKADC1\"\n",
+        "if use_colab:\r\n",
+        "    # Read file from Colab Notebook\r\n",
+        "    from google.colab import drive\r\n",
+        "    drive.mount('/content/drive')\r\n",
+        "    config.MODEL_WEIGHTS = \"/content/drive/My Drive/Colab Notebooks/SKADC1\"\r\n",
         "    config.IMAGE_PATH = \"/content/drive/My Drive/Colab Notebooks/SKADC1/asset/560Mhz_1000h.fits\""
       ],
       "outputs": [],
@@ -104,8 +104,8 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# Dataset parsing and loading\n",
-        "# use \"subset\" in config file to load a small portion of data for development/debugging purposes\n",
+        "# Dataset parsing and loading\r\n",
+        "# use \"subset\" in config file to load a small portion of data for development/debugging purposes\r\n",
         "ska_dataset = dataset.SKADataset(k=3, print_info=False, use_pb=False)"
       ],
       "outputs": [],
@@ -141,8 +141,9 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "show_plot = True\n",
-        "ska_dataset.generate_patches(limit=5, plot_patches=show_plot) # Remember to remove internal return"
+        "show_plot = True\r\n",
+        "RGB_patch_norm = True\r\n",
+        "ska_dataset.generate_patches(limit=2, patch_RGB_norm =  RGB_patch_norm, plot_patches=show_plot) # Remember to remove internal return"
       ],
       "outputs": [],
       "metadata": {
@@ -166,10 +167,10 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "ska_dataset.split_train_val_stratified(random_state=42, val_portion=0.2)\n",
-        "\n",
-        "print(len(ska_dataset.train_patch_list))\n",
-        "print(len(ska_dataset.val_patch_list))\n"
+        "ska_dataset.split_train_val_stratified(random_state=42, val_portion=0.2)\r\n",
+        "\r\n",
+        "print(len(ska_dataset.train_patch_list))\r\n",
+        "print(len(ska_dataset.val_patch_list))\r\n"
       ],
       "outputs": [],
       "metadata": {}
@@ -201,7 +202,7 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "print_img(config.TRAIN_PATCHES_FOLDER, '20_16396_16729_20', show_data=True)\n"
+        "print_img(config.TRAIN_PATCHES_FOLDER, '20_16396_16729_20', show_data=True)\r\n"
       ],
       "outputs": [],
       "metadata": {}
@@ -210,14 +211,14 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# # Debugging\n",
-        "\n",
-        "# train_patch_list = ska_dataset.train_patch_list\n",
-        "# patches_folder_path=config.TRAIN_PATCHES_FOLDER\n",
-        "\n",
-        "# train_datagen = prep.get_anchor_gt(patches_folder_path, ['20_16396_16729_20'], backbone, pixel_mean=None)\n",
-        "# image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _, patch_id = next(train_datagen)\n",
-        "\n"
+        "# Debugging\r\n",
+        "\r\n",
+        "train_patch_list = ska_dataset.train_patch_list\r\n",
+        "patches_folder_path=config.TRAIN_PATCHES_FOLDER\r\n",
+        "\r\n",
+        "train_datagen = prep.get_anchor_gt(patches_folder_path, ['20_16396_16729_20'], backbone, pixel_mean=None)\r\n",
+        "image, [y_rpn_cls_true, y_rpn_reg_true], img_data_aug, _, _, patch_id = next(train_datagen)\r\n",
+        "\r\n"
       ],
       "outputs": [],
       "metadata": {}
@@ -270,10 +271,10 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "rpn_model, detector_model, total_model = models.get_train_model(input_shape_1=input_shape_1, input_shape_2=input_shape_2, anchor_num=config.anchor_num, pooling_regions=config.pooling_regions, num_rois=config.num_rois, num_classes=len(ska_dataset.class_list)+1, backbone=backbone, use_expander=False)\n",
-        "\n",
-        "rpn_model.summary()\n",
-        "detector_model.summary()\n",
+        "rpn_model, detector_model, total_model = models.get_train_model(input_shape_1=input_shape_1, input_shape_2=input_shape_2, anchor_num=config.anchor_num, pooling_regions=config.pooling_regions, num_rois=config.num_rois, num_classes=len(ska_dataset.class_list)+1, backbone=backbone, use_expander=False)\r\n",
+        "\r\n",
+        "rpn_model.summary()\r\n",
+        "detector_model.summary()\r\n",
         "total_model.summary()"
       ],
       "outputs": [],
@@ -294,7 +295,7 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "models.load_weigths(rpn_model, detector_model, backbone, resume_train=False, checkpoint=checkpoint)\n",
+        "models.load_weigths(rpn_model, detector_model, backbone, resume_train=False, checkpoint=checkpoint)\r\n",
         "models.compile_models(rpn_model, detector_model, total_model, rpn_losses=[loss.rpn_loss_cls, loss.rpn_loss_regr], detector_losses=[loss.detector_loss_cls, loss.detector_loss_regr], class_list=ska_dataset.class_list)"
       ],
       "outputs": [],
@@ -304,8 +305,8 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# Specifically checking backbone weights\n",
-        "\n",
+        "# Specifically checking backbone weights\r\n",
+        "\r\n",
         "# total_model.weights[24:25][0][0][0][0]"
       ],
       "outputs": [],
@@ -315,10 +316,10 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# Check that all of the pretrained weights have been loaded.\n",
-        "import numpy as np\n",
-        "for i, j in zip(total_model.weights, rpn_model.weights): \n",
-        "    # print(i,j)\n",
+        "# Check that all of the pretrained weights have been loaded.\r\n",
+        "import numpy as np\r\n",
+        "for i, j in zip(total_model.weights, rpn_model.weights): \r\n",
+        "    # print(i,j)\r\n",
         "    assert np.allclose(i,j), 'Weights don\\'t match!'"
       ],
       "outputs": [],
@@ -355,8 +356,8 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "# zzz = np.load(f'{config.TRAIN_PATCHES_FOLDER}/3100_16376_16829_100/3100_16376_16829_100.npy')\n",
-        "\n",
+        "# zzz = np.load(f'{config.TRAIN_PATCHES_FOLDER}/3100_16376_16829_100/3100_16376_16829_100.npy')\r\n",
+        "\r\n",
         "# print_img(config.TRAIN_PATCHES_FOLDER, '3100_16376_16829_100')"
       ],
       "outputs": [],
@@ -373,10 +374,9 @@
       "cell_type": "code",
       "execution_count": null,
       "source": [
-        "from src.train import *\n",
-        "\n",
-        "val_patch_list = None\n",
-        "train_frcnn(rpn_model, detector_model, total_model, ['20_16396_16729_20'], ska_dataset.val_patch_list, ska_dataset.class_list, num_epochs=499, patches_folder_path=config.TRAIN_PATCHES_FOLDER, backbone=backbone, resume_train=True)\n",
+        "from src.train import *\r\n",
+        "val_patch_list = None\r\n",
+        "train_frcnn(rpn_model, detector_model, total_model, ['20_16396_16729_20'], ska_dataset.val_patch_list, ska_dataset.class_list, num_epochs=500, patches_folder_path=config.TRAIN_PATCHES_FOLDER, single_patch_norm = RGB_patch_norm, backbone=backbone, resume_train=True)\r\n",
         "# train_frcnn(rpn_model, detector_model, total_model, ska_dataset.train_patch_list, ska_dataset.val_patch_list, ska_dataset.class_list, num_epochs=300, patches_folder_path=config.TRAIN_PATCHES_FOLDER, backbone=backbone, resume_train=True)"
       ],
       "outputs": [],
@@ -402,10 +402,10 @@
       "cell_type": "code",
       "execution_count": 60,
       "source": [
-        "rpn_model_eval, detector_model_eval, total_model_eval = models.get_eval_model(input_shape_1=input_shape_1, input_shape_2=input_shape_2, input_shape_fmap=None, anchor_num=config.anchor_num, pooling_regions=config.pooling_regions, num_rois=config.num_rois, num_classes=len(ska_dataset.class_list)+1, backbone=backbone, use_expander=False)\n",
-        "\n",
-        "rpn_model_eval.summary()\n",
-        "detector_model_eval.summary()\n",
+        "rpn_model_eval, detector_model_eval, total_model_eval = models.get_eval_model(input_shape_1=input_shape_1, input_shape_2=input_shape_2, input_shape_fmap=None, anchor_num=config.anchor_num, pooling_regions=config.pooling_regions, num_rois=config.num_rois, num_classes=len(ska_dataset.class_list)+1, backbone=backbone, use_expander=False)\r\n",
+        "\r\n",
+        "rpn_model_eval.summary()\r\n",
+        "detector_model_eval.summary()\r\n",
         "total_model_eval.summary()"
       ],
       "outputs": [
@@ -512,11 +512,11 @@
       "cell_type": "code",
       "execution_count": 67,
       "source": [
-        "patch_id = ['20_16396_16729_20']#ska_dataset.train_patch_list#[1:2]\n",
-        "# print(patch_id)\n",
-        "# gt = pd.read_pickle(f'{config.TRAIN_PATCHES_FOLDER}/{patch_id[0]}/{patch_id[0]}.pkl')\n",
-        "# display(gt['class_label'])\n",
-        "\n",
+        "patch_id = ['20_16396_16729_20']#ska_dataset.train_patch_list#[1:2]\r\n",
+        "# print(patch_id)\r\n",
+        "# gt = pd.read_pickle(f'{config.TRAIN_PATCHES_FOLDER}/{patch_id[0]}/{patch_id[0]}.pkl')\r\n",
+        "# display(gt['class_label'])\r\n",
+        "\r\n",
         "preds, mAP, prec, recall = evaluate_model(rpn_model_eval, detector_model_eval, backbone, patch_id, ska_dataset.class_list, metric_threshold=.5)"
       ],
       "outputs": [
@@ -741,7 +741,7 @@
       "cell_type": "code",
       "execution_count": 68,
       "source": [
-        "anch = pd.read_pickle(f'{config.EVAL_RESULTS}/20_16396_16729_20/20_16396_16729_20.pkl')\n",
+        "anch = pd.read_pickle(f'{config.EVAL_RESULTS}/20_16396_16729_20/20_16396_16729_20.pkl')\r\n",
         "display(anch)"
       ],
       "outputs": [
@@ -803,7 +803,7 @@
       "cell_type": "code",
       "execution_count": 69,
       "source": [
-        "anch['width'] = anch['x2s'] - anch['x1s']\n",
+        "anch['width'] = anch['x2s'] - anch['x1s']\r\n",
         "anch['heght'] = anch['y2s'] - anch['y1s']"
       ],
       "outputs": [],
