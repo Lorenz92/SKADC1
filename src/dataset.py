@@ -9,7 +9,6 @@ import astropy.wcs as pywcs
 from astropy.io import fits
 import copy
 import math
-import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import matplotlib.cm as cm
@@ -423,8 +422,9 @@ class SKADataset:
         if use_log_scale:
             min_magnitude_order = int(math.log(thresh_low,self.log_base)) -1
             max_magnitude_order = int(math.log(max_val, self.log_base))
-            one_magnitude_range = int(np.floor(256/(max_magnitude_order - min_magnitude_order)))
-            print('one magnitude range', one_magnitude_range)
+            delta = 1 if (max_magnitude_order - min_magnitude_order) == 0 else (max_magnitude_order - min_magnitude_order)
+            one_magnitude_range = int(np.floor(256/delta))
+            # print('one magnitude range', one_magnitude_range)
             #lndelta = np.linspace(0., 1., one_magnitude_range)
             training_image = self._RGB_to_FLOAT(image, one_magnitude_range, min_magnitude_order, max_magnitude_order)
             pixel_mean = np.repeat(int(np.mean(training_image)), 3)
@@ -435,7 +435,7 @@ class SKADataset:
             training_image = pow((image/max_val), 0.7)*255
             pixel_mean = np.mean(training_image.flatten())
 
-        print('mean RGB val=' , pixel_mean)
+        # print('mean RGB val=' , pixel_mean)
 
         return training_image, pixel_mean
 
@@ -513,7 +513,8 @@ class SKADataset:
             def _find_gt_in_patch(patch_xo, patch_yo, patch_dim, gt_df):
 
                 def _filter_func(x, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim):
-                    return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
+                    return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim and (x.x2 - x.x1) <= patch_dim * 0.8 and (x.y2 - x.y1) <= patch_dim * 0.8 
+                    # return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
 
                 filtered_df = gt_df[gt_df.apply(_filter_func, axis=1)]
 
@@ -549,9 +550,12 @@ class SKADataset:
 
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
+            hlim = round(np.sqrt(limit))
+            wlim = hlim
+            patches_without_gt = 0
 
             print(f'\nTraining image dimensions: {w} x {h}')
-            print(f'Cutting training image in patches of dim {patch_dim}')
+            print(f'Cutting training image in patches of dim {patch_dim} from a square of {hlim}x{wlim} pixels')
 
             # Add new columns to df
             self.cleaned_train_df['x1s'] = None
@@ -563,15 +567,17 @@ class SKADataset:
             if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
                 raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
+            print(f'hlim: {hlim}')
+            print(f'wlim: {wlim}')
             patches_list = []
-            for i in tqdm(range(0, h, int(patch_dim/2))):
-                if (i<=limit*patch_dim or limit == None):
-
-                    for j in range(0, w, int(patch_dim/2)):
-                        if (j<=limit*patch_dim or limit == None):
-
-                            patch_xo = self.x1_min+j
-                            patch_yo = self.y1_min+i
+            # for i in tqdm(range(0, h, int(patch_dim/2))):
+            for i in tqdm(range(hlim)):
+                # if (i<=limit*patch_dim or limit == None):
+                    # for j in range(0, w, int(patch_dim/2)):
+                    for j in range(wlim):
+                        # if (j<=limit*patch_dim or limit == None):
+                            patch_xo = self.x1_min+j*int(patch_dim/2)
+                            patch_yo = self.y1_min+i*int(patch_dim/2)
                             gt_id = []
 
                             gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
@@ -579,6 +585,7 @@ class SKADataset:
                             # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
 
                             if len(gt_id) > 0:
+                                print(f'\n Generating patch {len(patches_list)+1}/{limit}')
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
 
                                 if patch_RGB_norm:                        
@@ -610,28 +617,43 @@ class SKADataset:
                                 self.proc_train_df = self.proc_train_df.append(df_scaled)
                                 patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
                                 _save_bbox_files(img_patch, patch_id, df_scaled)
-                                patches_list.append(patch_id)    
+                                patches_list.append(patch_id)  
 
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     print('Max gray level value = ', img_patch.max())
                                     for box_index in gt_id:
                                         box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
-                                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
+                                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.5,edgecolor='r',facecolor='none'))
                                         plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
                                     plt.show()
+                            else:
+                                patches_without_gt +=1
+                                pass
+
+                                if len(patches_list) >= limit:
+                                    print('Breaking')
+                                    break
+                    else:
+                        print('continuing')
+                        continue  # only executed if the inner loop did NOT break
+                    break  # only executed if the inner loop DID break
 
             self.class_list = self.proc_train_df['class_label'].unique()
             print()
             print(f'Class list: {self.class_list}')
             self.num_classes = len(self.proc_train_df['class_label'].unique())
             print(f'Number of distinct class labels: {self.num_classes}')
+            print(f'Total number of generated patches: {len(patches_list)}')
+            print(f'Patches with no gt: {patches_without_gt}')
             return patches_list
 
         self.patch_list = {}
         self.patch_list = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit)
         return
-    
+
+
+   #TODO rivedere questa funzione usando un dict
     def analyze_class_distribution(self):
 
         # number of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved

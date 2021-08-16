@@ -48,7 +48,7 @@ required_files = [
 ]
 
 # Dimensions of patches
-patch_dim = 20
+patch_dim = None
 
 # Setting for data augmentation
 use_horizontal_flips = True
