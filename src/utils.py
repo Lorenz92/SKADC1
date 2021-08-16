@@ -101,7 +101,7 @@ def rpn_to_roi(rpn_layer, regr_layer, use_regr=True, max_boxes=300, overlap_thre
 
     # print(regr_layer)
 
-
+    print('anchor sizes', anchor_sizes)
     for anchor_size in anchor_sizes:
         # print('anchor_size=',anchor_size)
         for anchor_ratio in anchor_ratios:      
@@ -541,8 +541,9 @@ def plot_loss(history):
     
     return
 
-def get_real_coordinates(x1, y1, x2, y2):
-    ratio = config.resizeFinalDim / config.patch_dim if config.resizePatch else 1.
+def get_real_coordinates(x1, y1, x2, y2, patch_dim):
+    ratio = config.resizeFinalDim / patch_dim if config.resizePatch else 1.
+    print('get_real_coordinates ratio:', ratio)
     real_x1 = int(round(x1 // ratio))
     real_y1 = int(round(y1 // ratio))
     real_x2 = int(round(x2 // ratio))
@@ -550,7 +551,7 @@ def get_real_coordinates(x1, y1, x2, y2):
 
     return (real_x1, real_y1, real_x2 ,real_y2)
 
-def get_detections(patch_id, bboxes, probs):
+def get_detections(patch_id, bboxes, probs, patch_dim):
     boxes_coords ={'x1s':[], 'y1s':[], 'x2s':[], 'y2s':[], 'class':[], 'prob':[]}
     
     for key in bboxes:
@@ -561,7 +562,7 @@ def get_detections(patch_id, bboxes, probs):
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
             print((x1, y1, x2, y2))
-            (real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(x1, y1, x2, y2)
+            (real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(x1, y1, x2, y2, patch_dim)
 
             boxes_coords['x1s'].append(real_x1)
             boxes_coords['y1s'].append(real_y1)
@@ -667,7 +668,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold, single_patch_norm = False):
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold, single_patch_norm = False, size_from_name = True):
 
     preds = {}
     mAP = []
@@ -677,12 +678,15 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
 
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
+        patch_dim_list = patch_id.split('_') 
+        patch_dim = int( patch_dim_list[-1])
+        print('origiinal patch dimension:' ,patch_dim)
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
         
         # print(bboxes, probs)
         
-        detections = get_detections(patch_id, bboxes, probs)
-        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id, metric_threshold)
+        detections = get_detections(patch_id, bboxes, probs, patch_dim)
+        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id, metric_threshold, patch_dim)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
@@ -696,10 +700,10 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
     print(f'\nTotal model metrics: mAP: {total_mAP} - macro_precision: {total_mPrec} - macro_recall: {total_mRecall}')
     return preds, total_mAP, total_mPrec, total_mRecall
 
-def compute_map(y_pred, gt_patch_id, data_folder):
+def compute_map(y_pred, gt_patch_id, data_folder, patch_dim):
     T = {}
     P = {}
-    f = config.patch_dim / float(config.resizeFinalDim) if config.resizePatch else 1.
+    f = patch_dim / float(config.resizeFinalDim) if config.resizePatch else 1.
 
     gt = pd.read_pickle(f'{data_folder}/{gt_patch_id}/{gt_patch_id}.pkl')
 
@@ -757,7 +761,7 @@ def compute_map(y_pred, gt_patch_id, data_folder):
 
     return T, P
 
-def get_img_scores(detections, patch_id, metric_threshold):
+def get_img_scores(detections, patch_id, metric_threshold, patch_dim):
     T = {}
     P = {}
     P_tresh = {}
@@ -765,7 +769,7 @@ def get_img_scores(detections, patch_id, metric_threshold):
     all_prec = []
     all_recall = []
     
-    t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER)
+    t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER, patch_dim)
     # print('762')
     # print(t, p)
 
