@@ -1,0 +1,5 @@
+1 - senza normalizzazione della ground truth -- non funziona
+4 - variando roipooling conv
+2 - trainando anche primi layer partendo da pesi vgg
+2.2 - trainando primi layer senza transfer learning
+3 - con più layer conv

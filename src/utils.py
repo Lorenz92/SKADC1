@@ -377,7 +377,7 @@ def print_img(img_folder, img_name, data_folder=None, show_data=False):
             display(img_data.iloc[:,20:])
         for _, box in img_data.iterrows():
             #box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
-            ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.1, edgecolor='r',facecolor='none'))
+            ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.5, edgecolor='r',facecolor='none'))
             #plt.text(box.x - patch_xo, box.y - patch_yo, box_index, fontsize = 1)
         
         plt.show()
