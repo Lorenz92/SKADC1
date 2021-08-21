@@ -516,7 +516,6 @@ def plot_loss(history):
     plt.subplot(1,2,2)
     plt.plot(np.arange(0, r_epochs), history[:,4], 'r')
     plt.title('class_acc')
-
     plt.show()
 
     plt.figure(figsize=(15,5))

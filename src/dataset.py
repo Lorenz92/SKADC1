@@ -1,4 +1,5 @@
 import os
+from os import listdir
 from IPython.core.display import display
 import itertools
 import numpy as np
@@ -453,7 +454,43 @@ class SKADataset:
 
         return
 
-    def generate_patches(self, limit, plot_patches=False):
+    def generate_patches(self, limit, plot_patches=False, source_dir=False):
+        
+        def _retrieve_patches_from_dir(limit, source_dir, plot_patches):
+
+            patches_list = []
+            proc_train_df = pd.DataFrame()
+            previously_generate_patches = listdir(source_dir)
+            patches_dict = {int(v.split('_')[0]):v for v in previously_generate_patches}
+
+            if limit:
+                print(f'Attention: by using limit parameter you will retrieve only the first {limit} patches')
+            
+            for patch_id in sorted(patches_dict)[:limit]:
+
+                patch = patches_dict[patch_id]
+                patches_list.append(patch)
+
+                print(f'\nRetrieving patch {patch}')
+
+                pkl = pd.read_pickle(f'{source_dir}/{patch}/{patch}.pkl')
+
+                proc_train_df = proc_train_df.append(pkl)
+
+                if plot_patches:
+                    img_patch = np.load(f'{source_dir}/{patch}/{patch}.npy')
+                    patch_xo = int(patch.split('_')[1])
+                    patch_yo = int(patch.split('_')[2])
+                    plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
+                    print('Max gray level value = ', img_patch.max())
+                    for box_index, box in pkl.iterrows():
+                        # box = pkl.loc[pkl['ID']==box_index].squeeze()
+                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.5,edgecolor='r',facecolor='none'))
+                        plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
+                    plt.show()
+
+            
+            return patches_list, proc_train_df.reset_index()
 
         def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None):
         
@@ -489,7 +526,8 @@ class SKADataset:
             def _find_gt_in_patch(patch_xo, patch_yo, patch_dim, gt_df):
 
                 def _filter_func(x, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim):
-                    return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
+                    return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim and (x.x2 - x.x1) <= patch_dim * 0.8 and (x.y2 - x.y1) <= patch_dim * 0.8 
+                    # return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
 
                 filtered_df = gt_df[gt_df.apply(_filter_func, axis=1)]
 
@@ -498,29 +536,34 @@ class SKADataset:
 
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
+            hlim = round(np.sqrt(limit))
+            wlim = hlim
+            patches_without_gt = 0
 
             print(f'\nTraining image dimensions: {w} x {h}')
             print(f'Cutting training image in patches of dim {patch_dim}')
-
+            proc_train_df = pd.DataFrame()
             # Add new columns to df
             self.cleaned_train_df['x1s'] = None
             self.cleaned_train_df['y1s'] = None
             self.cleaned_train_df['x2s'] = None
             self.cleaned_train_df['y2s'] = None
             self.cleaned_train_df['class_label'] = None
+            self.cleaned_train_df['patch_id'] = None
 
             if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
                 raise ValueError('Image size is not multiple of patch_dim. Please choose an appropriate value for patch_dim.')
 
+            print(f'hlim: {hlim}')
+            print(f'wlim: {wlim}')
+            step = int(patch_dim/2)
             patches_list = []
-            for i in tqdm(range(0, h, int(patch_dim/2))):
-                if (i<=limit*patch_dim or limit == None):
-
-                    for j in range(0, w, int(patch_dim/2)):
-                        if (j<=limit*patch_dim or limit == None):
-
-                            patch_xo = self.x1_min+j
-                            patch_yo = self.y1_min+i
+            # for i in tqdm(range(0, h, int(patch_dim/2))):
+            for i in tqdm(range(hlim)):
+                    # for j in range(0, w, int(patch_dim/2)):
+                    for j in range(wlim):
+                            patch_xo = self.x1_min+j*step
+                            patch_yo = self.y1_min+i*step
                             gt_id = []
 
                             gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
@@ -528,8 +571,10 @@ class SKADataset:
                             # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
 
                             if len(gt_id) > 0:
+                                print(f'\n Generating patch {len(patches_list)+1}/{limit}')
+
                                 filename = f'{fits_filename}_{patch_xo}_{patch_yo}'
-                                img_patch = self.training_image[i:i+patch_dim, j:j+patch_dim].copy()
+                                img_patch = self.training_image[i*step:i*step+patch_dim, j*step:j*step+patch_dim].copy()
 
                                 # Cut bboxes that fall outside the patch
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
@@ -548,34 +593,52 @@ class SKADataset:
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
                                 df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
-
                                 patch_index = i * (h // patch_dim) +j
-
-                                self.proc_train_df = self.proc_train_df.append(df_scaled)
                                 patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
+                                df_scaled['patch_id'] = patch_id
+                                
+                                proc_train_df = proc_train_df.append(df_scaled)
                                 _save_bbox_files(img_patch, patch_id, df_scaled)
-                                patches_list.append(patch_id)    
+                                patches_list.append(patch_id) 
 
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     print('Max gray level value = ', img_patch.max())
                                     for box_index in gt_id:
                                         box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
-                                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.1,edgecolor='r',facecolor='none'))
+                                        plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.5,edgecolor='r',facecolor='none'))
                                         plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
                                     plt.show()
+                            else:
+                                patches_without_gt +=1
+                                pass
 
-            self.class_list = self.proc_train_df['class_label'].unique()
-            print()
-            print(f'Class list: {self.class_list}')
-            self.num_classes = len(self.proc_train_df['class_label'].unique())
-            print(f'Number of distinct class labels: {self.num_classes}')
-            return patches_list
+                                if len(patches_list) >= limit:
+                                    break
+                    else:
+                        continue  # only executed if the inner loop did NOT break
+                    break
+
+            
+            print(f'Patches with no gt: {patches_without_gt}')
+            return patches_list, proc_train_df.reset_index()
 
         self.patch_list = {}
-        self.patch_list = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit)
+        
+        if source_dir:
+            self.patch_list, self.proc_train_df = _retrieve_patches_from_dir(limit, source_dir, plot_patches)
+        else:
+            self.patch_list, self.proc_train_df = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit)
+        
+        self.class_list = self.proc_train_df['class_label'].unique()
+        print(f'Total number of generated patches: {len(self.patch_list)}')
+        print()
+        print(f'Class list: {self.class_list}')
+        self.num_classes = len(self.proc_train_df['class_label'].unique())
+        print(f'Number of distinct class labels: {self.num_classes}')
         return
     
+    # TODO riscrivere usando la class list
     def analyze_class_distribution(self):
 
         # number of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
@@ -645,35 +708,77 @@ class SKADataset:
             except:
                 print('key_{}'.format(idx),"not splitted")
                 continue
-        #TODO: aggiungere trasloco val patch nella loro folder
+        
         print('split ended')
 
         return
 
+    # def split_train_val(self, random_state, val_portion=.2):
+    #     # self.train_patch_list_no_strat = []
+    #     # self.val_patch_list_no_strat = []
+    #     train_class_distribution =[]
+
+    #     train, val = train_test_split(self.patch_list,  test_size = val_portion, random_state=random_state)
+
+    #     for idx in range(1, self.num_combinations+1):
+    #         common_ID = set(train) & set(self.patch_list_per_class['key_{}'.format(idx)])
+
+    #         if(len(self.patch_list_per_class['key_{}'.format(idx)])!=0):
+    #             print("len of class:", format(idx), len(self.patch_list_per_class['key_{}'.format(idx)]))              
+    #             print("len of common ID:", len(common_ID))
+    #             train_class_distribution.append((len(common_ID)/len(self.patch_list_per_class['key_{}'.format(idx)]))*100)
+    #         else:
+    #             train_class_distribution.append(0)
+
+    #     x_val= list(range(1, len(self.patch_list_per_class.keys())+1))
+    #     # print("x", x_val)
+    #     # print("y", train_class_distribution)
+    #     # print("name",self.patch_list_per_class.keys() )
+    #     plt.bar(x_val, train_class_distribution, tick_label =list(self.patch_list_per_class.keys()), width = 0.8)
+    #     #plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
+    #     plt.xlabel("classes ratio")
+    #     plt.ylabel("num patches")
+    #     plt.title("Histogram")
+    #     plt.show() 
+
     def split_train_val(self, random_state, val_portion=.2):
-        # self.train_patch_list_no_strat = []
-        # self.val_patch_list_no_strat = []
-        train_class_distribution =[]
 
-        train, val = train_test_split(self.patch_list,  test_size = val_portion, random_state=random_state)
+        train, val = train_test_split(self.patch_list, test_size=val_portion, random_state=random_state)
+        print(f'Train list consists of {len(train)} patches')
+        print(f'Val list consists of {len(val)} patches')
 
-        for idx in range(1, self.num_combinations+1):
-            common_ID = set(train) & set(self.patch_list_per_class['key_{}'.format(idx)])
+        self.train_patch_list, self.val_patch_list = train, val
 
-            if(len(self.patch_list_per_class['key_{}'.format(idx)])!=0):
-                print("len of class:", format(idx), len(self.patch_list_per_class['key_{}'.format(idx)]))              
-                print("len of common ID:", len(common_ID))
-                train_class_distribution.append((len(common_ID)/len(self.patch_list_per_class['key_{}'.format(idx)]))*100)
-            else:
-                train_class_distribution.append(0)
+        self.plot_class_distribution([train, val])
 
-        x_val= list(range(1, len(self.patch_list_per_class.keys())+1))
-        # print("x", x_val)
-        # print("y", train_class_distribution)
-        # print("name",self.patch_list_per_class.keys() )
-        plt.bar(x_val, train_class_distribution, tick_label =list(self.patch_list_per_class.keys()), width = 0.8)
-        #plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
-        plt.xlabel("classes ratio")
-        plt.ylabel("num patches")
-        plt.title("Histogram")
-        plt.show() 
+        return
+
+    def plot_class_distribution(self, l):
+
+        if not isinstance(l, list):
+            l = [l]
+
+        fig, axes = plt.subplots(1,2, figsize=(10,5))
+        # print(self.proc_train_df.shape)
+        # display(self.proc_train_df)
+        # ddf = self.proc_train_df['class_label'].value_counts()
+        # display(ddf)
+        # ddf.plot(kind='bar')
+
+        for i, ll in enumerate(l):
+            df = self.proc_train_df.loc[self.proc_train_df['patch_id'].isin(ll)]
+            # print(df.shape)
+            # display(df)
+            # display(df['class_label'])
+            # ddf = df['class_label'].value_counts()
+            # display(ddf)
+            df['class_label'].value_counts().plot(kind='bar', ax=axes[i])
+            # df.hist(column='class_label', ax=axes[i])
+            axes[i].set_xlabel("Class", labelpad=14)
+            axes[i].set_ylabel("Frequency", labelpad=14)
+            axes[i].set_title(f"Class distribution for {i}", y=1.02)
+            
+        plt.tight_layout()
+        plt.show()
+
+        return

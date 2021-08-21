@@ -243,7 +243,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
             except Exception as e:
                 print('Exception: {}'.format(e))
-                return
-                # continue
+                # return
+                continue
 
     print('Training complete.')
