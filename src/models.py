@@ -67,6 +67,7 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
         input_shape_fmap = (50, 50, 64)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
+        # input_shape_fmap = (25, 25, 512)
         input_shape_fmap = (25, 25, 128)
 
     # Create Region Proposal Net

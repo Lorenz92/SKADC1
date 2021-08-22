@@ -333,7 +333,7 @@ class SKADataset:
             print(f'Initial dataset shape: {boxes_dataframe.shape}')
             print(f'Found {faint_a} boxes with zero area')
             print(f'Rows to be deleted: {len(id_to_delete)}')       
-            cleaned_df = copy.copy(boxes_dataframe.drop(index = id_to_delete).reset_index(drop=True))
+            cleaned_df = copy.copy(boxes_dataframe.drop(index=id_to_delete).reset_index(drop=True))
             print(f'New dataset shape: {cleaned_df.shape}')
             print('Extending dataset with new computed columns...')
             cleaned_df = copy.copy(_extend_dataframe(cleaned_df, self.coords))
@@ -344,7 +344,8 @@ class SKADataset:
                 print('Enlarging bboxes...')
                 cleaned_train_df= copy.copy(cleaned_df.apply(_enlarge_bbox, scale_factor = config.bbox_scale_factor, axis=1))
                 print('DONE - Enlarging bboxes...')
-            
+            cleaned_train_df = cleaned_train_df.astype({"ID": int})
+            cleaned_train_df = cleaned_train_df.astype({"ID": object})
             display(cleaned_train_df.head())
             return cleaned_train_df
         
@@ -454,7 +455,7 @@ class SKADataset:
 
         return
 
-    def generate_patches(self, limit, plot_patches=False, source_dir=False):
+    def generate_patches(self, limit, objects_to_ignore, plot_patches=False, source_dir=False):
         
         def _retrieve_patches_from_dir(limit, source_dir, plot_patches):
 
@@ -492,7 +493,7 @@ class SKADataset:
             
             return patches_list, proc_train_df.reset_index()
 
-        def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None):
+        def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None, objects_to_ignore=None):
         
             def _cut_bbox(x, patch_xo, patch_yo, patch_dim):
                 x.x1 = max(x.x1, patch_xo)
@@ -534,15 +535,30 @@ class SKADataset:
                 idx2 = filtered_df['ID'].tolist()
                 return idx2
 
+            def _check_overlap(obj_to_check, xo, yo, dim):
+                x2 = xo + dim
+                y2 = yo + dim
+                overlap = False
+
+                for _, row in obj_to_check.iterrows():
+                    
+                    if not (xo > row.x2 or x2 < row.x1 or yo > row.y2 or y2 < row.y1):
+                        print(f'found overlap with {row.ID}!')
+                        overlap = True 
+
+                return overlap
+
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
             hlim = round(np.sqrt(limit))
             wlim = hlim
             patches_without_gt = 0
+            ignored_objects_patches = 0
 
             print(f'\nTraining image dimensions: {w} x {h}')
             print(f'Cutting training image in patches of dim {patch_dim}')
             proc_train_df = pd.DataFrame()
+
             # Add new columns to df
             self.cleaned_train_df['x1s'] = None
             self.cleaned_train_df['y1s'] = None
@@ -558,6 +574,11 @@ class SKADataset:
             print(f'wlim: {wlim}')
             step = int(patch_dim/2)
             patches_list = []
+
+            objects_to_ignore_df = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(objects_to_ignore)]
+            objects_to_ignore_df = objects_to_ignore_df[['ID','x1', 'x2', 'y1', 'y2']]
+            display(objects_to_ignore_df)
+
             # for i in tqdm(range(0, h, int(patch_dim/2))):
             for i in tqdm(range(hlim)):
                     # for j in range(0, w, int(patch_dim/2)):
@@ -567,6 +588,15 @@ class SKADataset:
                             gt_id = []
 
                             gt_id = _find_gt_in_patch(patch_xo, patch_yo, patch_dim, self.cleaned_train_df)
+
+                            if np.isin(objects_to_ignore, gt_id).any():
+                                print('Found objects to ignore.\nSkipping patch...')
+                                continue
+                            
+                            # Check if patch contains residual of objects to ignore
+                            if _check_overlap(objects_to_ignore_df, patch_xo, patch_yo, patch_dim):
+                                ignored_objects_patches += 1
+                                continue
 
                             # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
 
@@ -607,7 +637,7 @@ class SKADataset:
                                     for box_index in gt_id:
                                         box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
                                         plt.gca().add_patch(Rectangle((box.x1-patch_xo, box.y1-patch_yo), box.x2 - box.x1, box.y2-box.y1,linewidth=.5,edgecolor='r',facecolor='none'))
-                                        plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=1)
+                                        plt.text(box.x-patch_xo, box.y-patch_yo, box_index, fontsize=5)
                                     plt.show()
                             else:
                                 patches_without_gt +=1
@@ -621,6 +651,8 @@ class SKADataset:
 
             
             print(f'Patches with no gt: {patches_without_gt}')
+            print(f'Patches skipped due to ignore objects list: {ignored_objects_patches}')
+            
             return patches_list, proc_train_df.reset_index()
 
         self.patch_list = {}
@@ -628,7 +660,7 @@ class SKADataset:
         if source_dir:
             self.patch_list, self.proc_train_df = _retrieve_patches_from_dir(limit, source_dir, plot_patches)
         else:
-            self.patch_list, self.proc_train_df = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit)
+            self.patch_list, self.proc_train_df = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit, objects_to_ignore=objects_to_ignore)
         
         self.class_list = self.proc_train_df['class_label'].unique()
         print(f'Total number of generated patches: {len(self.patch_list)}')
