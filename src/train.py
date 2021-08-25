@@ -216,7 +216,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     print('Loss RPN regression: {}'.format(loss_rpn_regr))
                     print('Loss Detector classifier: {}'.format(loss_detector_cls))
                     print('Loss Detector regression: {}'.format(loss_detector_regr))
-                    print('Total loss: {}'.format(curr_loss))
+                    print('Total loss: {}, wrt best loss: {} '.format(curr_loss, best_loss))
                     print('Elapsed time: {}'.format(time.time() - start_time))
 
                     if resume_train:
@@ -229,6 +229,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                         resume_train = True
 
                     np.save(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy", loss_hist)
+                    total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/0_frcnn_{backbone}.h5')
+
 
                     iter_num = 0
 
