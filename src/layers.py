@@ -5,6 +5,10 @@ import keras.backend as K
 import tensorflow as tf
 from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout, ZeroPadding2D, Convolution2D, BatchNormalization, Activation, Add
 
+"""
+rf = rf_l-1 + (s * k-1)
+"""
+
 class Expander(Layer):
     def __init__(self, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
         super(Expander, self).__init__(name=name)
@@ -38,6 +42,27 @@ def baseline_16(input_image):
 
     # x = Conv2D(256, (1, 1), activation='relu', padding='same', name='cust_blockx_conv1', trainable=True)(x) # RF = 16
     # x = Conv2D(512, (1, 1), activation='relu', padding='same', name='cust_blockx_conv2', trainable=True)(x) # RF = 16
+
+def baseline_36(input_image):
+
+    # Block 1
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
+    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x) # RF = 5
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 6
+
+    # Block 2
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=False)(x) # RF = 10
+    x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x) # RF = 14
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) # RF = 16
+
+    # x = Conv2D(256, (1, 1), activation='relu', padding='same', name='cust_blockx_conv1', trainable=True)(x) # RF = 16
+    # x = Conv2D(512, (1, 1), activation='relu', padding='same', name='cust_blockx_conv2', trainable=True)(x) # RF = 16
+
+    # Block 3
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x) # RF = 24
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x) # RF = 32
+    # x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x) # RF = 40
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x) # RF = 44 # 36
 
 
     return x

@@ -3,6 +3,7 @@ from os import listdir
 from IPython.core.display import display
 import itertools
 import numpy as np
+import operator
 import scipy.stats as st
 from scipy.special import erfinv
 import pandas as pd
@@ -13,7 +14,6 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from tqdm import tqdm
 from sklearn.model_selection import train_test_split
-from tqdm.utils import _environ_cols_wrapper
 
 import src.utils as utils
 import src.config as config
@@ -476,25 +476,30 @@ class SKADataset:
         return img_rgb, pixel_mean, orig_img_zero_clipped, stdev
     
     def generate_patches(self, limit, objects_to_ignore, plot_patches=False, source_dir=False, rgb_norm=False):
+        def _extract_class_dict(df, filter, val, cols, key):
+            return df[df[filter]==val][cols].set_index(key).T.to_dict('list')
         
         def _retrieve_patches_from_dir(limit, source_dir, plot_patches):
 
             patches_list = []
+            patches_dict = {}
             proc_train_df = pd.DataFrame()
             previously_generate_patches = listdir(source_dir)
-            patches_dict = {int(v.split('_')[0]):v for v in previously_generate_patches}
+            patches_idx_dict = {int(v.split('_')[0]):v for v in previously_generate_patches}
 
             if limit:
                 print(f'Attention: by using limit parameter you will retrieve only the first {limit} patches')
             
-            for patch_id in sorted(patches_dict)[:limit]:
+            for patch_id in sorted(patches_idx_dict)[:limit]:
 
-                patch = patches_dict[patch_id]
+                patch = patches_idx_dict[patch_id]
                 patches_list.append(patch)
-
+                
                 print(f'\nRetrieving patch {patch}')
 
                 pkl = pd.read_pickle(f'{source_dir}/{patch}/{patch}.pkl')
+                patch_dict = _extract_class_dict(pkl,filter='patch_id', val=patch, cols=['class_label', 'patch_id'], key='class_label')
+                patches_dict = utils.merge_dols(patches_dict, patch_dict)
 
                 proc_train_df = proc_train_df.append(pkl)
 
@@ -511,7 +516,7 @@ class SKADataset:
                     plt.show()
 
             
-            return patches_list, proc_train_df.reset_index()
+            return patches_list, proc_train_df.reset_index(), patches_dict
 
         def _split_in_patch(patch_dim=100, is_multiple=False, show_plot=False, limit=None, objects_to_ignore=None, rgb_norm=False):
         
@@ -568,6 +573,7 @@ class SKADataset:
 
                 return overlap
 
+            
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
             hlim = round(np.sqrt(limit))
@@ -594,6 +600,7 @@ class SKADataset:
             print(f'wlim: {wlim}')
             step = int(patch_dim/2)
             patches_list = []
+            patches_dict = {}
 
             objects_to_ignore_df = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(objects_to_ignore)]
             objects_to_ignore_df = objects_to_ignore_df[['ID','x1', 'x2', 'y1', 'y2']]
@@ -653,7 +660,10 @@ class SKADataset:
                                 
                                 proc_train_df = proc_train_df.append(df_scaled)
                                 _save_bbox_files(img_patch, patch_id, df_scaled)
-                                patches_list.append(patch_id) 
+                                patches_list.append(patch_id)
+                                patch_dict = _extract_class_dict(df_scaled,filter='patch_id', val=patch_id,cols=['class_label', 'patch_id'], key='class_label')
+                                patches_dict = utils.merge_dols(patches_dict, patch_dict)
+                                
 
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
@@ -677,14 +687,15 @@ class SKADataset:
             print(f'Patches with no gt: {patches_without_gt}')
             print(f'Patches skipped due to ignore objects list: {ignored_objects_patches}')
             
-            return patches_list, proc_train_df.reset_index()
+            return patches_list, proc_train_df.reset_index(drop=True), patches_dict
 
-        self.patch_list = {}
+        self.patch_list = []
+        self.patches_dict = {}
         
         if source_dir:
-            self.patch_list, self.proc_train_df = _retrieve_patches_from_dir(limit, source_dir, plot_patches)
+            self.patch_list, self.proc_train_df, self.patches_dict = _retrieve_patches_from_dir(limit, source_dir, plot_patches)
         else:
-            self.patch_list, self.proc_train_df = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit, objects_to_ignore=objects_to_ignore, rgb_norm=rgb_norm)
+            self.patch_list, self.proc_train_df, self.patches_dict = _split_in_patch(config.patch_dim, show_plot=plot_patches, limit=limit, objects_to_ignore=objects_to_ignore, rgb_norm=rgb_norm)
         
         self.class_list = self.proc_train_df['class_label'].unique()
         print(f'Total number of generated patches: {len(self.patch_list)}')
@@ -797,9 +808,16 @@ class SKADataset:
     #     plt.title("Histogram")
     #     plt.show() 
 
-    def split_train_val(self, random_state, val_portion=.2):
+    def split_train_val(self, random_state, val_portion=.2, balanced=False):
+        if not balanced:
+            patch_list = self.patch_list
+        else:
+            self.balanced_patch_list = self.balance_patch_list()
+            assert len(self.balanced_patch_list) > 1, 'Attention! There is no balanced_patch_list available!'
+            patch_list = self.balanced_patch_list
+            print(len(patch_list))
 
-        train, val = train_test_split(self.patch_list, test_size=val_portion, random_state=random_state)
+        train, val = train_test_split(patch_list, test_size=val_portion, random_state=random_state)
         print(f'Train list consists of {len(train)} patches')
         print(f'Val list consists of {len(val)} patches')
 
@@ -809,7 +827,7 @@ class SKADataset:
 
         return
 
-    def plot_class_distribution(self, l):
+    def plot_class_distribution(self, l): #TODO correggere quando dataset viene bilanciato
 
         if not isinstance(l, list):
             l = [l]
@@ -838,3 +856,21 @@ class SKADataset:
         plt.show()
 
         return
+
+    def balance_patch_list(self):
+        balanced_patch_list = self.patch_list.copy()
+        
+        class_freq_dict = {key: len(value) for key, value in self.patches_dict.items()}
+        most_frequent_class = max(class_freq_dict.items(), key=operator.itemgetter(1))[0]
+        max_freq = class_freq_dict[most_frequent_class]
+        
+        less_freq_classes = {k:v for k,v in class_freq_dict.items() if k != most_frequent_class}
+
+        for key, val in less_freq_classes.items():
+            ratio = max_freq // val
+            repeated_patches = np.tile(self.patches_dict[key], ratio).tolist()
+ 
+
+            balanced_patch_list += repeated_patches
+
+        return balanced_patch_list

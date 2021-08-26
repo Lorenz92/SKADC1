@@ -812,3 +812,15 @@ def get_model_last_checkpoint(backbone):
         cp = None
     
     return cp
+
+def merge_dols(dol1, dol2):
+    """
+    Merges two dictionary of lists.
+    Example:
+        d = {'a': ['1','2'], 'b':['8']}
+        dd = {'a': ['3','4'], 'c': ['9']}
+        become -> {'a': ['1', '2', '3', '4'], 'b': ['8'], 'c': ['9']}
+    """
+    keys = set(dol1).union(dol2)
+    no = []
+    return dict((k, dol1.get(k, no) + dol2.get(k, no)) for k in keys)

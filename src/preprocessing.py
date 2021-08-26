@@ -76,10 +76,12 @@ def calc_rpn(img_data, width, height, backbone):
 	anchor_sizes = C.anchor_box_scales   # [32, 64, 128, 256, 512]
 	anchor_ratios = C.anchor_box_ratios  # 1:1, 1:2, 2:1
 	num_anchors = len(anchor_sizes) * len(anchor_ratios) # 3x5=15
-
+	
 	# calculate the output map size based on the network architecture
 	if backbone == 'baseline_8':
 		(output_width, output_height) = (width//2, height//2)
+	elif backbone == 'baseline_36':
+		(output_width, output_height) = (width//8, height//8)
 	elif backbone == 'baseline_16':
 		(output_width, output_height) = (width//4, height//4)
 	elif backbone == 'vgg16':
@@ -87,6 +89,7 @@ def calc_rpn(img_data, width, height, backbone):
 	elif backbone=='resnet50':
 		(output_width, output_height) = (int(np.ceil(width/C.in_out_img_size_ratio)), int(np.ceil(height/C.in_out_img_size_ratio)))
 	
+
 	
 	n_anchratios = len(anchor_ratios)    # 3
 	
@@ -503,7 +506,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				
 				zero_centering(x_img, pixel_mean)
 				
-				if (backbone == 'resnet50' or backbone =='baseline_16'):
+				if (backbone == 'resnet50' or backbone =='baseline_16' or backbone =='baseline_36'):
 					normalize_pixel_values(x_img)
 				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)

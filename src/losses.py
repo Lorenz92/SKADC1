@@ -78,4 +78,8 @@ def detector_loss_regr(num_classes):
     return detector_loss_regr_fixed_num
 
 def detector_loss_cls(y_true, y_pred):
+    # tf.print('y_true shape = ', y_true.shape, output_stream=sys.stderr, sep=',', summarize=-1)
+    # tf.print('y_true = ', y_true[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
+    # tf.print('y_pred shape = ', y_pred.shape, output_stream=sys.stderr, sep=',', summarize=-1)
+    # tf.print('y_pred = ', y_pred[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
     return lambda_cls_class * K.mean(K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))

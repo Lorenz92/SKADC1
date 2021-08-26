@@ -26,11 +26,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     ######### shuffle image list
     np.random.shuffle(train_patch_list)
 
-
-    ######### Only fo debug
-    # train_patch_list = ['1550_16376_16779_100']
-    #########
-
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
     if val_patch_list is not None:
         val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list, backbone, pixel_mean=pixel_mean)
@@ -40,9 +35,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
-    num_epochs = num_epochs #config.num_epochs
+    num_epochs = num_epochs
     losses = np.zeros((epoch_length, 5))
-    # losses_to_save = np.zeros((1, 5))
 
 
     ######### resume training
@@ -142,7 +136,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                     # else randomly choose num_pos_samples pos samples
                     if len(pos_samples) < num_pos_samples:
                         selected_pos_samples = pos_samples.tolist()
-                        selected_pos_samples += np.random.choice(pos_samples, num_pos_samples-len(pos_samples), replace=True).tolist()
+                        # selected_pos_samples += np.random.choice(pos_samples, num_pos_samples-len(pos_samples), replace=True).tolist()
                     else:
                         selected_pos_samples = np.random.choice(pos_samples, num_pos_samples, replace=False).tolist()
                     
