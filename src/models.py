@@ -69,12 +69,12 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
         input_shape_fmap = (50, 50, 64)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
-        # input_shape_fmap = (25, 25, 512)
-        input_shape_fmap = (25, 25, 128)
+        input_shape_fmap = (37, 37, 128)
+        # input_shape_fmap = (25, 25, 128)
     elif backbone == 'baseline_36':
         x = baseline_36(x)
-        # input_shape_fmap = (25, 25, 512)
-        input_shape_fmap = (12, 12, 256)
+        input_shape_fmap = (18, 18, 256)
+        # input_shape_fmap = (12, 12, 256)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, shared_backbone = RpnNet(anchor_num)(x)
@@ -153,8 +153,10 @@ def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_
 
     ########## Build models
 
-    rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
-    detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
+    # rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
+    # detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
+    rpn_optimizer = Adam(lr=5e-2)
+    detector_optimizer = Adam(lr=5e-2)
 
     rpn_loss_cls = rpn_losses[0]
     rpn_loss_regr = rpn_losses[1]

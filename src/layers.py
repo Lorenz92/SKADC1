@@ -43,6 +43,8 @@ def baseline_16(input_image):
     # x = Conv2D(256, (1, 1), activation='relu', padding='same', name='cust_blockx_conv1', trainable=True)(x) # RF = 16
     # x = Conv2D(512, (1, 1), activation='relu', padding='same', name='cust_blockx_conv2', trainable=True)(x) # RF = 16
 
+    return x
+
 def baseline_36(input_image):
 
     # Block 1
@@ -54,9 +56,6 @@ def baseline_36(input_image):
     x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv1', trainable=False)(x) # RF = 10
     x = Conv2D(128, (3, 3), activation='relu', padding='same', name='block2_conv2', trainable=False)(x) # RF = 14
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block2_pool')(x) # RF = 16
-
-    # x = Conv2D(256, (1, 1), activation='relu', padding='same', name='cust_blockx_conv1', trainable=True)(x) # RF = 16
-    # x = Conv2D(512, (1, 1), activation='relu', padding='same', name='cust_blockx_conv2', trainable=True)(x) # RF = 16
 
     # Block 3
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x) # RF = 24

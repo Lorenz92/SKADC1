@@ -350,8 +350,11 @@ class SKADataset:
                 print('DONE - Enlarging bboxes...')
             cleaned_train_df = cleaned_train_df.astype({"ID": int})
             cleaned_train_df = cleaned_train_df.astype({"ID": object})
+            cleaned_train_df['SIZE'] = cleaned_train_df['SIZE'].astype(int).astype('object')
+            cleaned_train_df['CLASS'] = cleaned_train_df['CLASS'].astype(int).astype('object')
+            cleaned_train_df['class_label'] = cleaned_train_df[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
             display(cleaned_train_df.head())
-            return cleaned_train_df
+            return cleaned_train_df.copy()
         
         
         #####################
@@ -590,7 +593,6 @@ class SKADataset:
             self.cleaned_train_df['y1s'] = None
             self.cleaned_train_df['x2s'] = None
             self.cleaned_train_df['y2s'] = None
-            self.cleaned_train_df['class_label'] = None
             self.cleaned_train_df['patch_id'] = None
 
             if (w % patch_dim !=0 or h % patch_dim != 0) and is_multiple:
@@ -653,7 +655,7 @@ class SKADataset:
                                 df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
-                                df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
+                                # df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
                                 patch_index = i * (h // patch_dim) +j
                                 patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
                                 df_scaled['patch_id'] = patch_id
@@ -756,58 +758,6 @@ class SKADataset:
         plt.show()
         return
 
-    def split_train_val_stratified(self, random_state, val_portion=.2):
-
-        self.train_patch_list = []
-        self.val_patch_list = []
-
-        if val_portion==0:
-            self.val_patch_list = []
-            self.train_patch_list = list(itertools.chain.from_iterable([[] + i for i in self.patch_list_per_class.values()]))
-
-        for idx in range(1, self.num_combinations+1):
-            try:
-                train, val = train_test_split(self.patch_list_per_class['key_{}'.format(idx)],
-                 test_size = val_portion, random_state=random_state)
-
-                self.train_patch_list = self.train_patch_list + train
-                self.val_patch_list = self.val_patch_list + val
-            except:
-                print('key_{}'.format(idx),"not splitted")
-                continue
-        
-        print('split ended')
-
-        return
-
-    # def split_train_val(self, random_state, val_portion=.2):
-    #     # self.train_patch_list_no_strat = []
-    #     # self.val_patch_list_no_strat = []
-    #     train_class_distribution =[]
-
-    #     train, val = train_test_split(self.patch_list,  test_size = val_portion, random_state=random_state)
-
-    #     for idx in range(1, self.num_combinations+1):
-    #         common_ID = set(train) & set(self.patch_list_per_class['key_{}'.format(idx)])
-
-    #         if(len(self.patch_list_per_class['key_{}'.format(idx)])!=0):
-    #             print("len of class:", format(idx), len(self.patch_list_per_class['key_{}'.format(idx)]))              
-    #             print("len of common ID:", len(common_ID))
-    #             train_class_distribution.append((len(common_ID)/len(self.patch_list_per_class['key_{}'.format(idx)]))*100)
-    #         else:
-    #             train_class_distribution.append(0)
-
-    #     x_val= list(range(1, len(self.patch_list_per_class.keys())+1))
-    #     # print("x", x_val)
-    #     # print("y", train_class_distribution)
-    #     # print("name",self.patch_list_per_class.keys() )
-    #     plt.bar(x_val, train_class_distribution, tick_label =list(self.patch_list_per_class.keys()), width = 0.8)
-    #     #plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
-    #     plt.xlabel("classes ratio")
-    #     plt.ylabel("num patches")
-    #     plt.title("Histogram")
-    #     plt.show() 
-
     def split_train_val(self, random_state, val_portion=.2, balanced=False):
         if not balanced:
             patch_list = self.patch_list
@@ -827,30 +777,29 @@ class SKADataset:
 
         return
 
-    def plot_class_distribution(self, l): #TODO correggere quando dataset viene bilanciato
+    def plot_class_distribution(self, l):
 
         if not isinstance(l, list):
             l = [l]
 
         fig, axes = plt.subplots(1,2, figsize=(10,5))
-        # print(self.proc_train_df.shape)
-        # display(self.proc_train_df)
-        # ddf = self.proc_train_df['class_label'].value_counts()
-        # display(ddf)
-        # ddf.plot(kind='bar')
+        title_list = ['train set', 'val set']
 
         for i, ll in enumerate(l):
-            df = self.proc_train_df.loc[self.proc_train_df['patch_id'].isin(ll)]
-            # print(df.shape)
-            # display(df)
-            # display(df['class_label'])
-            # ddf = df['class_label'].value_counts()
-            # display(ddf)
-            df['class_label'].value_counts().plot(kind='bar', ax=axes[i])
-            # df.hist(column='class_label', ax=axes[i])
+            class_count_dict = {k:0 for k in self.class_list}
+
+            for p in ll:
+                patch_class_count_dict = self.proc_train_df.loc[self.proc_train_df['patch_id']==p].value_counts(subset=['class_label'], sort=False).to_frame().reset_index().set_index('class_label').to_dict()[0]
+                class_count_dict = utils.merge_dois(class_count_dict,patch_class_count_dict)
+            
+            axes[i].bar(range(len(class_count_dict)), list(class_count_dict.values()), align='center')
+            
+            axes[i].set_xticks(range(len(class_count_dict)))
+
+            axes[i].set_xticklabels(list(class_count_dict.keys()))
             axes[i].set_xlabel("Class", labelpad=14)
             axes[i].set_ylabel("Frequency", labelpad=14)
-            axes[i].set_title(f"Class distribution for {i}", y=1.02)
+            axes[i].set_title(f"Class distribution for {title_list[i]}", y=1.02)
             
         plt.tight_layout()
         plt.show()
@@ -859,18 +808,23 @@ class SKADataset:
 
     def balance_patch_list(self):
         balanced_patch_list = self.patch_list.copy()
-        
         class_freq_dict = {key: len(value) for key, value in self.patches_dict.items()}
         most_frequent_class = max(class_freq_dict.items(), key=operator.itemgetter(1))[0]
         max_freq = class_freq_dict[most_frequent_class]
-        
+
         less_freq_classes = {k:v for k,v in class_freq_dict.items() if k != most_frequent_class}
 
-        for key, val in less_freq_classes.items():
-            ratio = max_freq // val
-            repeated_patches = np.tile(self.patches_dict[key], ratio).tolist()
- 
-
+        for key, _ in less_freq_classes.items():
+            repeated_patches = []
+            print('minor class:', self.patches_dict[key])
+            patch_to_be_repeated = np.setdiff1d(self.patches_dict[key], self.patches_dict[most_frequent_class])
+            print('patch_to_be_repeated:', patch_to_be_repeated)
+            try:
+                ratio = max_freq // len(patch_to_be_repeated)
+                repeated_patches = np.tile(patch_to_be_repeated, ratio).tolist()
+            except:
+                continue
             balanced_patch_list += repeated_patches
+        
 
         return balanced_patch_list

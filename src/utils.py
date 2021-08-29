@@ -592,7 +592,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
 
     # print(Y1.shape, Y2.shape)
 
-    R = rpn_to_roi(Y1, Y2, overlap_thresh=0.5, max_boxes=64)
+    R = rpn_to_roi(Y1, Y2, overlap_thresh=0.9, max_boxes=64)
 
     # convert from (x1,y1,x2,y2) to (x,y,w,h)
     R[:, 2] -= R[:, 0]
@@ -782,7 +782,7 @@ def get_img_scores(detections, patch_id, metric_threshold):
         P_tresh[key] = np.where(np.array(P[key]) > metric_threshold, 1, 0)
 
         prec = precision_score(T[key], P_tresh[key], zero_division=0)
-        recall = recall_score(T[key], P_tresh[key])
+        recall = recall_score(T[key], P_tresh[key], zero_division=0)
         # print('{} AP: {}'.format(key, ap))
         all_aps.append(ap)
         all_prec.append(prec)
@@ -824,3 +824,19 @@ def merge_dols(dol1, dol2):
     keys = set(dol1).union(dol2)
     no = []
     return dict((k, dol1.get(k, no) + dol2.get(k, no)) for k in keys)
+
+def merge_dois(dol1, dol2):
+    """
+    Merges two dictionary of lists.
+    Example:
+        d = {'a': ['1','2'], 'b':['8']}
+        dd = {'a': ['3','4'], 'c': ['9']}
+        become -> {'a': ['1', '2', '3', '4'], 'b': ['8'], 'c': ['9']}
+    """
+    keys = set(dol1).union(dol2)
+    no = 0
+    return dict((k, dol1.get(k, no) + dol2.get(k, no)) for k in keys)
+
+
+def moving_average(x, w):
+    return np.convolve(x, np.ones(w), 'valid') / w
