@@ -424,8 +424,12 @@ def calc_iou(R, img_data, class_mapping):
         # Iterate through all the ground-truth bboxes to calculate the iou
         for box_index in range(img_data.shape[0]):
 
+            # print([gta[box_index, 0], gta[box_index, 2], gta[box_index, 1], gta[box_index, 3]])
+            # print([x1, y1, x2, y2])
+
             # print(f'box_index={box_index}')
             curr_iou = prep.iou([gta[box_index, 0], gta[box_index, 2], gta[box_index, 1], gta[box_index, 3]], [x1, y1, x2, y2])
+            # print(curr_iou)
             # Find out the corresponding ground-truth box_index with larget iou
             if curr_iou > best_iou:
                 best_iou = curr_iou
@@ -844,3 +848,65 @@ def merge_dois(dol1, dol2):
 
 def moving_average(x, w):
     return np.convolve(x, np.ones(w), 'valid') / w
+
+def compute_intersection_fast(boxes, area, overlap_thresh=0.7):
+
+    #TODO Comment here
+    # Process explanation:
+    #   Step 1: Sort the area list
+    #   Step 2: Find the largest prob 'Last' in the list and save it to the pick list
+    #   Step 3: Calculate the IoU with 'Last' box and other boxes in the list. If the IoU is larger than overlap_threshold, delete the box from list
+    #   Step 4: Repeat step 2 and step 3 until there is no item in the area list 
+    if len(boxes) == 0:
+        return []
+
+    # grab the coordinates of the bounding boxes
+    x1 = boxes[:, 0]
+    y1 = boxes[:, 1]
+    x2 = boxes[:, 2]
+    y2 = boxes[:, 3]
+
+    # np.testing.assert_array_less(x1, x2)
+    # np.testing.assert_array_less(y1, y2)
+
+    # if the bounding boxes integers, convert them to floats --
+    # this is important since we'll be doing a bunch of divisions
+    if boxes.dtype.kind == "i":
+        boxes = boxes.astype("float")
+
+    # initialize the list of picked indexes	
+    pick = []
+
+    # sort the bounding boxes 
+    idxs = np.argsort(area)
+
+    # keep looping while some indexes still remain in the indexes list
+    while len(idxs) > 0:
+        # grab the last index in the indexes list and add the
+        # index value to the list of picked indexes
+        last = len(idxs) - 1
+        i = idxs[last]
+        pick.append(i)
+
+        # find the intersection
+        xx1_int = np.maximum(x1[i], x1[idxs[:last]])
+        yy1_int = np.maximum(y1[i], y1[idxs[:last]])
+        xx2_int = np.minimum(x2[i], x2[idxs[:last]])
+        yy2_int = np.minimum(y2[i], y2[idxs[:last]])
+
+        ww_int = np.maximum(0, xx2_int - xx1_int)
+        hh_int = np.maximum(0, yy2_int - yy1_int)
+
+        area_int = ww_int * hh_int
+        area_idx = (y2[idxs[:last]] - y1[idxs[:last]]) * (x2[idxs[:last]] - x1[idxs[:last]])
+
+        # compute the ratio of overlap
+        overlap = area_int/(area_idx)
+
+        # delete all indexes from the index list that have
+        idxs = np.delete(idxs, np.concatenate(([last], np.where(overlap > overlap_thresh)[0])))
+
+    # return only the bounding boxes that were picked using the integer data type
+    boxes = boxes[pick].astype("int")
+    area = area[pick]
+    return boxes, area, pick

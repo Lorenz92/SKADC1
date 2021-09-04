@@ -560,6 +560,8 @@ class SKADataset:
 
                 filtered_df = gt_df[gt_df.apply(_filter_func, axis=1)]
 
+
+
                 idx2 = filtered_df['ID'].tolist()
                 return idx2
 
@@ -576,6 +578,14 @@ class SKADataset:
 
                 return overlap
 
+            
+            def _delete_crowded_objects(df):
+                coords = np.array([df.x1s, df.y1s, df.x2s, df.y2s]).T
+                area = np.array(df.width * df.height)
+
+                _,_,res = utils.compute_intersection_fast(coords, area)
+
+                return df.iloc[res].copy()
             
             h, w = self.training_image.shape
             fits_filename = self.image_filename.split('/')[-1].split('.')[0]
@@ -627,8 +637,6 @@ class SKADataset:
                                 ignored_objects_patches += 1
                                 continue
 
-                            # Questo potrebbe essere un buon punto in cui applicare il filtro sul noise
-
                             if len(gt_id) > 0:
                                 print(f'\n Generating patch {len(patches_list)+1}/{limit}')
 
@@ -643,6 +651,11 @@ class SKADataset:
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
                                 df_scaled = df_scaled.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_from_image_to_patch_coord, patch_xo=patch_xo, patch_yo=patch_yo, axis=1)
                                 
+                                df_scaled = _delete_crowded_objects(df_scaled)
+
+                                # Here we need to update ground truth list based on last function called
+                                gt_id = df_scaled['ID'].to_list()
+
                                 df_scaled["patch_name"] = filename
                                 df_scaled["patch_xo"] = patch_xo
                                 df_scaled["patch_yo"] = patch_yo
@@ -655,7 +668,6 @@ class SKADataset:
                                 df_scaled['SIZE'] = df_scaled['SIZE'].astype(int).astype('object')
                                 df_scaled['CLASS'] = df_scaled['CLASS'].astype(int).astype('object')
                                 df_scaled['SELECTION'] = df_scaled['SELECTION'].astype(int).astype('object')
-                                # df_scaled['class_label'] = df_scaled[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
                                 patch_index = i * (h // patch_dim) +j
                                 patch_id = str(patch_index)+'_'+str(patch_xo)+'_'+str(patch_yo)+'_'+str(patch_dim)
                                 df_scaled['patch_id'] = patch_id
@@ -665,8 +677,7 @@ class SKADataset:
                                 patches_list.append(patch_id)
                                 patch_dict = _extract_class_dict(df_scaled,filter='patch_id', val=patch_id,cols=['class_label', 'patch_id'], key='class_label')
                                 patches_dict = utils.merge_dols(patches_dict, patch_dict)
-                                
-
+                                display(df_scaled)
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     print('Max gray level value = ', img_patch.max())

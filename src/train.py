@@ -76,17 +76,17 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
                 loss_rpn_tot, loss_rpn_cls, loss_rpn_regr = rpn_model.train_on_batch(image, [y_rpn_cls_true, y_rpn_reg_true])
                 # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
                 P_rpn = rpn_model.predict_on_batch(image)
-
+                
                 # R: bboxes (shape=(300,4))
                 # Convert rpn layer to roi bboxes
                 R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
-     
+                # print(R)
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
                 # # Y1: one hot encode for bboxes from above => x_roi (X)
                 # # Y2: corresponding labels and corresponding gt bboxes
                 X2, Y1, Y2, IoUs = utils.calc_iou(R, img_data_aug, class_mapping)
-
+                # print('IoUs:',IoUs)
                 # tf.print('Y2 shape = ', Y2.shape, output_stream=sys.stderr, sep=',', summarize=-1)
 
                 
