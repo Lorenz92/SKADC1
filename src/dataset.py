@@ -373,21 +373,21 @@ class SKADataset:
                     # plt.ylim((0, 100))
                     # plt.xlim((0, 100))
                     #plt.legend(loc='upper left')
-                # clean_cass2= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[4]), :]
-                # clean_cass1= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[3]), :]
-                # clean_cass3= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[2]), :]
-                # clean_cass4= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[1]), :]
-                # clean_cass5= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[0]), :]
-                # fig = plt.figure(figsize=(8,8))
+                clean_cass2= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[4]), :]
+                clean_cass1= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[3]), :]
+                clean_cass3= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[2]), :]
+                clean_cass4= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[1]), :]
+                clean_cass5= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[0]), :]
+                fig = plt.figure(figsize=(8,8))
 
-                # ax1 = fig.add_subplot(111)
-                # ax1.scatter(clean_cass2['width'], clean_cass2['height'], s=10, c='b', label=patch_class_list[4])
-                # ax1.scatter(clean_cass1['width'], clean_cass1['height'], s=10, c='r', label=patch_class_list[3])
-                # ax1.scatter(clean_cass3['width'], clean_cass3['height'], s=10, c='g', label=patch_class_list[2])
-                # ax1.scatter(clean_cass5['width'], clean_cass5['height'], s=10, c='c', label=patch_class_list[0])
-                # ax1.scatter(clean_cass4['width'], clean_cass4['height'], s=10, c='y', label=patch_class_list[1])
-                plt.ylim((0, 100))
-                plt.xlim((0, 100))
+                ax1 = fig.add_subplot(111)
+                ax1.scatter(clean_cass2['width'], clean_cass2['height'], s=10, c='b', label=patch_class_list[4])
+                ax1.scatter(clean_cass1['width'], clean_cass1['height'], s=10, c='r', label=patch_class_list[3])
+                ax1.scatter(clean_cass3['width'], clean_cass3['height'], s=10, c='g', label=patch_class_list[2])
+                ax1.scatter(clean_cass5['width'], clean_cass5['height'], s=10, c='c', label=patch_class_list[0])
+                ax1.scatter(clean_cass4['width'], clean_cass4['height'], s=10, c='y', label=patch_class_list[1])
+                plt.ylim((0, 150))
+                plt.xlim((0, 250))
                 plt.legend(loc='upper left')
                 #colors = ['red','green','blue']          
                 #ax1.scatter(clean_cass2['width'], clean_cass2['height'], c='b')# cmap=matplotlib.colors.ListedColormap(colors))
