@@ -128,7 +128,7 @@ def calc_rpn(img_data, width, height, backbone):
 				x2_anc = downscale * (ix + 0.5) + anchor_x / 2	
 				
 				# ignore boxes that go across image boundaries					
-				if (x1_anc < 0 or x2_anc > width):
+				if (x1_anc < 0 or x2_anc >= width):
 					continue
 					
 				for jy in range(output_height):
@@ -138,7 +138,7 @@ def calc_rpn(img_data, width, height, backbone):
 					y2_anc = downscale * (jy + 0.5) + anchor_y / 2
 
 					# ignore boxes that go across image boundaries
-					if (y1_anc < 0 or y2_anc > height):
+					if (y1_anc < 0 or y2_anc >= height):
 						continue
 
 					# bbox_type indicates whether an anchor should be a target

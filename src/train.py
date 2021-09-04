@@ -125,7 +125,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
 
                 # Here we select 64 proposals in the 1:3 ratio:
                 # 64/4*3 positive and 64/4*1 negative
-                num_pos_samples=(config.num_rois//4)*3
+                num_pos_samples=(config.num_rois//4)*2
+                # num_pos_samples=(config.num_rois//4)*3
 
                 # print('config.num_rois:',config.num_rois)
                 # print('pos threshold:',num_pos_samples)

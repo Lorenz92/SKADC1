@@ -192,7 +192,6 @@ class SKADataset:
                 # total_flux /= area_pixel
                 return total_flux, threshold
 
-
             def _primary_beam_gridding(pbwc, total_flux, ra, dec, primary_beam_data):
                 # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
                 # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
@@ -733,7 +732,7 @@ class SKADataset:
                                 patches_list.append(patch_id)
                                 patch_dict = _extract_class_dict(df_scaled,filter='patch_id', val=patch_id,cols=['class_label', 'patch_id'], key='class_label')
                                 patches_dict = utils.merge_dols(patches_dict, patch_dict)
-                                display(df_scaled)
+
                                 if show_plot:
                                     plt.imshow(img_patch, cmap='viridis', vmax=255, vmin=0)
                                     print('Max gray level value = ', img_patch.max())

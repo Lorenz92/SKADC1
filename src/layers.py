@@ -62,7 +62,7 @@ def baseline_44(input_image):
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x) # RF = 24
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x) # RF = 32
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x) # RF = 40
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x) # RF = 44 # 36
+    x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x) # RF = 44
     
     return x
 

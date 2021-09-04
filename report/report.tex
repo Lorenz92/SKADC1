@@ -168,10 +168,19 @@ In this work, we implemented three different models. All of them are a Faster R-
 
 In order to perform an effective comparison, the models share the same output architecture.
 
-The following is a detailed description of the models. Beware that in each model section we report everything but what happens in the output module, which is described once in \ref{sec:output-module}.
+The following is a detailed description of the models. Beware that in each model section we report everything but what happens in the output module, which is described once in \ref{sec:output-architecture}.
 
 \section{Feature Extraction Backbone}\label{sec:feature-extraction-backbone}
 -- aggiungere citazioni ovunque
+
+Basically, in this work we tested:
+\begin{enumerate}
+\item wether a simple (meaning "not very deep") model is enough for the small object detection task, and;
+\item how detection performance varies when changing the receptive field size of the model
+\end{enumerate}
+
+For this reasons we implemented three different feature extraction backbone with different receptive field size.
+
 \subsection{B16 - Baseline 16}\label{subsec:b16}
 
 The first backbone we implemented has the following structure:
@@ -192,7 +201,7 @@ This resemble to zoom-in the image, so that the objects to detect become 5 times
 As we've seen before, the bounding box shapes distribution shows that the 99\% of the objects to detect is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before rescaling.
 After rescaling these values become: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
 
-So, with the B16 model, we wanted to test how a backbone with a receptive field smaller than the objects to detect performs on this task.
+With the B16 model, we wanted to test how a backbone with a receptive field smaller than the objects to detect performs on this task.
 Indeed the receptive field of B16 backbone (the feature extraction part) is 16, with a stride of 4. So, given an input image of size 100x100px, the last layer feature maps have a size of 25x25.
 
 In this model we used the follwing values for anchor sizes and ratios:
@@ -201,8 +210,32 @@ In this model we used the follwing values for anchor sizes and ratios:
   \item anchor ratio: [2: 1, 1: 2, 1:1]
 \end{itemize}
 
-\subsection{B44 - Baseline 44}\label{subsec:b44}
+This imply that, at training time, the model generates 6x3x25x25 anchors ground truth.
 
+\subsection{B44 - Baseline 44}\label{subsec:b44}
+The second backbone we implemented has the following structure:
+\begin{enumerate}
+  \item Block 1: consists of 2 convolutional layers with 3x3x64 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 2: consists of 2 convolutional layers with 3x3x128 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 3: consists of 3 convolutional layers with 3x3x256 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+\end{enumerate}
+The first two blocks are the same as in the B16 model. 
+
+With the third block we wanted to test whether a receptive field greater than the objects to detect performs better than the opposite (like in the B16).
+Indeed B44 has a receptive field of 44, that is greater than the 90\% of objects to detect.
+So, the test here is a direct performance comparison between B16 and B44 on the same input image size.
+
+Each block is initialized with the VGG16 weights. Block 1 and 2 have been freezed, while block 3 is left free to learn.
+
+The size of the last feature maps is 12x12.
+
+In this model we used the same values for anchor sizes and ratios as in the B16:
+\begin{itemize}
+  \item anchor size: [4, 8, 16, 24, 32, 64]
+  \item anchor ratio: [2: 1, 1: 2, 1:1]
+\end{itemize}
+
+This imply that, at training time, the model generates 6x3x12x12 anchors ground truth.
 
 \begin{figure}[h]
   \center
@@ -211,8 +244,49 @@ In this model we used the follwing values for anchor sizes and ratios:
   \label{fig:bidaf}
 \end{figure}
 
-\section{Transformer-based models}\label{sec:transformer-models}
-\subsection{BERT}\label{subsec:bert-model}
+\subsection{VGG16}\label{subsec:vgg16}
+The third backbone we implemented is the well known VGG16 backbone, without the fully connected part and without the last MaxPooling layer.
+
+It has the following structure:
+\begin{enumerate}
+  \item Block 1: consists of 2 convolutional layers with 3x3x64 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 2: consists of 2 convolutional layers with 3x3x128 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 3: consists of 3 convolutional layers with 3x3x256 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 4: consists of 3 convolutional layers with 3x3x512 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 5: consists of 3 convolutional layers with 3x3x512 filters, followed by a ReLU activation layer;
+\end{enumerate}
+The first two blocks are the same as in the B16 model, while the third is the same as in the B44.
+
+Each block is initialized with the VGG16 weights. Block 1 and 2 have been freezed, while block 3, 4 and 5 is left free to learn.
+
+The size of the last feature maps is 37x37.
+
+In this model, anchor sizes and ratios used are:
+\begin{itemize}
+  \item anchor size: [128, 256, 512]
+  \item anchor ratio: [2: 1, 1: 2, 1:1]
+\end{itemize}
+
+This imply that, at training time, the model generates 3x3x37x37 anchors ground truth.
+
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{bidaf}
+  \caption{BiDAF model (image courtesy of \cite{bidaf})}
+  \label{fig:bidaf}
+\end{figure}
+
+\section{Output Architecture}\label{sec:output-architecture}
+
+The output module is composed by two fully-connected layers, used to identify the start and end token indexes of the answer in the given context. The start index classifier directly receives the output of the previous modules (e.g. in the BiDAF model that would correspond to the output of the modeling layer), while the same output vector is first passed into a single layer recurrent encoder before entering into the end index classifier. This additional RNN is used to implicitly enforce the constraint that the end index should follow the start one.
+
+We then compute a softmax over both logits, so as to obtain a start and end index probability for each token in the context. To find the correct section of context that forms the answer, we compute the joint probability distribution (by multiplying each pair of start/end probabilities, for each token) and we take the start/end indexes corresponding to the maximum combined probability (respecting the assumption that the start index must precede the end one).
+
+Finally, thanks to HuggingFace's tokenizers \cite{tokenizers}, we are able to simply convert start/end indexes over tokens to their corresponding values over original characters' positions.
+
+The output layer is also responsible for the computation of the loss, which is a simple mean of cross-entropy losses of the start and end token probabilities.
+
+\subsection{Region Proposal Network Net}\label{subsec:rpn-net}
 All the Transformer models are based on BERT \cite{bert}, which is a language model composed by a multi-layer bidirectional encoder-decoder structure \cite{transformers}. Our experiments are all performed using the base, uncased implementation of BERT, which has $12$ Transformer layers and $768$ as its hidden size.
 
 The peculiarity of its Transformer architecture allows the model to learn the context of a word based on all of its surroundings, at the same time, without having to perform a sequential scan of the input, as done in standard RNNs. This is reflected in its pre-training, which is composed of two tasks:
@@ -224,10 +298,10 @@ The first task, MLM, is used to gain a detailed understanding of the processed l
 
 BERT is trained using both tasks together, with the goal of minimizing the combined loss.
 
-\subsection{DistilBERT}\label{subsec:distilbert-model}
+\subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
 BERT performances, as for the majority of large-scale language models, are inevitably intertwined with their number of parameters. DistilBERT \cite{distilbert,distilbert-article} tries to reduce this number using a technique called distillation, which consists in training a smaller "student" network to mimic the full output of the big "teacher" model \cite{distillation}. Specifically, DistilBERT has about half the parameters of BERT and retains $95\%$ of its performance on the GLUE benchmark \cite{glue}.
 
-\subsection{ELECTRA}\label{subsec:electra-model}
+\subsection{Detector}\label{subsec:electra-model}
 ELECTRA (Efficiently Learning an Encoder that Classifies Token Replacements Accurately) \cite{electra} has the same architecture as BERT, but uses a new pre-training approach which aims to outperform the MLM strategy with RTD (Replaced Token Detection). Its structure is composed of three steps, shown in figure \ref{fig:electra}:
 \begin{enumerate}
   \item Given an input sequence, randomly replace tokens with a $[MASK]$ token
@@ -244,14 +318,6 @@ This new pre-training task allows the model to compute the loss over each and ev
   \label{fig:electra}
 \end{figure}
 
-\section{Output module}\label{sec:output-module}
-The output module is composed by two fully-connected layers, used to identify the start and end token indexes of the answer in the given context. The start index classifier directly receives the output of the previous modules (e.g. in the BiDAF model that would correspond to the output of the modeling layer), while the same output vector is first passed into a single layer recurrent encoder before entering into the end index classifier. This additional RNN is used to implicitly enforce the constraint that the end index should follow the start one.
-
-We then compute a softmax over both logits, so as to obtain a start and end index probability for each token in the context. To find the correct section of context that forms the answer, we compute the joint probability distribution (by multiplying each pair of start/end probabilities, for each token) and we take the start/end indexes corresponding to the maximum combined probability (respecting the assumption that the start index must precede the end one).
-
-Finally, thanks to HuggingFace's tokenizers \cite{tokenizers}, we are able to simply convert start/end indexes over tokens to their corresponding values over original characters' positions.
-
-The output layer is also responsible for the computation of the loss, which is a simple mean of cross-entropy losses of the start and end token probabilities.
 
 \chapter{Experimental setup and results}\label{chap:experiments}
  

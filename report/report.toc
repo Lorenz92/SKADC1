@@ -7,17 +7,17 @@
 \contentsline {section}{\numberline {4.1}Feature Extraction Backbone}{8}{section.4.1}%
 \contentsline {subsection}{\numberline {4.1.1}B16 - Baseline 16}{8}{subsection.4.1.1}%
 \contentsline {subsection}{\numberline {4.1.2}B44 - Baseline 44}{9}{subsection.4.1.2}%
-\contentsline {section}{\numberline {4.2}Transformer-based models}{9}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}BERT}{9}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}DistilBERT}{10}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}ELECTRA}{10}{subsection.4.2.3}%
-\contentsline {section}{\numberline {4.3}Output module}{10}{section.4.3}%
-\contentsline {chapter}{\numberline {5}Experimental setup and results}{12}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Data handling}{12}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Tokenization}{12}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Embeddings}{13}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Metrics}{13}{section.5.4}%
-\contentsline {section}{\numberline {5.5}Environment}{14}{section.5.5}%
-\contentsline {section}{\numberline {5.6}Results}{14}{section.5.6}%
-\contentsline {chapter}{\numberline {6}Analysis of results}{15}{chapter.6}%
-\contentsline {chapter}{\numberline {7}Discussion}{17}{chapter.7}%
+\contentsline {subsection}{\numberline {4.1.3}VGG16}{9}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Output Architecture}{11}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Region Proposal Network Net}{11}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{12}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Detector}{12}{subsection.4.2.3}%
+\contentsline {chapter}{\numberline {5}Experimental setup and results}{14}{chapter.5}%
+\contentsline {section}{\numberline {5.1}Data handling}{14}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Tokenization}{14}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Embeddings}{15}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Metrics}{15}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Environment}{16}{section.5.5}%
+\contentsline {section}{\numberline {5.6}Results}{16}{section.5.6}%
+\contentsline {chapter}{\numberline {6}Analysis of results}{17}{chapter.6}%
+\contentsline {chapter}{\numberline {7}Discussion}{19}{chapter.7}%
