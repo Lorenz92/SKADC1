@@ -159,47 +159,50 @@ The multi-head attention modules in the Transformer architecture are the ones re
 
 While Transformers may always seem the way to go, since they throw away all the computational burden of training recurrent modules (which are sequential in nature and, thus, scarcely parallelizable), they also suffer from limitations due to the quadratic complexity of attention and the inherent maximum number of input tokens (which is implicitly linked to architecture choices themselves).
 
+\chapter{Dataset description}\label{chap:dataset-description}
 
+-- qui dire anche che le immagini vengono genrate on the fly e quindi anche l'augmentation, se accesa, viene fatta otf
 \chapter{System description}\label{chap:system-description}
 
-In this work, we implemented five different models, grouped together in two categories:
-\begin{itemize}
-  \item Recurrent-based models: comprising a simple LSTM encoder with a naïve attention mechanism (referred to as Baseline), along with the BiDAF network
-  \item Transformer-based models: comprising wraps of language models, like BERT, DistilBERT and ELECTRA
-\end{itemize}
+In this work, we implemented three different models. All of them are a Faster R-CNN network, but they differ on the backbone and hyperparameters.
 
-In order to perform an effective comparison, models from each group share the same input and output layer specifications.
+In order to perform an effective comparison, the models share the same output architecture.
 
 The following is a detailed description of the models. Beware that in each model section we report everything but what happens in the output module, which is described once in \ref{sec:output-module}.
 
-\section{Recurrent-based models}\label{sec:recurrent-models}
-\subsection{Baseline}\label{subsec:baseline}
+\section{Feature Extraction Backbone}\label{sec:feature-extraction-backbone}
+-- aggiungere citazioni ovunque
+\subsection{B16 - Baseline 16}\label{subsec:b16}
 
-The following is a simple description of the flow followed by questions and contexts, when given in input to the Baseline model:
+The first backbone we implemented has the following structure:
 \begin{enumerate}
-  \item Embedding: it performs a standard word-level embedding on both questions and contexts (see \ref{sec:embeddings})
-  \item Projection: embedded inputs are down-sampled into a fixed hidden size dimension, to reduce computation
-  \item Token encoding: a single uni-directional recurrent encoder, which processes questions and contexts as two separate inputs
-  \item Naïve attention: all the hidden states of a single question are averaged together (over the embedding dimension) so as to obtain a single vector which should encode the semantic information of the question at the sentence level; then, the aggregated question vector is element-wise multiplied to each context token latent representation
+  \item Block 1: consists of 2 convolutional layers with 3x3x64 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
+  \item Block 2: consists of 2 convolutional layers with 3x3x128 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
 \end{enumerate}
+Both the blocks have been initialized with the public available VGG-16 weights and \textbf{freezed}.
 
-\subsection{BiDAF}\label{subsec:bidaf}
+It has been shown that, in computer vision tasks, the very first layers of a convolutional pipeline, learn the most basic features, as strokes or circles.
+So, given that the objects we have to detect have simple shapes, like circles or ellipses, and that we think these kind of basic feature are common across different domains, 
+we tried to transfer learning from the VGG-16 and freezing the first layers, the ones that learn most basic features.
 
-The BiDAF model \cite{bidaf,bidaf-medium} is composed by the following sub-modules, where each one produces a more in-depth representation w.r.t. the previous stage, of the (question, context) tuple:
-\begin{enumerate}
-  \item Embedding: simple word-level embeddings, even though the original BiDAF paper also leverages character-level embeddings (which are known to help with OOV words): given that this addition seems to increase the metrics only by a couple of percentage points while requiring a lot more computation and structure to work optimally, we didn't implement it 
-  \item Projection: as done in the Baseline model
-  \item Highway: the last step in the embedding process is performed by a Highway network \cite{highway-network}, which is usually used to balance the contributions of word and character embeddings, but in our case, lacking the character embedding part, it serves as a training stabilizer
-  \item Contextual embeddings: a single layer bidirectional LSTM is used to refine the word-level embeddings for both questions and contexts separately, by taking into account the surrounding words for each token
-  \item Attention: this step is the heart of the BiDAF model. First of all, it computes a similarity matrix between questions and contexts as $\langle w, [q,c,q\cdot c]\rangle$, where $w$ is the weight matrix of a fully-connected layer, $q$ and $c$ represent the contextual embeddings of questions and contexts, respectively, $[\cdot]$ represents concatenation, $\langle\cdot\rangle$ is the dot product and $\cdot$ is element-wise multiplication. This similarity matrix represents how much each question and context words are grammatically and semantically alike and it's used as one of the inputs given to both BiDAF's peculiar attention modules, i.e. Context-To-Query (C2Q) and Query-To-Context (Q2C):
-  \begin{enumerate}
-    \item C2Q: represents which question words are most relevant to each context words, which outputs a vector $\tilde{c}$
-    \item Q2C: signifies which context words have the closest similarity to one of the question words and are hence critical for answering the query, which outputs a vector $\tilde{q}$
-  \end{enumerate}
-  
-  The last step in the attention module outputs a query-aware context vector, given by $g=\langle w, [c, \tilde{c}, c \cdot \tilde{c}, c\cdot \tilde{q}] \rangle$, where $w$ is the weight matrix of a fully-connected layer
-  \item Modeling: the modeling module is structured as a two-layer bidirectional LSTM, which takes as input the combined vector $g$
-\end{enumerate}
+As mentioned before, the goal was to detect very small objects, with respect to the dimensions usually detected in other deep learning works.
+So we decided to crop the original 32kx32k pixels image into 20x20 pixels patches and rescale them to 100x100 pixels, before feeding the network.
+This resemble to zoom-in the image, so that the objects to detect become 5 times bigger.
+
+As we've seen before, the bounding box shapes distribution shows that the 99\% of the objects to detect is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before rescaling.
+After rescaling these values become: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
+
+So, with the B16 model, we wanted to test how a backbone with a receptive field smaller than the objects to detect performs on this task.
+Indeed the receptive field of B16 backbone (the feature extraction part) is 16, with a stride of 4. So, given an input image of size 100x100px, the last layer feature maps have a size of 25x25.
+
+In this model we used the follwing values for anchor sizes and ratios:
+\begin{itemize}
+  \item anchor size: [4, 8, 16, 24, 32, 64]
+  \item anchor ratio: [2: 1, 1: 2, 1:1]
+\end{itemize}
+
+\subsection{B44 - Baseline 44}\label{subsec:b44}
+
 
 \begin{figure}[h]
   \center
@@ -251,7 +254,7 @@ Finally, thanks to HuggingFace's tokenizers \cite{tokenizers}, we are able to si
 The output layer is also responsible for the computation of the loss, which is a simple mean of cross-entropy losses of the start and end token probabilities.
 
 \chapter{Experimental setup and results}\label{chap:experiments}
-
+ 
 \section{Data handling}\label{sec:data-handling}
 Given the JSON training set, we decided to parse it into a suitable tabular data structure, which turned out to be useful even for subsequent pre-processing tasks. In particular, since each context has multiple question/answer pairs and each question can have multiple answers, we allocated one row for each context/question/answer triple, thus replicating the same context and question multiple times, in order to consider it as a separate example.
 

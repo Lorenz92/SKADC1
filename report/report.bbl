@@ -17,29 +17,6 @@
 \endgroup
 
 \datalist[entry]{nyt/global//global/global}
-  \entry{bidaf-medium}{online}{}
-    \name{author}{1}{}{%
-      {{hash=AM}{%
-         family={Antonio},
-         familyi={A\bibinitperiod},
-         given={Meraldo},
-         giveni={M\bibinitperiod},
-      }}%
-    }
-    \strng{namehash}{AM1}
-    \strng{fullhash}{AM1}
-    \field{labelnamesource}{author}
-    \field{labeltitlesource}{title}
-    \field{sortinit}{A}
-    \field{sortinithash}{A}
-    \field{title}{An Illustrated Guide to Bi-Directional Attention Flow
-  (BiDAF)}
-    \verb{url}
-    \verb https://towardsdatascience.com/the-definitive-guide-to-bi-directional
-    \verb -attention-flow-d0e96e9e666b
-    \endverb
-  \endentry
-
   \entry{wandb}{misc}{}
     \name{author}{1}{}{%
       {{hash=BL}{%
@@ -953,46 +930,6 @@
     \verb https://www.skatelescope.org/news/ska-launches-science-data-challenge
     \verb /
     \endverb
-  \endentry
-
-  \entry{highway-network}{article}{}
-    \name{author}{3}{}{%
-      {{hash=SRK}{%
-         family={Srivastava},
-         familyi={S\bibinitperiod},
-         given={Rupesh\bibnamedelima Kumar},
-         giveni={R\bibinitperiod\bibinitdelim K\bibinitperiod},
-      }}%
-      {{hash=GK}{%
-         family={Greff},
-         familyi={G\bibinitperiod},
-         given={Klaus},
-         giveni={K\bibinitperiod},
-      }}%
-      {{hash=SJ}{%
-         family={Schmidhuber},
-         familyi={S\bibinitperiod},
-         given={J{\"{u}}rgen},
-         giveni={J\bibinitperiod},
-      }}%
-    }
-    \strng{namehash}{SRKGKSJ1}
-    \strng{fullhash}{SRKGKSJ1}
-    \field{labelnamesource}{author}
-    \field{labeltitlesource}{title}
-    \field{sortinit}{S}
-    \field{sortinithash}{S}
-    \verb{eprint}
-    \verb 1505.00387
-    \endverb
-    \field{title}{Highway Networks}
-    \verb{url}
-    \verb http://arxiv.org/abs/1505.00387
-    \endverb
-    \field{volume}{abs/1505.00387}
-    \field{journaltitle}{CoRR}
-    \field{eprinttype}{arXiv}
-    \field{year}{2015}
   \endentry
 
   \entry{transformers}{article}{}
