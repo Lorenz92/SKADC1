@@ -4,10 +4,14 @@ import sys
 import keras.backend as K
 import tensorflow as tf
 from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout, ZeroPadding2D, Convolution2D, BatchNormalization, Activation, Add
+from tensorflow.keras import initializers
 
 """
 rf = rf_l-1 + (s * k-1)
 """
+
+kernel_init = initializers.RandomNormal(mean=.0, stddev=0.01)
+bias_init = initializers.Zeros()
 
 class Expander(Layer):
     def __init__(self, channels=3, kernel_size=(1, 1), padding='same', activation='relu', name='Custom_input_layer'):
@@ -45,7 +49,7 @@ def baseline_16(input_image):
 
     return x
 
-def baseline_36(input_image):
+def baseline_44(input_image):
 
     # Block 1
     x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
@@ -60,10 +64,9 @@ def baseline_36(input_image):
     # Block 3
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv1')(x) # RF = 24
     x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv2')(x) # RF = 32
-    # x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x) # RF = 40
+    x = Conv2D(256, (3, 3), activation='relu', padding='same', name='block3_conv3')(x) # RF = 40
     x = MaxPooling2D((2, 2), strides=(2, 2), name='block3_pool')(x) # RF = 44 # 36
-
-
+    
     return x
 
 
@@ -182,9 +185,9 @@ class RpnNet(Layer):
         self.prob_pred_out = anchor_num
         self.coord_pred_out = 4 * anchor_num 
         super(RpnNet, self).__init__(name='rpn')
-        self.conv2d = Conv2D(filters=512, kernel_size=(3, 3), padding='same', kernel_initializer='normal', activation='relu', name='18_RPN_Conv1')
-        self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), activation='sigmoid', kernel_initializer='uniform', name='19_Anchor_Cls_Conv')
-        self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), activation='linear', kernel_initializer='zero', name='19_Anchor_Reg_Conv')
+        self.conv2d = Conv2D(filters=512, kernel_size=(3, 3), padding='same', kernel_initializer=kernel_init, bias_initializer=bias_init, activation='relu', name='18_RPN_Conv1')
+        self.cls_pred = Conv2D(filters=self.prob_pred_out, kernel_size=(1, 1), activation='sigmoid', kernel_initializer='uniform', bias_initializer=bias_init, name='19_Anchor_Cls_Conv')
+        self.reg_pred = Conv2D(filters=self.coord_pred_out, kernel_size=(1, 1), activation='linear', kernel_initializer='zero', bias_initializer=bias_init, name='19_Anchor_Reg_Conv')
     
     def call(self, backbone):
         x = self.conv2d(backbone)
@@ -306,6 +309,7 @@ class Detector(Layer):
 
         self.td_fc_cls = TimeDistributed(Dense(self.num_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(self.num_classes))
         self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
+        # self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
 
     def call(self, inputs):
 

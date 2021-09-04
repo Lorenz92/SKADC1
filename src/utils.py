@@ -632,6 +632,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
             if cls_name not in bboxes:
                 bboxes[cls_name] = []
                 probs[cls_name] = []
+
             (x,y,w,h) = ROIs[0,ii,:]
             
             try:
@@ -655,6 +656,9 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
                 
                 [[[x]], [[y]], [[w]], [[h]]] = apply_regr_np(X, T)
 
+                # if w==0 or h==0 or x <0 or y <0:
+                #     continue
+
             except Exception as e:
                 print('Exception: {}'.format(e))
                 pass
@@ -665,7 +669,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold):
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold, acceptance_treshold):
 
     preds = {}
     mAP = []
@@ -675,7 +679,7 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
 
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
-        bboxes, probs = get_predictions(image, class_list, acceptance_treshold=.4, rpn_model=rpn_model, detector_model=detector_model)
+        bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)
         
         # print(bboxes, probs)
         

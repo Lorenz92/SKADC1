@@ -80,7 +80,7 @@ def calc_rpn(img_data, width, height, backbone):
 	# calculate the output map size based on the network architecture
 	if backbone == 'baseline_8':
 		(output_width, output_height) = (width//2, height//2)
-	elif backbone == 'baseline_36':
+	elif backbone == 'baseline_44':
 		(output_width, output_height) = (width//8, height//8)
 	elif backbone == 'baseline_16':
 		(output_width, output_height) = (width//4, height//4)
@@ -506,7 +506,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				
 				zero_centering(x_img, pixel_mean)
 				
-				if (backbone == 'resnet50' or backbone =='baseline_16' or backbone =='baseline_36'):
+				if (backbone == 'resnet50' or backbone =='baseline_16' or backbone =='baseline_44'):
 					normalize_pixel_values(x_img)
 				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)
@@ -548,7 +548,7 @@ def zero_centering(img_patch, pixel_mean=None):
 
 def normalize_pixel_values(img_patch):
 
-	if True:
+	if False:
 		img_patch[:, :, 0] /= 255
 		img_patch[:, :, 1] /= 255
 		img_patch[:, :, 2] /= 255
@@ -556,9 +556,5 @@ def normalize_pixel_values(img_patch):
 		img_patch[:, :, 0] = img_patch[:, :, 0]/C.img_channel_mean[0]
 		img_patch[:, :, 1] = img_patch[:, :, 1]/C.img_channel_mean[1]
 		img_patch[:, :, 2] = img_patch[:, :, 2]/C.img_channel_mean[2]
-
-		# img_patch[:, :, 0] = np.where(img_patch[:, :, 0] < 0, img_patch[:, :, 0]/C.img_channel_mean[0], img_patch[:, :, 0]/(255 - C.img_channel_mean[0]))
-		# img_patch[:, :, 1] = np.where(img_patch[:, :, 1] < 0, img_patch[:, :, 1]/C.img_channel_mean[1], img_patch[:, :, 1]/(255 - C.img_channel_mean[1]))
-		# img_patch[:, :, 2] = np.where(img_patch[:, :, 2] < 0, img_patch[:, :, 2]/C.img_channel_mean[2], img_patch[:, :, 2]/(255 - C.img_channel_mean[2]))
 
 	return

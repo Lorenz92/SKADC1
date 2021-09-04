@@ -1,5 +1,5 @@
 import os
-from src.layers import Expander, RpnNet, RoiPoolingConv, Detector, vgg16, resnet50, baseline_8, baseline_16, baseline_36
+from src.layers import Expander, RpnNet, RoiPoolingConv, Detector, vgg16, resnet50, baseline_8, baseline_16, baseline_44
 import src.config as config
 import src.utils as utils
 import keras
@@ -27,8 +27,8 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
         x = baseline_8(x)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
-    elif backbone == 'baseline_36':
-        x = baseline_36(x)
+    elif backbone == 'baseline_44':
+        x = baseline_44(x)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, _ = RpnNet(anchor_num)(x)
@@ -69,12 +69,12 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
         input_shape_fmap = (50, 50, 64)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
-        input_shape_fmap = (37, 37, 128)
-        # input_shape_fmap = (25, 25, 128)
-    elif backbone == 'baseline_36':
-        x = baseline_36(x)
-        input_shape_fmap = (18, 18, 256)
-        # input_shape_fmap = (12, 12, 256)
+        # input_shape_fmap = (37, 37, 128)
+        input_shape_fmap = (25, 25, 128)
+    elif backbone == 'baseline_44':
+        x = baseline_44(x)
+        # input_shape_fmap = (18, 18, 256)
+        input_shape_fmap = (12, 12, 256)
 
     # Create Region Proposal Net
     rpn_cls, rpn_reg, shared_backbone = RpnNet(anchor_num)(x)
@@ -117,7 +117,7 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
                 utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
                 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
 
-        elif backbone == 'baseline_36':
+        elif backbone == 'baseline_44':
             weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
             # Download VGG16 weights
             # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
