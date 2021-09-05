@@ -225,57 +225,38 @@ class SKADataset:
                     raise ValueError("Dimension of DataFrame and dict passed don't match!")
                 return pd.concat([df, df_from_dict], axis=1)
 
-            def _dataset_plot():
-                   # histogram of height and width
+            def _dataset_plot(df):
+                # histogram of height and width
                 plt.figure(figsize=(8,6))
-                plt.hist(cleaned_df['width'], bins=400, alpha=0.5, label="width ")
-                plt.hist(cleaned_df['height'], bins=200, alpha=0.5, label="height")
+                plt.hist(df['width'], bins=400, alpha=0.5, label="width ")
+                plt.hist(df['height'], bins=200, alpha=0.5, label="height")
                 plt.ylim((0, 11500))
                 plt.xlim((0, 50))
 
                 #scatter plot of class 
-                patch_class_list = cleaned_df['class_label'].unique() 
+                patch_class_list = df['class_label'].unique() 
 
-                print(cleaned_df.groupby('class_label').count())
-                print (patch_class_list)
-
-                #fig = plt.figure(figsize=(8,8))
-                #ax1 = fig.add_subplot(111)
                 colors = cm.rainbow(np.linspace(0, 1, len(patch_class_list)))
-                fig, axs = plt.subplots(1, len(patch_class_list), figsize=(4*len(patch_class_list),4))
+                fig, axs = plt.subplots(1, len(patch_class_list), figsize=(4*len(patch_class_list), 4))
+                
+                fig = plt.figure(figsize=(8,8))
+                ax1 = fig.add_subplot(111)
+                
                 for idx, c in zip(range(len(patch_class_list)), colors):
-                    #fig = plt.figure(figsize=(4,4))
-                    clean_cass = cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[idx]), :]
-                    axs[idx].scatter(clean_cass['width'], clean_cass['height'], s=10,color=c, label=patch_class_list[idx])
+                    class_slice = df.loc[(df['class_label']==patch_class_list[idx]), :]
+                    axs[idx].scatter(class_slice['width'], class_slice['height'], s=10,color=c, label=patch_class_list[idx])
                     axs[idx].set_xlim([0, 100])
                     axs[idx].set_ylim([0, 100])
-                    axs[idx].title.set_text( f'width vs height of class: { patch_class_list[idx]}')
-                    # plt.ylim((0, 100))
-                    # plt.xlim((0, 100))
-                    #plt.legend(loc='upper left')
-                clean_cass2= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[4]), :]
-                clean_cass1= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[3]), :]
-                clean_cass3= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[2]), :]
-                clean_cass4= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[1]), :]
-                clean_cass5= cleaned_df.loc[(cleaned_df['class_label']== patch_class_list[0]), :]
-                fig = plt.figure(figsize=(8,8))
+                    axs[idx].title.set_text(f'width vs height of class: {patch_class_list[idx]}')
+                
+                for idx, c in zip(reversed(range(len(patch_class_list))), colors):
+                    class_slice= df.loc[(df['class_label']== patch_class_list[idx]), :]
+                    ax1.scatter(class_slice['width'], class_slice['height'], s=10, color=c, label=patch_class_list[idx])
 
-                ax1 = fig.add_subplot(111)
-                ax1.scatter(clean_cass2['width'], clean_cass2['height'], s=10, c='b', label=patch_class_list[4])
-                ax1.scatter(clean_cass1['width'], clean_cass1['height'], s=10, c='r', label=patch_class_list[3])
-                ax1.scatter(clean_cass3['width'], clean_cass3['height'], s=10, c='g', label=patch_class_list[2])
-                ax1.scatter(clean_cass5['width'], clean_cass5['height'], s=10, c='c', label=patch_class_list[0])
-                ax1.scatter(clean_cass4['width'], clean_cass4['height'], s=10, c='y', label=patch_class_list[1])
                 plt.ylim((0, 150))
                 plt.xlim((0, 250))
                 plt.legend(loc='upper left')
-                #colors = ['red','green','blue']          
-                #ax1.scatter(clean_cass2['width'], clean_cass2['height'], c='b')# cmap=matplotlib.colors.ListedColormap(colors))
-                
-                #cb = plt.colorbar()
-                # loc = np.arange(0,max(clean_cass2['class_label']),max(clean_cass2['class_label'])/float(len(colors)))
-                # cb.set_ticks(loc)
-                # cb.set_ticklabels(colors)
+ 
                 return
 
             #rows with selection == 0 must be deleted (from 274883 rows to 190553)
@@ -400,7 +381,7 @@ class SKADataset:
             cleaned_df['class_label'] = cleaned_df[['SIZE', 'CLASS']].apply(lambda x: f'{x[0]}_{x[1]}', axis=1)
   
             if show_plot:
-                _dataset_plot()
+                _dataset_plot(cleaned_df)
 
             if config.enlarge_bbox:
                 print('Enlarging bboxes...')
