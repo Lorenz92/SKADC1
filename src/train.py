@@ -15,7 +15,7 @@ np.random.seed(config.RANDOM_SEED)
 
 # Training loop
 
-def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, pixel_mean=None, resume_train=True):
+def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_list, num_epochs, patches_folder_path, backbone, pixel_mean=None, resume_train=True):
 
     ######### build class_mapping
 
@@ -27,11 +27,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, val_pa
     np.random.shuffle(train_patch_list)
 
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
-    if val_patch_list is not None:
-        val_datagen = prep.get_anchor_gt(patches_folder_path, val_patch_list, backbone, pixel_mean=pixel_mean)
 
     iter_num = 0
-    epoch_length = 10
+    epoch_length = 100
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
