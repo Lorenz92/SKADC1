@@ -121,3 +121,6 @@ rpn_max_overlap = 0.7
 # overlaps for classifier ROIs
 classifier_min_overlap = 0.1
 classifier_max_overlap = 0.5
+
+# Ratio between image size before entering the net and last feature map
+in_out_img_size_ratio = None

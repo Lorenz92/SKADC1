@@ -270,50 +270,50 @@ def calc_rpn(img_data, width, height, backbone):
 		# print('249', val_locs)
 		y_is_box_valid[0, pos_locs[0][val_locs], pos_locs[1][val_locs], pos_locs[2][val_locs]] = 0
 		num_pos = num_regions/2
-	else:
-		# Qui campioniamo num_regions/2 - len(pos_locs[0] volte ancore positive per bilanciare il batch tra pos e neg.
-		# Alla fine possiamo semplicemente concatenare ad y_is_box_valid e y_rpn_overlap perchè poi la loss_cls filtra le ancore non valide
-		new_pos = np.random.choice(len(pos_locs[0]), int(num_regions/2 - len(pos_locs[0])))
+	# else:
+	# 	# Qui campioniamo num_regions/2 - len(pos_locs[0] volte ancore positive per bilanciare il batch tra pos e neg.
+	# 	# Alla fine possiamo semplicemente concatenare ad y_is_box_valid e y_rpn_overlap perchè poi la loss_cls filtra le ancore non valide
+	# 	new_pos = np.random.choice(len(pos_locs[0]), int(num_regions/2 - len(pos_locs[0])))
 
-		# print('new_pos:', len(new_pos), new_pos)
-		# print(y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
-		# print(y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+	# 	# print('new_pos:', len(new_pos), new_pos)
+	# 	# print(y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
+	# 	# print(y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]])
 
-		# pos_y_is_box_valid = y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
-		# pos_y_rpn_overlap = y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
-		# double_check = np.where(np.logical_and(pos_y_rpn_overlap[0, :, :, :] == 1, pos_y_is_box_valid[0, :, :, :] == 1))
+	# 	# pos_y_is_box_valid = y_is_box_valid[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
+	# 	# pos_y_rpn_overlap = y_rpn_overlap[0, pos_locs[0][new_pos], pos_locs[1][new_pos], pos_locs[2][new_pos]]
+	# 	# double_check = np.where(np.logical_and(pos_y_rpn_overlap[0, :, :, :] == 1, pos_y_is_box_valid[0, :, :, :] == 1))
 
-		# print('double check:', len(double_check[0]))
-		# print('pos_y_is_box_valid shape',pos_y_is_box_valid.shape)
-		# print('pos_y_rpn_overlap shape',pos_y_rpn_overlap.shape)
+	# 	# print('double check:', len(double_check[0]))
+	# 	# print('pos_y_is_box_valid shape',pos_y_is_box_valid.shape)
+	# 	# print('pos_y_rpn_overlap shape',pos_y_rpn_overlap.shape)
 
-		# num_pos = new_pos + num_pos
+	# 	# num_pos = new_pos + num_pos
 	
-	# Estendiamo y_is_box_valid e y_rpn_overlap
-	not_valids = np.where(y_is_box_valid[0, :, :, :] == 0)
-	replacing_indexes = int(num_regions/2 - len(pos_locs[0]))
-	not_valid_to_be_replaced = np.array([not_valids[0][:replacing_indexes], not_valids[1][:replacing_indexes], not_valids[2][:replacing_indexes]])
+	# # Estendiamo y_is_box_valid e y_rpn_overlap
+	# not_valids = np.where(y_is_box_valid[0, :, :, :] == 0)
+	# replacing_indexes = int(num_regions/2 - len(pos_locs[0]))
+	# not_valid_to_be_replaced = np.array([not_valids[0][:replacing_indexes], not_valids[1][:replacing_indexes], not_valids[2][:replacing_indexes]])
 
-	# print('not val', len(not_valids[0]))
-	# print('not val', not_valid_to_be_replaced.shape)
-	# print('not val', not_valid_to_be_replaced[0])
-	# print('not val', 4*not_valid_to_be_replaced[0])
-	# print('not val', 4*not_valid_to_be_replaced[0]+4)
-	# print(type(y_rpn_regr))
+	# # print('not val', len(not_valids[0]))
+	# # print('not val', not_valid_to_be_replaced.shape)
+	# # print('not val', not_valid_to_be_replaced[0])
+	# # print('not val', 4*not_valid_to_be_replaced[0])
+	# # print('not val', 4*not_valid_to_be_replaced[0]+4)
+	# # print(type(y_rpn_regr))
 
-	y_is_box_valid[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
-	y_rpn_overlap[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
+	# y_is_box_valid[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
+	# y_rpn_overlap[0, not_valid_to_be_replaced[0], not_valid_to_be_replaced[1], not_valid_to_be_replaced[2]] = 1
 
-	for idx in range(len(not_valid_to_be_replaced[0])):
-		# print('?'*9)
-		new_regr_values = new_pos[idx]
-		# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
-		# print(y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]])
-		y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]] = y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]]
-		# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
+	# for idx in range(len(not_valid_to_be_replaced[0])):
+	# 	# print('?'*9)
+	# 	new_regr_values = new_pos[idx]
+	# 	# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
+	# 	# print(y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]])
+	# 	y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]] = y_rpn_regr[0, 4*pos_locs[0][new_regr_values]:4*pos_locs[0][new_regr_values]+4, pos_locs[1][new_regr_values],pos_locs[2][new_regr_values]]
+	# 	# print(y_rpn_regr[0, 4*not_valid_to_be_replaced[0][idx]:4*not_valid_to_be_replaced[0][idx]+4, not_valid_to_be_replaced[1][idx], not_valid_to_be_replaced[2][idx]])
 	
-	num_pos += len(new_pos)
-	# print('new num pos:', num_pos)
+	# num_pos += len(new_pos)
+	# # print('new num pos:', num_pos)
 
 
 	if len(neg_locs[0]) + num_pos > num_regions:
@@ -504,7 +504,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				# Zero-center by mean pixel, and preprocess image
 				# print('zero-centering -- START')
 				
-				zero_centering(x_img, pixel_mean)
+				# zero_centering(x_img, pixel_mean)
 				
 				if (backbone == 'resnet50' or backbone =='baseline_16' or backbone =='baseline_44'):
 					normalize_pixel_values(x_img)
@@ -553,8 +553,12 @@ def normalize_pixel_values(img_patch):
 		img_patch[:, :, 1] /= 255
 		img_patch[:, :, 2] /= 255
 	else:
-		img_patch[:, :, 0] = img_patch[:, :, 0]/C.img_channel_mean[0]
-		img_patch[:, :, 1] = img_patch[:, :, 1]/C.img_channel_mean[1]
-		img_patch[:, :, 2] = img_patch[:, :, 2]/C.img_channel_mean[2]
+		# img_patch[:, :, 0] = img_patch[:, :, 0]/C.img_channel_mean[0]
+		# img_patch[:, :, 1] = img_patch[:, :, 1]/C.img_channel_mean[1]
+		# img_patch[:, :, 2] = img_patch[:, :, 2]/C.img_channel_mean[2]
+		max = img_patch[:, :, 0].max()
+		img_patch[:, :, 0] /= max
+		img_patch[:, :, 1] /= max
+		img_patch[:, :, 2] /= max
 
 	return

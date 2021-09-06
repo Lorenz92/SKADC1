@@ -524,6 +524,7 @@ class SKADataset:
             patches_dict = {}
             proc_train_df = pd.DataFrame()
             previously_generate_patches = listdir(source_dir)
+            previously_generate_patches.remove('.DS_Store')
             patches_idx_dict = {int(v.split('_')[0]):v for v in previously_generate_patches}
 
             if limit:

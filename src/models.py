@@ -153,10 +153,10 @@ def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_
 
     ########## Build models
 
-    # rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
-    # detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
-    rpn_optimizer = Adam(lr=5e-2)
-    detector_optimizer = Adam(lr=5e-2)
+    rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
+    detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
+    # rpn_optimizer = Adam(lr=5e-2)
+    # detector_optimizer = Adam(lr=5e-2)
 
     rpn_loss_cls = rpn_losses[0]
     rpn_loss_regr = rpn_losses[1]
