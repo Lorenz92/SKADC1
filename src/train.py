@@ -2,20 +2,20 @@ import time
 import os
 import numpy as np
 
+from keras.utils import generic_utils
+import tensorflow as tf
+
 import src.preprocessing as prep
 import src.config as config
 import src.utils as utils
-
-from keras.utils import generic_utils
-import tensorflow as tf
-import sys
+import src.models as models
+import src.losses as loss
 
 np.random.seed(config.RANDOM_SEED)
 
-
 # Training loop
 
-def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_list, num_epochs, patches_folder_path, backbone, pixel_mean=None, resume_train=True):
+def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_model_eval, detector_model_eval, total_model_eval, val_patch_list, class_list, num_epochs, patches_folder_path, backbone, pixel_mean=None, resume_train=True):
 
     ######### build class_mapping
 
@@ -29,12 +29,13 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
 
     iter_num = 0
-    epoch_length = 100
+    epoch_length = 2
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
     num_epochs = num_epochs
     losses = np.zeros((epoch_length, 5))
+    scores = np.zeros((epoch_length, 2))
 
 
     ######### resume training
@@ -42,12 +43,17 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_
     if resume_train:
         previous_losses = np.load(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy")
         best_loss = min(previous_losses[:,:-1].sum(axis=1))
-        print(f'\nPrevious best loss: {best_loss}')
         del previous_losses
+
+        previous_scores = np.load(f"{config.MODEL_WEIGHTS}/{backbone}/scores_history.npy")
+        best_mAP = max(previous_scores[:,0])
+        print(f'\nPrevious best loss: {best_loss} - best mAP: {best_mAP}')
+        del previous_scores
     else:
-        if os.path.exists(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy"):
-            raise ValueError('There is already a loss history file. Please delete it first.')
+        if (os.path.exists(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy") or os.path.exists(f"{config.MODEL_WEIGHTS}/{backbone}/scores_history.npy")):
+            raise ValueError('There is already a loss history or a score history file. Please delete it first.')
         best_loss = np.Inf
+        best_mAP = 0.
 
     ######### (re-)start training
     for epoch in range(num_epochs):
@@ -219,11 +225,32 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_
                     else:
                         loss_hist = losses_to_save
                         counter = 1
-                        resume_train = True
-
+                    print('saving loss')
                     np.save(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy", loss_hist)
                     total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/0_frcnn_{backbone}.h5')
+                    
+                    print('Validating model on validation set...')
 
+                    models.load_weigths(rpn_model_eval, detector_model_eval, backbone, checkpoint=f'0_frcnn_{backbone}.h5')
+                    models.compile_models(rpn_model_eval, detector_model_eval, total_model_eval, rpn_losses=[loss.rpn_loss_cls, loss.rpn_loss_regr], detector_losses=[loss.detector_loss_cls, loss.detector_loss_regr], class_list=class_list)
+
+
+                    _, mAP, mPrecision = utils.evaluate_model(rpn_model_eval, detector_model_eval, backbone, val_patch_list, class_list, map_threshold=.5, acceptance_treshold=.5)
+
+                    if (mPrecision == 0. and mAP == 1.):
+                        mAP=0.
+                    
+                    scores_to_save = [[mAP, mPrecision]]
+                    print(scores_to_save)
+
+                    if resume_train:
+                        previous_scores = np.load(f"{config.MODEL_WEIGHTS}/{backbone}/scores_history.npy")
+                        scores_hist = np.concatenate((previous_scores, scores_to_save), axis=0)
+                    else:
+                        scores_hist = scores_to_save
+                        resume_train = True
+                    
+                    np.save(f"{config.MODEL_WEIGHTS}/{backbone}/scores_history.npy", scores_hist)
 
                     iter_num = 0
 
@@ -231,7 +258,11 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, class_
                     if curr_loss < best_loss:
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
-                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/{counter}_frcnn_{backbone}.h5')
+                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/loss_{counter}_frcnn_{backbone}.h5')
+                    if (mAP > best_mAP and mPrecision > 0):
+                        print('mAP decreased from {} to {}, saving weights'.format(best_mAP,mAP))
+                        best_mAP = mAP
+                        total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/map_{counter}_frcnn_{backbone}.h5')
                     
                     start_time = time.time()
                     break

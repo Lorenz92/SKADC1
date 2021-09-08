@@ -455,8 +455,6 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				image_path = os.path.join(patches_path, patch_id, f"{patch_id}.npy")
 				image_data_path = os.path.join(patches_path, patch_id, f"{patch_id}.pkl")
 
-				#TODO: aggiungere if backbone per manipolare i pixel
-
 				if False:#mode == 'train':
 					# print('Augmenting -- START')
 					hflip = np.random.randint(0, 2)
@@ -467,8 +465,6 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 					# print('Augmenting -- END')
 				else:
 					x_img, img_data_aug  = augment(image_path, image_data_path, augment=False)
-
-				print(x_img.shape)
 
 				img_data_aug['x1s'] = img_data_aug['x1s'].astype(int)
 				img_data_aug['x2s'] = img_data_aug['x2s'].astype(int)

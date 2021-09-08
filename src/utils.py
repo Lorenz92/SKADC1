@@ -543,6 +543,19 @@ def plot_loss(history):
     
     return
 
+def plot_scores(history):
+    r_epochs = history.shape[0]
+
+    plt.figure(figsize=(15,5))
+    plt.subplot(1,2,1)
+    plt.plot(np.arange(0, r_epochs), history[:,0], 'r')
+    plt.title('mAP_0.5')
+    plt.subplot(1,2,2)
+    plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
+    plt.title('macro Precision')
+    plt.show()
+
+
 def get_real_coordinates(x1, y1, x2, y2):
     ratio = config.resizeFinalDim / config.patch_dim if config.resizePatch else 1.
     real_x1 = int(round(x1 // ratio))
@@ -562,7 +575,7 @@ def get_detections(patch_id, bboxes, probs):
        
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
-            print((x1, y1, x2, y2))
+            # print((x1, y1, x2, y2))
             (real_x1, real_y1, real_x2, real_y2) = get_real_coordinates(x1, y1, x2, y2)
 
             boxes_coords['x1s'].append(real_x1)
@@ -584,15 +597,15 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     class_mapping = {key:value for key, value in enumerate(class_list)}
     class_mapping[len(class_mapping)] = 'bg'
 
-    print(class_mapping)
+    # print(class_mapping)
 
-    print('Predict')
+    # print('Predict')
 
     # get the feature maps and output from the RPN
     [Y1, Y2, F] = rpn_model.predict_on_batch(image)
     # [Y1, Y2] = rpn_model.predict_on_batch(image)
 
-    print('rpn_to_roi')
+    # print('rpn_to_roi')
 
     # print(Y1.shape, Y2.shape)
 
@@ -622,9 +635,9 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
         # print(ROIs)
 
         [P_cls, P_regr] = detector_model.predict([F, ROIs])
-        # [P_cls, P_regr] = detector_model.predict([image, ROIs])
-        print(P_cls)
-        print(P_regr)
+        
+        # print(P_cls)
+        # print(P_regr)
         for ii in range(P_cls.shape[1]):
             # if classification perc is too low OR it is. a 'bg' image THEN discard
             if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
@@ -660,8 +673,8 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
                 
                 [[[x]], [[y]], [[w]], [[h]]] = apply_regr_np(X, T)
 
-                # if w==0 or h==0 or x <0 or y <0:
-                #     continue
+                if w==0 or h==0 or x <0 or y <0:
+                    continue
 
             except Exception as e:
                 print('Exception: {}'.format(e))
@@ -670,47 +683,43 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
             bboxes[cls_name].append([config.rpn_stride*x, config.rpn_stride*y, config.rpn_stride*(x+w), config.rpn_stride*(y+h)])
             probs[cls_name].append(np.max(P_cls[0, ii, :]))
    
-    print(f'Elapsed:{time.time()-start}')
+    # print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, metric_threshold, acceptance_treshold):
-
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, map_threshold, acceptance_treshold):
     preds = {}
     mAP = []
     mPrec = []
-    mRecall = []
     val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False)
 
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
-        bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)
-        
-        # print(bboxes, probs)
-        
+        bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)        
         detections = get_detections(patch_id, bboxes, probs)
-        macro_AP, macro_prec, macro_recall = get_img_scores(detections, patch_id, metric_threshold)
-        preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_recall}
+        macro_AP, macro_prec = get_img_scores(detections, patch_id, map_threshold)
+        preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec}#, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
-        mRecall.append(macro_recall)
-
+        
 
     total_mAP = np.array(mAP).mean()
     total_mPrec = np.array(mPrec).mean()
-    total_mRecall = np.array(mRecall).mean()
+    
+    print(f'\nTotal model metrics: mAP: {total_mAP} - mPrecision: {total_mPrec}')
+    return preds, total_mAP, total_mPrec
 
-    print(f'\nTotal model metrics: mAP: {total_mAP} - macro_precision: {total_mPrec} - macro_recall: {total_mRecall}')
-    return preds, total_mAP, total_mPrec, total_mRecall
-
-def compute_map(y_pred, gt_patch_id, data_folder):
+def compute_map(y_pred, gt_patch_id, data_folder, map_threshold):
     T = {}
     P = {}
     f = config.patch_dim / float(config.resizeFinalDim) if config.resizePatch else 1.
 
     gt = pd.read_pickle(f'{data_folder}/{gt_patch_id}/{gt_patch_id}.pkl')
+    # display(gt)
 
     gt['bbox_matched'] = False
     pred_probs = np.array(y_pred['prob'])
+    # print('714')
+    # print(pred_probs)
 
     box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
 
@@ -738,12 +747,16 @@ def compute_map(y_pred, gt_patch_id, data_folder):
                 continue
             if gt_seen:
                 continue
-            gt_x1 = gt_box['x1s']/f
-            gt_x2 = gt_box['x2s']/f
-            gt_y1 = gt_box['y1s']/f
-            gt_y2 = gt_box['y2s']/f
+            gt_x1 = round(gt_box['x1s'])#/f
+            gt_x2 = round(gt_box['x2s'])#/f
+            gt_y1 = round(gt_box['y1s'])#/f
+            gt_y2 = round(gt_box['y2s'])#/f
+            # print('737')
+            # print((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
             iou = prep.iou((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
-            if iou >= 0.5:
+            # print('738')
+            # print(iou)
+            if iou >= map_threshold:
                 found_match = True
                 gt.at[idx,'bbox_matched'] = True
                 break
@@ -763,15 +776,14 @@ def compute_map(y_pred, gt_patch_id, data_folder):
 
     return T, P
 
-def get_img_scores(detections, patch_id, metric_threshold):
+def get_img_scores(detections, patch_id, map_threshold):
     T = {}
     P = {}
     P_tresh = {}
     all_aps = []
     all_prec = []
-    all_recall = []
     
-    t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER)
+    t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER, map_threshold)
     # print('762')
     # print(t, p)
 
@@ -787,25 +799,19 @@ def get_img_scores(detections, patch_id, metric_threshold):
         ap = average_precision_score(T[key], P[key])
         # print('773')
         # print(T[key], P[key])
-        P_tresh[key] = np.where(np.array(P[key]) > metric_threshold, 1, 0)
+        P_tresh[key] = np.where(np.array(P[key]) > 0.5, 1, 0)
 
         prec = precision_score(T[key], P_tresh[key], zero_division=0)
-        recall = recall_score(T[key], P_tresh[key], zero_division=0)
-        # print('{} AP: {}'.format(key, ap))
         all_aps.append(ap)
         all_prec.append(prec)
-        all_recall.append(recall)
-
+        
     mAP=np.mean(np.array(all_aps))
     macro_prec = np.mean(np.array(all_prec))
-    macro_recall =  np.mean(np.array(all_recall))
-
-    # print('mAP = {}'.format(mAP))
-    return mAP, macro_prec, macro_recall
+    
+    return mAP, macro_prec
 
 def get_model_last_checkpoint(backbone):
     try:
-    
         model_cp_dict = dict()
         model_dir = f'{config.MODEL_WEIGHTS}/{backbone}'
         print(f'Checking model checkpoints in directory {config.MODEL_WEIGHTS}/{backbone}')
@@ -833,17 +839,17 @@ def merge_dols(dol1, dol2):
     no = []
     return dict((k, dol1.get(k, no) + dol2.get(k, no)) for k in keys)
 
-def merge_dois(dol1, dol2):
+def merge_dois(doi1, doi2):
     """
-    Merges two dictionary of lists.
+    Merges two dictionary of integer.
     Example:
-        d = {'a': ['1','2'], 'b':['8']}
-        dd = {'a': ['3','4'], 'c': ['9']}
-        become -> {'a': ['1', '2', '3', '4'], 'b': ['8'], 'c': ['9']}
+        d = {'a': 10, 'b': 5}
+        dd = {'a': 3, 'c': 9}
+        become -> {'a': 13, 'b': 5, 'c': 9}
     """
-    keys = set(dol1).union(dol2)
+    keys = set(doi1).union(doi2)
     no = 0
-    return dict((k, dol1.get(k, no) + dol2.get(k, no)) for k in keys)
+    return dict((k, doi1.get(k, no) + doi2.get(k, no)) for k in keys)
 
 
 def moving_average(x, w):
