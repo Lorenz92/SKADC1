@@ -35,8 +35,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
     start_time = time.time()
     num_epochs = num_epochs
     losses = np.zeros((epoch_length, 5))
-    scores = np.zeros((epoch_length, 2))
-
 
     ######### resume training
 
