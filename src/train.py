@@ -29,7 +29,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
     train_datagen = prep.get_anchor_gt(patches_folder_path, train_patch_list, backbone, pixel_mean=pixel_mean)
 
     iter_num = 0
-    epoch_length = 2
+    epoch_length = 250
     rpn_accuracy_rpn_monitor = []
     rpn_accuracy_for_epoch = []
     start_time = time.time()
@@ -259,7 +259,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/loss_{counter}_frcnn_{backbone}.h5')
-                    if (mAP > best_mAP and mPrecision > 0):
+                    if (mAP > best_mAP and mPrecision > 0.):
                         print('mAP decreased from {} to {}, saving weights'.format(best_mAP,mAP))
                         best_mAP = mAP
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/map_{counter}_frcnn_{backbone}.h5')
