@@ -808,17 +808,14 @@ class SKADataset:
         return
 
     def split_train_val(self, random_state, val_portion=.2, balanced=False, size=None):
-        if not balanced:
-            patch_list = self.patch_list
-        else:
-            self.balanced_patch_list = self.balance_patch_list()
-            assert len(self.balanced_patch_list) > 1, 'Attention! There is no balanced_patch_list available!'
-            patch_list = self.balanced_patch_list
-            print(len(patch_list))
+        np.random.seed(random_state)
+        
+        self.balanced_patch_list = self.balance_patch_list(balanced)
+        assert len(self.balanced_patch_list) > 1, 'Attention! There is no balanced_patch_list available!'
+        patch_list = self.balanced_patch_list
 
         patch_list = np.random.choice(patch_list, size, replace=False)
-
-        train, val = train_test_split(patch_list, test_size=val_portion, random_state=random_state)
+        train, val = train_test_split(patch_list, test_size=val_portion)
         print(f'Train list consists of {len(train)} patches')
         print(f'Val list consists of {len(val)} patches')
 
@@ -842,7 +839,6 @@ class SKADataset:
             for p in ll:
                 patch_class_count_dict = self.proc_train_df.loc[self.proc_train_df['patch_id']==p].value_counts(subset=['class_label'], sort=False).to_frame().reset_index().set_index('class_label').to_dict()[0]
                 class_count_dict = utils.merge_dois(class_count_dict,patch_class_count_dict)
-            
             axes[i].bar(range(len(class_count_dict)), list(class_count_dict.values()), align='center')
             
             axes[i].set_xticks(range(len(class_count_dict)))
@@ -857,7 +853,7 @@ class SKADataset:
 
         return
 
-    def balance_patch_list(self):
+    def balance_patch_list(self, balanced):
         balanced_patch_list = self.patch_list.copy()
         class_freq_dict = {key: len(value) for key, value in self.patches_dict.items()}
         most_frequent_class = max(class_freq_dict.items(), key=operator.itemgetter(1))[0]
@@ -871,15 +867,15 @@ class SKADataset:
             patch_to_be_repeated = np.setdiff1d(self.patches_dict[key], self.patches_dict[most_frequent_class])
             # print('patch_to_be_repeated:', patch_to_be_repeated)
             if len(patch_to_be_repeated)==0:
-                patch_to_be_repeated = self.patches_dict[key]
-            try:
-                ratio = max_freq // len(patch_to_be_repeated)
-                repeated_patches = np.tile(patch_to_be_repeated, ratio).tolist()
-            except:
-                continue
-            balanced_patch_list += repeated_patches
-
-        # np.random.sample(balanced_patch_list, size)
-        
+                patch_to_be_repeated = np.array(self.patches_dict[key])
+            if balanced:
+                try:
+                    ratio = max_freq // len(patch_to_be_repeated)
+                    repeated_patches = np.tile(patch_to_be_repeated, ratio).tolist()
+                    balanced_patch_list += repeated_patches
+                except:
+                    continue
+            else:
+                balanced_patch_list += patch_to_be_repeated.tolist()
 
         return balanced_patch_list

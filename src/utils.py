@@ -565,7 +565,7 @@ def get_real_coordinates(x1, y1, x2, y2):
 
     return (real_x1, real_y1, real_x2 ,real_y2)
 
-def get_detections(patch_id, bboxes, probs):
+def get_detections(patch_id, bboxes, probs, save_eval_results):
     boxes_coords ={'x1s':[], 'y1s':[], 'x2s':[], 'y2s':[], 'class':[], 'prob':[]}
     
     for key in bboxes:
@@ -585,7 +585,7 @@ def get_detections(patch_id, bboxes, probs):
             boxes_coords['class'].append(key)
             boxes_coords['prob'].append(new_probs[jk])
     
-    if not os.path.exists(os.path.join(config.EVAL_RESULTS, f"{patch_id}")):
+    if (save_eval_results and not os.path.exists(os.path.join(config.EVAL_RESULTS, f"{patch_id}"))):
         os.makedirs(os.path.join(config.EVAL_RESULTS, f"{patch_id}/"))
         a = pd.DataFrame.from_dict(boxes_coords)        
         a.to_pickle(f'{config.EVAL_RESULTS}/{patch_id}/{patch_id}.pkl')
@@ -686,7 +686,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
     # print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
-def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, map_threshold, acceptance_treshold):
+def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, map_threshold, acceptance_treshold, save_eval_results=False):
     preds = {}
     mAP = []
     mPrec = []
@@ -695,7 +695,7 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)        
-        detections = get_detections(patch_id, bboxes, probs)
+        detections = get_detections(patch_id, bboxes, probs, save_eval_results)
         macro_AP, macro_prec = get_img_scores(detections, patch_id, map_threshold)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec}#, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
@@ -818,7 +818,7 @@ def get_model_last_checkpoint(backbone):
         for file in os.listdir(model_dir):
             if file.endswith(f"{backbone}.h5"):
                 print(os.path.join(model_dir, file))
-                key = file.split('_')[0]
+                key = file.split('_')[1]
                 model_cp_dict[file] = int(key)
 
         cp = max(model_cp_dict, key=model_cp_dict.get)

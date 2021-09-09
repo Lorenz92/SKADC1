@@ -225,11 +225,11 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                         counter = 1
                     print('saving loss')
                     np.save(f"{config.MODEL_WEIGHTS}/{backbone}/loss_history.npy", loss_hist)
-                    total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/0_frcnn_{backbone}.h5')
+                    total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/loss_0_frcnn_{backbone}.h5')
                     
                     print('Validating model on validation set...')
 
-                    models.load_weigths(rpn_model_eval, detector_model_eval, backbone, checkpoint=f'0_frcnn_{backbone}.h5')
+                    models.load_weigths(rpn_model_eval, detector_model_eval, backbone, checkpoint=f'loss_0_frcnn_{backbone}.h5')
                     models.compile_models(rpn_model_eval, detector_model_eval, total_model_eval, rpn_losses=[loss.rpn_loss_cls, loss.rpn_loss_regr], detector_losses=[loss.detector_loss_cls, loss.detector_loss_regr], class_list=class_list)
 
 
