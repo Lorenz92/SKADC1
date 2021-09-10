@@ -59,8 +59,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
         progbar = generic_utils.Progbar(epoch_length)
         print('Epoch {}/{}'.format(epoch+1, num_epochs))
 
-        #TODO: check if we need LR warmup
-
         while True:
             try:
                 if len(rpn_accuracy_rpn_monitor) == epoch_length:
@@ -90,7 +88,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 X2, Y1, Y2, IoUs = utils.calc_iou(R, img_data_aug, class_mapping)
                 # print('IoUs:',IoUs)
                 # tf.print('Y2 shape = ', Y2.shape, output_stream=sys.stderr, sep=',', summarize=-1)
-
                 
                 # print(IoUs)
                 if IoUs is not None:
@@ -110,7 +107,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 pos_samples = np.where(Y1[0, :, -1] == 0)
 
                 # tf.print('Y2 = ', Y2[0,pos_samples,...], output_stream=sys.stderr, sep=',', summarize=-1)
-
 
                 if len(neg_samples) > 0:
                     neg_samples = neg_samples[0]
@@ -257,8 +253,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                         print('Total loss decreased from {} to {}, saving weights'.format(best_loss,curr_loss))
                         best_loss = curr_loss
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/loss_{counter}_frcnn_{backbone}.h5')
-                    if (mAP > best_mAP and mPrecision > 0.):
-                        print('mAP decreased from {} to {}, saving weights'.format(best_mAP,mAP))
+                    if mAP > best_mAP:
+                        print('mAP increased from {} to {}, saving weights'.format(best_mAP,mAP))
                         best_mAP = mAP
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/map_{counter}_frcnn_{backbone}.h5')
                     

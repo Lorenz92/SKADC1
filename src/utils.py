@@ -210,7 +210,7 @@ def non_max_suppression_fast(boxes, probs, overlap_thresh=0.9, max_boxes=300):
     #   Step 3: Calculate the IoU with 'Last' box and other boxes in the list. If the IoU is larger than overlap_threshold, delete the box from list
     #   Step 4: Repeat step 2 and step 3 until there is no item in the probs list 
     if len(boxes) == 0:
-        return []
+        return [], []
 
     # grab the coordinates of the bounding boxes
     x1 = boxes[:, 0]
@@ -567,12 +567,17 @@ def get_real_coordinates(x1, y1, x2, y2):
 
 def get_detections(patch_id, bboxes, probs, save_eval_results):
     boxes_coords ={'x1s':[], 'y1s':[], 'x2s':[], 'y2s':[], 'class':[], 'prob':[]}
-    
+    # print('1')
+    # print(bboxes)
+
     for key in bboxes:
         bbox = np.array(bboxes[key])
-
+        # print('2')
+        # print(bbox)
+        if len(bbox)==0:
+            continue
         new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.2) #TODO: sposta soglia in config
-       
+    
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
             # print((x1, y1, x2, y2))
@@ -640,6 +645,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
         # print(P_regr)
         for ii in range(P_cls.shape[1]):
             # if classification perc is too low OR it is. a 'bg' image THEN discard
+            # if np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
             if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
                 continue
 
@@ -683,29 +689,33 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
             bboxes[cls_name].append([config.rpn_stride*x, config.rpn_stride*y, config.rpn_stride*(x+w), config.rpn_stride*(y+h)])
             probs[cls_name].append(np.max(P_cls[0, ii, :]))
    
-    # print(f'Elapsed:{time.time()-start}')
+    print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
 def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, map_threshold, acceptance_treshold, save_eval_results=False):
     preds = {}
     mAP = []
     mPrec = []
+    mRec = []
     val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False)
 
     for patch in val_datagen:
         image, _, _, _, _, patch_id = patch
+        print(patch_id)
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)        
         detections = get_detections(patch_id, bboxes, probs, save_eval_results)
-        macro_AP, macro_prec = get_img_scores(detections, patch_id, map_threshold)
+        macro_AP, macro_prec, macro_rec= get_img_scores(detections, patch_id, map_threshold)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec}#, 'macro_recall':macro_recall}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
+        mRec.append(macro_rec)
         
 
     total_mAP = np.array(mAP).mean()
     total_mPrec = np.array(mPrec).mean()
+    total_mRec = np.array(mPrec).mean()
     
-    print(f'\nTotal model metrics: mAP: {total_mAP} - mPrecision: {total_mPrec}')
+    print(f'\nTotal model metrics: mAP: {round(total_mAP*100,2)}% - mPrecision: {round(total_mPrec*100,2)}% - mRecall: {round(total_mRec*100,2)}%')
     return preds, total_mAP, total_mPrec
 
 def compute_map(y_pred, gt_patch_id, data_folder, map_threshold):
@@ -782,6 +792,7 @@ def get_img_scores(detections, patch_id, map_threshold):
     P_tresh = {}
     all_aps = []
     all_prec = []
+    all_rec = []
     
     t, p = compute_map(detections, patch_id, config.TRAIN_PATCHES_FOLDER, map_threshold)
     # print('762')
@@ -802,13 +813,20 @@ def get_img_scores(detections, patch_id, map_threshold):
         P_tresh[key] = np.where(np.array(P[key]) > 0.5, 1, 0)
 
         prec = precision_score(T[key], P_tresh[key], zero_division=0)
+        rec = recall_score(T[key], P_tresh[key], zero_division=0)
+        
+        if ( ):
+            ap=0
+        
         all_aps.append(ap)
         all_prec.append(prec)
+        all_rec.append(rec)
         
     mAP=np.mean(np.array(all_aps))
     macro_prec = np.mean(np.array(all_prec))
+    macro_rec = np.mean(np.array(all_rec))
     
-    return mAP, macro_prec
+    return mAP, macro_prec, macro_rec
 
 def get_model_last_checkpoint(backbone):
     try:
