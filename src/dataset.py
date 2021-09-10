@@ -594,11 +594,8 @@ class SKADataset:
 
                 def _filter_func(x, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim):
                     return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim and (x.x2 - x.x1) <= patch_dim * 0.8 and (x.y2 - x.y1) <= patch_dim * 0.8 
-                    # return x.x >= patch_xo and x.y >= patch_yo and x.x <= patch_xo + patch_dim and x.y <= patch_yo + patch_dim
 
                 filtered_df = gt_df[gt_df.apply(_filter_func, axis=1)]
-
-
 
                 idx2 = filtered_df['ID'].tolist()
                 return idx2
@@ -684,6 +681,10 @@ class SKADataset:
                                     img_patch, _, _, _ = self.preprocess_train_image(img_patch)
                                 else:
                                     img_patch = self.training_image[i*step:i*step+patch_dim, j*step:j*step+patch_dim].copy()
+
+                                # Check whether patches is fully cut
+                                if img_patch.shape[0] < patch_dim or img_patch.shape[1] < patch_dim:
+                                    continue
 
                                 # Cut bboxes that fall outside the patch
                                 df_scaled = self.cleaned_train_df.loc[self.cleaned_train_df['ID'].isin(gt_id)].apply(_cut_bbox, patch_xo=patch_xo, patch_yo=patch_yo, patch_dim=patch_dim, axis=1)
