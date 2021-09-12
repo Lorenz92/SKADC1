@@ -553,6 +553,9 @@ def plot_scores(history):
     plt.subplot(1,2,2)
     plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
     plt.title('macro Precision')
+    plt.subplot(1,2,3)
+    plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
+    plt.title('macro Recall')
     plt.show()
 
 
@@ -713,10 +716,10 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
 
     total_mAP = np.array(mAP).mean()
     total_mPrec = np.array(mPrec).mean()
-    total_mRec = np.array(mPrec).mean()
+    total_mRec = np.array(mRec).mean()
     
     print(f'\nTotal model metrics: mAP: {round(total_mAP*100,2)}% - mPrecision: {round(total_mPrec*100,2)}% - mRecall: {round(total_mRec*100,2)}%')
-    return preds, total_mAP, total_mPrec
+    return preds, total_mAP, total_mPrec, total_mRec
 
 def compute_map(y_pred, gt_patch_id, data_folder, map_threshold):
     T = {}
@@ -815,7 +818,7 @@ def get_img_scores(detections, patch_id, map_threshold):
         prec = precision_score(T[key], P_tresh[key], zero_division=0)
         rec = recall_score(T[key], P_tresh[key], zero_division=0)
         
-        if ( ):
+        if (ap==1. and prec==0.):
             ap=0
         
         all_aps.append(ap)

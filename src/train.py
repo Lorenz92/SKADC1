@@ -229,12 +229,13 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                     models.compile_models(rpn_model_eval, detector_model_eval, total_model_eval, rpn_losses=[loss.rpn_loss_cls, loss.rpn_loss_regr], detector_losses=[loss.detector_loss_cls, loss.detector_loss_regr], class_list=class_list)
 
 
-                    _, mAP, mPrecision = utils.evaluate_model(rpn_model_eval, detector_model_eval, backbone, val_patch_list, class_list, map_threshold=.5, acceptance_treshold=.5)
-
+                    _, mAP, mPrecision, mRecall = utils.evaluate_model(rpn_model_eval, detector_model_eval, backbone, val_patch_list, class_list, map_threshold=.5, acceptance_treshold=.5)
+                    
+                    # This is a ssfety chck because scikit mAP has an ambiguous behaviour when FN = 100%
                     if (mPrecision == 0. and mAP == 1.):
                         mAP=0.
                     
-                    scores_to_save = [[mAP, mPrecision]]
+                    scores_to_save = [[mAP, mPrecision, mRecall]]
                     print(scores_to_save)
 
                     if resume_train:
