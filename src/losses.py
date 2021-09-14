@@ -85,16 +85,6 @@ def detector_loss_cls(y_true, y_pred):
     # tf.print('y_pred = ', y_pred[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
     return lambda_cls_class * K.mean(K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
 
-def focal_detector_loss_cls(y_true, y_pred):
-    tf.print('y_true shape = ', y_true.shape, output_stream=sys.stderr, sep=',', summarize=-1)
-    # tf.print('y_true = ', y_true[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
-    tf.print('y_pred shape = ', y_pred.shape, output_stream=sys.stderr, sep=',', summarize=-1)
-    # tf.print('y_pred = ', y_pred[0,...], output_stream=sys.stderr, sep=',', summarize=-1)
-    tf.print('crossentropy:', K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]), output_stream=sys.stderr, sep=',', summarize=-1)
-    # return lambda_cls_class * K.mean(K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
-    
-    return lambda_cls_class * K.mean(K.categorical_crossentropy(y_true[0, :, :], y_pred[0, :, :]))
-
 def categorical_focal_loss(alpha, gamma=2.):
     """
     Softmax version of focal loss.

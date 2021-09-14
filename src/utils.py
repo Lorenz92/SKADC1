@@ -342,25 +342,10 @@ def apply_regr_np(X, T):
         return X
 
 
-def print_img(img_folder, img_name, data_folder=None, show_data=False):
+def print_img(img_folder, img_name, pred_data_folder=None, show_data=False):
     img = f'{img_folder}/{img_name}/{img_name}.npy'
     img = np.load(img)
-    if data_folder==None:
-        img_data = f'{img_folder}/{img_name}/{img_name}.pkl'
-    else:
-        img_data = f'{data_folder}/{img_name}/{img_name}.pkl'
-    
-    # if(config.convert_to_RGB):
-    #     plt.imshow(img, cmap='viridis', vmax=255, vmin=0)   
-    # else:
-    # #img must be a numpy.ndarray img
-    #     normalized_data = img * (1.0 /img.max())
-
-    #     # Create figure and axes
-    #     fig, ax = plt.subplots()
-
-    #     # Display the image
-    #     ax.imshow(normalized_data, cmap='viridis', vmax=1, vmin=0)
+    gt = f'{img_folder}/{img_name}/{img_name}.pkl'
 
     # Create figure and axes
     fig, ax = plt.subplots()
@@ -368,18 +353,30 @@ def print_img(img_folder, img_name, data_folder=None, show_data=False):
     # Display the image
     ax.imshow(img, cmap='viridis', vmax=255, vmin=0)
 
-
-    if img_data is None:
+    if gt is None:
         return
     else:
-        img_data = pd.read_pickle(img_data)
+        gt = pd.read_pickle(gt)
         if show_data: 
-            display(img_data.iloc[:,20:])
-        for _, box in img_data.iterrows():
-            #box = df_scaled.loc[df_scaled['ID']==box_index].squeeze()
-            ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=.5, edgecolor='r',facecolor='none'))
-            #plt.text(box.x - patch_xo, box.y - patch_yo, box_index, fontsize = 1)
-        
+            display(gt.iloc[:,20:])
+        for _, box in gt.iterrows():
+            # print(box)
+            ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=1., edgecolor='g',facecolor='none'))
+            plt.text(box['x1s'] + round(box['bbox_w']/2), box['y1s'] + round(box['bbox_h']/2), box['class_label'], fontsize = 1)
+            plt.text(box.x - box.patch_xo, box.y - box.patch_yo, box.class_label, fontsize = 10, c='g')
+        if pred_data_folder is not None:
+            pred_img_data = f'{pred_data_folder}/{img_name}/{img_name}.pkl'
+            pred_img_data = pd.read_pickle(pred_img_data)
+            if show_data:
+                display(pred_img_data)
+            for _, box in pred_img_data.iterrows():
+                # print(box)
+                ax.add_patch(Rectangle((box['x1s'] , box['y1s']), box['x2s'] - box['x1s'], box['y2s'] - box['y1s'], linewidth=1., edgecolor='r',facecolor='none'))
+                plt.text(box['x1s'] + round((box['x2s']-box['x1s'])/2), box['y1s'] + round((box['y2s']-box['y1s'])/2), box['class'], fontsize = 10, c='r')
+
+
+
+            
         plt.show()
         
     return
@@ -553,7 +550,10 @@ def plot_scores(history):
     plt.subplot(1,2,2)
     plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
     plt.title('macro Precision')
-    plt.subplot(1,2,3)
+    plt.show()
+
+    plt.figure(figsize=(15,5))
+    plt.subplot(1,2,1)
     plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
     plt.title('macro Recall')
     plt.show()

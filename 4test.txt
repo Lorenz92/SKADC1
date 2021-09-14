@@ -1,9 +1,0 @@
-immagine 2_16396_16729_20 - 2 oggetti grandi circa 7x8 sovrapposti
-
-1. rgb false div media - le roi hanno prob diverse ma il plot non è bellissimo
-2. rgb false div 255 - meno bello di 3 e 4
-3. rgb true div media - bello, prima foto
-4. rgb true div 255 - meno bello di 3
-5. rgb true div media + focal loss [.25,.25,.05] - non prende niente
-5. rgb true div media img flippata per avere oggetto in alto - disegna box in alto ma il risultato è peggiore di 3. sospetto problema di vscode
-

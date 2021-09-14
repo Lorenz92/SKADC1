@@ -96,7 +96,7 @@
 
 The tasks of object detection and classification have gained significant popularity over the past years within the deep learning and computer vision communities. Systems trained end-to-end now achieve great results on a variety of tasks in the video and image domains.
 
-In this work, we address an object detection and classification problem on the Square Kilometer Array Dataset (SKADC1) \cite{ska-site}: given a large image, of about 32,000 pixels on each side and 4GB in size, the goal is to detect astronomycal sources and classify them among three possible classes.
+In this work, we address an object detection and classification problem on the Square Kilometer Array Dataset (SKADC1) \cite{ska-site}: given a large image, of about $32000$ pixels on each side and 4GB in size, the goal is to detect astronomycal sources and classify them among three possible classes.
 
 This project focuses on the SKADC1 dataset, in particular on the 560MHz-1000h high S/N sky image, that contains more than \num{19000} radio sources.
 
@@ -106,14 +106,12 @@ In this work we implemented and compared three different models:
 \begin{enumerate}
   \item B16: a Faster R-CNN with a naive feature extraction backbone with only 4 convolutional layers and with a receptive field of 16 on the last convolutional layer, that will act as our baseline model;
   \item B44: a Faster R-CNN with a feature extraction backbone with 7 convolutional layers and a receptive field of 44 on the last convolutional layer;
-  \item A Faster R-CNN with a larger backbone, specifically we implemented a VGG16 backbone, COMPLETAQUI \cite{bidaf}
+  \item A Faster R-CNN with a larger backbone, specifically we implemented a VGG16 backbone without the last max pooling layer, with a receptive filed of 196 \cite{vgg}.
 \end{enumerate}
 Each model consists of the same input and output (Region Proposal Network + Detector) structure, and what changes is the deepness of the feature extraction network (usually called backbone).
 
-In training the listed models, we adopted a transfer learning technique, because it has been proven to be effective in speeding up the training phase. 
+In training the listed models, we adopted a transfer learning technique, because it has been proven to be effective in speeding up the training phase \cite{claran},\cite{transfer-learning-1}, \cite{transfer-learning-2}.
 More specifically, we applied transfer learning only on the very first layers in order to inherit and retain the more basic feature, while letting the model learn deeper representation of them.
-
-So each model is initialized with the VGG16 public weights, then we freezed the first four convolutional layers and let deeper ones trainable.
 
 While this could seem an easy object detecion and classification problem, it turns out that it is an hard task on both the goals:
 \begin{itemize}
@@ -123,60 +121,84 @@ While this could seem an easy object detecion and classification problem, it tur
 
 For this two reasons we developed more than one model and we made some choices that will be discussed later.
 
-Our experimental evaluations show that the best model is  ... Such results are on par with those reported in the corresponding models' papers.
+Our experimental evaluations show that the best model is  ...
 
 \chapter{Background}\label{chap:background}
+Our project is an object recognition tasks, which is a general term to describe the identification of objects
+in digital photos. 
+The object recognition task consists in two aspects: object localization, which implies the drawing of an 
+axis-aligned  bounding box around one or more objects, and classification which consists in predicting the class 
+of objects.
 
--- QUI DARE LE DEFINIZIONI DI YOLO SSD E FASTER RCNN + DESCRIZIONE DETTAGLIATA DEI MODULI DI FASTER RCNN --
-
-As already described above, the question answering task is based on the idea of identifying one possible answer to the given question as a subset of the given context.
-
-Since the input data is of textual form and the latest models for the task are all based on neural architectures, there is the need to encode such text into a numeric representation. As of today, there are two main approaches to embed words in numerical format: sparse embeddings, like TF-IDF \cite{tf-idf} and PPMI \cite{ppmi}, and the modern dense embeddings, such as Word2Vec \cite{word2vec} and GloVe \cite{glove}. In the latter case, embeddings for each word in the input vocabulary are usually computed with shallow encoders.
-
-These embeddings are then used as inputs for models specialized in processing sequences. Nowadays, such models are mostly based on the Transformer architecture \cite{transformers}, which has the attention mechanism at its core. Instead, before this revolution, NLP competition's leaderboards were mostly populated by models based on recurrent and convolutional modules.
-
-The most influential recurrent networks are LSTMs \cite{lstm} and GRUs \cite{gru}. They are both based on processing sequential inputs and they keep an evolving series of hidden states, such that the output $h_t^{(0)}$ is a function of $h_{t-1}^{(0)}$ and the input $x_t$ at position $t$. Recurrent layers can also be stacked to increase the capacity of the network: in that case, $h_t^{(0)}$ would act as an input to $h_t^{(1)}$, i.e. the first hidden state of the next depth-wise layer, and the same goes for the successive layers, as shown in figure \ref{fig:recurrent}.
-
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.65\linewidth]{recurrent}
-  \caption{Recurrent module (image courtesy of \cite{recurrent-img})}
-  \label{fig:recurrent}
-\end{figure}
-
-In natural language, meaning does not usually simply flow from left to right, so that in RNNs other techniques may be necessary to reach a higher level of understanding. One example of such improvement is bi-directionality: the input is processed in two ways, from left to right (the "forward" pass) and from right to left (the "backward" pass); then, outputs of the two computations are merged together (usually by concatenating them over their last dimension). The intuition behind bi-directional RNNs is that they tend to understand the overall context better than their uni-directional counterparts, since they are able to aggregate information from the "past" and from the "future".
-
-About Transformers, at a high-level, they comprise a stack of encoder-decoder modules, where each encoder features a multi-head attention block (to focus on different subsets of the input sequence when encoding one specific token) and a point-wise fully-connected layer, while each decoder features the same architecture as the encoder, but with an additional multi-head attention block in the middle (that helps the decoder focus on relevant parts of the input sequence).
-
-The multi-head attention modules in the Transformer architecture are the ones responsible for gathering information from other tokens in the input sequence, thus resembling the task of hidden states in RNNs (i.e. incorporate the representation of previous inputs with the currently processed one).
-
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.45\linewidth]{transformers}
-  \caption{Transformers (image taken from \cite{transformers})}
-  \label{fig:transformers}
-\end{figure}
-
-While Transformers may always seem the way to go, since they throw away all the computational burden of training recurrent modules (which are sequential in nature and, thus, scarcely parallelizable), they also suffer from limitations due to the quadratic complexity of attention and the inherent maximum number of input tokens (which is implicitly linked to architecture choices themselves).
+Among the state of the art top-performing deep learning models for object detection there are:
+\begin{itemize}
+\item R-CNN (Region-Based Convolutional Neural Network ) Model Family: it was firstly introduced by Girshick et al. in 2014 \cite{rcnn}, then it was improved with the Fast \cite{fast-rcnn} and Faster R-CNN in 2015 \cite{faster-rcnn}, and finally with the Mask R-CNN in 2017 \cite{mask-rcnn}.
+In the first version of R-CNN the network involved had the duty to classify and find coordinates of objects on the regions proposed by a Selective Search algorithm that previously ran on the image.The computation of the feature map for each proposed region was carried out separately and this makes the R-CNN very slow. Fast R-CNN improved the execution speed of the first part of the network by computing the feature maps for the whole image and then using the SS proposals to cut feature map regions. The Faster R-CNN \cite{faster-rcnn} substitutes the Selective 
+Search of the Fast R-CNN with a Region Proposal Network without loosing accuracy. The Mask R-CNN is similar to the Faster R-CNN, but it uses the feature map to predict not only the class and bounding box for each region of interest, but also the pixel-level position of the object through an additional convolutional network. 
+\item YOLO (You Only Look Ones) Model Family: was proposed in 2015 by Joseph Redmon, et al \cite{yolo}. The approach consists in a single neural network trained end to end that takes an image as input and directly predicts bounding boxes and their class labels. The network divides the input image into a SxS grid, where SxS is equal to the width and height of the tensor which presents the final prediction. In case the center of an object is in a grid cell, the gird cell takes responsibility for detecting that object. Moreover, each gird cell is simultaneously responsible for predicting bounding boxes and confidence scores which represent how confident is the model about bounding box containing an object. YOLOv2 uses anchor boxes as Faster R-CNN
+\item SSD (Single Shot Detector) was proposed by Wei Liu et al. \cite{ssd} in 2016, with the aim of having the high computational speed of YOLO, while maintaining the accuracy of Faster R-CNN. SSD enhances the speed of running time with respect to Faster R-CNN by eliminating the need of the Region Proposal Network. Therefore, it causes a few drop in mAP, and SSD compensates this by applying some improvements including multiscale features and default boxes. These improvements allow SSD to gain the same of Faster R-CNN using lower resolution images, which then further speeds up the processing of SSD.
+\end{itemize}
 
 \chapter{Dataset description}\label{chap:dataset-description}
 
--- qui dire anche che le immagini vengono genrate on the fly e quindi anche l'augmentation, se accesa, viene fatta otf
+The data provided by the SKA (Square Kilometer Array) challenge, consists in a series of astronomical high resolution images created through data simulations \cite{bonaldi2021square}.  Images are a simulated SKA continuum image in total intensity at 3 frequencies: 560 MHz, 1.4 GHz and  9.2 GHz, each of witch has 3 different exposures: 8 h, 100 h, 1000 h. For each frequency band a catalogue revealing only a fraction of the simulated galaxies was released. We choose to analyse the image at 560 MHz with 1000 hours of exposure. 
+
+\section{Ground truth data}
+Each row of the ground-truth catalogue contains the subsequent information of the correspondent source: 
+\begin{itemize}
+    \item RA (core)  [degs]    Right ascension of the source core
+    \item DEC (core)    [degs]    Declination of the source core
+    \item RA (centroid)    [degs]    Right ascension of the source centroid
+    \item DEC (centroid)    [degs]    Declination of the source centroid
+    \item FLUX    [Jy]    integrated flux density
+    \item Core frac    [none]    integrated flux density of core/total
+    \item  BMAJ    [arcsec]    major axis dimension
+    \item  BMIN    [arcsec]    minor axis dimension
+    \item  PA    [degs] PA (measured clockwise from the longitude-wise direction)
+    \item    SIZE    [none]    1,2,3 for LAS, Gaussian, Exponential
+    \item    CLASS    [none]    1,2,3 for SS-AGNs, FS-AGNs,SFGs
+    \item  SELECTION    [none]  0,1 to record that the source has not/has been injected in the simulated map due to noise level
+    \item    x    [none]    pixel x coordinate of the centroid, starting from 0
+    \item   y    [none]    pixel y coordinate of the centroid,starting from 0
+\end{itemize}
+We used declination, right ascension, minor and major axis to obtain the pixel coordinates of the source center and its bounding box. We assigned to each source a class label, given by the concatenation of SIZE and CLASS and all sources with selection equal to 0 were discarded. At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results. 
+
+\begin{table}[h]
+  \center
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+                        & \textbf{Epochs} & \textbf{Batch size} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
+    \textbf{Baseline}   & $30$            & $128$               & Adam               & $1e-3$                 \\ \hline
+    \textbf{BiDAF}      & $12$            & $60$                & Adadelta           & $0.5$                  \\ \hline
+    \textbf{BERT}       & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
+    \textbf{DistilBERT} & $3$             & $16$                & Adam               & $5e-5$                 \\ \hline
+    \textbf{ELECTRA}    & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
+  \end{tabular}
+  \caption{Hyperparameters}
+  \label{table:hyperparameters}
+\end{table}
+
+\section{Image analysis}
+The image size is (32768 32768) pixels while the portion of the image that contains the ground truth boxes is 4000 x 4000 pixels .
+Images were given in FITS format, since they are a simulation of a radiotelescope acquisition, the range of each pixel is between 0 and 1. Negative values are due to the noise simulation. 
+We convert the fits image in png image, in order to have patches with 255 gray levels. 
+The brightest source in the fits image has value of 0.006586 while the minimum gray level is ... due to noise. To transform the float values into integer ones we tried different approaches, firstly we applyed a linear transformation cosidering the maximum GL value as 255 and set the lower value equal zero. In this way we delete the negative noise signal. We discarded this attempt because the distribution of sources intensities was not linearly distributed between min and max range, but the majority of them has a very low intensity. The image transformed into integers was almost completely black with the exception of very few sources and most of the ground truth boxes were indetectable (fig ...).
+A second attempt was performing a gamma transformation in order to enhance the signal of low intensitys sources. We tried several gamma values between 0.2 and 1 but also with this method many sources were too dark.
+The choose method was to scale the image intensity range using a base 10 logarithm scale: the magnitude range was defined by the magnitude of the noise standard deviation and of the maximum gray value. The image noise is caused by electronic noise and is well fitted by a gaussian distribution centered in zero.  We obtain the standard deviation  looking at the negative values of the gray level distribution, which are necessary caused by noise. 
+
 \chapter{System description}\label{chap:system-description}
 
-In this work, we implemented three different models. All of them are a Faster R-CNN network, and they differ on the backbone and hyperparameters.
+In this work, we implemented three different models. All of them are a Faster R-CNN network and they differ on the backbone and hyperparameters.
 
 In order to perform an effective comparison, the models share the same output architecture.
 
-The following is a detailed description of the models. Beware that in each model section we report everything but what happens in the output module, which is described once in \ref{sec:output-architecture}.
+The following is a detailed description of the models. Beware that in each model section we report everything but what happens in the output layers, which is described once in \ref{sec:output-architecture}.
 
 \section{Feature Extraction Backbone}\label{sec:feature-extraction-backbone}
--- aggiungere citazioni ovunque
-
 Basically, in this work we tested:
 \begin{enumerate}
-\item wether a simple modle, meaning "not very deep", is enough for the small object detection task, and;
-\item how detection performance varies when changing the receptive field size of the model
+\item wether a simple model, meaning "not very deep", is enough for the small object detection task, and;
+\item how detection performance varies when changing the receptive field size of the model with respect to objects size.
 \end{enumerate}
 
 For this reasons we implemented three different feature extraction backbone with different receptive field size.
@@ -188,29 +210,17 @@ The first backbone we implemented has the following structure:
   \item Block 1: consists of 2 convolutional layers with 3x3x64 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
   \item Block 2: consists of 2 convolutional layers with 3x3x128 filters, followed by a ReLU activation layer and a 2x2 MaxPooling layer with stride 2;
 \end{enumerate}
-Both the blocks have been initialized with the public available VGG-16 weights and \textbf{freezed}.
+Both the blocks have been initialized with the public available VGG16 weights and \textbf{freezed}.
 
-It has been shown that, in computer vision tasks, the very first layers of a convolutional pipeline, learn the most basic features, as strokes or circles.
+It has been shown that, in computer vision tasks, the very first layers of a convolutional pipeline, learn the most basic features, as strokes or circles \cite{cnn-features}.
 So, given that the objects we have to detect have simple shapes, like circles or ellipses, and that we think these kind of basic feature are common across different domains, 
-we tried to transfer learning from the VGG-16 and freezing the first layers, the ones that learn most basic features.
+we tried to transfer learning from the VGG16 and freezing the first layers, the ones that learn most basic features.
 
-As mentioned before, the goal was to detect very small objects, with respect to the dimensions usually detected in other deep learning works.
-So we decided to crop the original 32kx32k pixels image into 20x20 pixels patches and rescale them to 100x100 pixels, before feeding the network.
-This resemble to zoom-in the image, so that the objects to detect become 5 times bigger.
+With the B16 model, we wanted to test how a shallow feature extraction network performs in predicting small and simple shapes objects.
 
-As we've seen before, the bounding box shapes distribution shows that the 99\% of the objects to detect is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before rescaling.
-After rescaling these values become: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
+Furthermore, we tested how the relation between the receptive field size and the object size, influences the learning: indeed, B16 has a receptive field size of 16 and this is smaller than any object size for the 20\_100 set, but bigger than the 80\% of the objects in the 50\_100 set. More details in chapter \ref{chap:experiments}.
 
-With the B16 model, we wanted to test how a backbone with a receptive field smaller than the objects to detect performs on this task.
-Indeed the receptive field of B16 backbone (the feature extraction part) is 16, with a stride of 4. So, given an input image of size 100x100px, the last layer feature maps have a size of 25x25.
-
-In this model we used the follwing values for anchor sizes and ratios:
-\begin{itemize}
-  \item anchor size: [4, 8, 16, 24, 32, 64]
-  \item anchor ratio: [2: 1, 1: 2, 1:1]
-\end{itemize}
-
-This imply that, at training time, the model generates 6x3x25x25 anchors ground truth.
+With this architecture, the final feature map size is $\frac{1}{4}$ of the input image.
 
 \subsection{B44 - Baseline 44}\label{subsec:b44}
 The second backbone we implemented has the following structure:
@@ -221,28 +231,13 @@ The second backbone we implemented has the following structure:
 \end{enumerate}
 The first two blocks are the same as in the B16 model. 
 
-With the third block we wanted to test whether a receptive field greater than the objects to detect performs better than the opposite (like in the B16).
-Indeed B44 has a receptive field of 44, that is greater than the 90\% of objects to detect.
-So, the test here is a direct performance comparison between B16 and B44 on the same input image size.
+By adding the third block we wanted to test how performance changes with a deeper model.
+
+The purpose of this backbone is also to make a direct performance comparison between B16 and B44 on the same input image size. Indeed, B44 has a receptive field size of 44, that is greater than the 90\% of objects to detect (in the 20\_100 set).
 
 Each block is initialized with the VGG16 weights. Block 1 and 2 have been freezed, while block 3 is left free to learn.
 
-The size of the last feature maps is 12x12.
-
-In this model we used the same values for anchor sizes and ratios as in the B16:
-\begin{itemize}
-  \item anchor size: [4, 8, 16, 24, 32, 64]
-  \item anchor ratio: [2: 1, 1: 2, 1:1]
-\end{itemize}
-
-This imply that, at training time, the model generates 6x3x12x12 anchors ground truth.
-
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{bidaf}
-  \caption{BiDAF model (image courtesy of \cite{bidaf})}
-  \label{fig:bidaf}
-\end{figure}
+With this architecture, the final feature map size is $\frac{1}{8}$ of the input image.
 
 \subsection{VGG16}\label{subsec:vgg16}
 The third backbone we implemented is the well known VGG16 backbone, without the fully connected part and without the last MaxPooling layer.
@@ -257,123 +252,206 @@ It has the following structure:
 \end{enumerate}
 The first two blocks are the same as in the B16 model, while the third is the same as in the B44.
 
-Each block is initialized with the VGG16 weights. Block 1 and 2 have been freezed, while block 3, 4 and 5 is left free to learn.
+Each block is initialized with the VGG16 weights. Block 1 and 2 have been freezed, while block 3, 4 and 5 are left free to learn. The receptive field of this backbone is 196.
 
-The size of the last feature maps is 37x37.
+With this architecture, the final feature map size is $\frac{1}{16}$ of the input image.
 
+\section{Output Architecture}\label{sec:output-architecture}
+The output architecture is the same as of a standard Faster R-CNN module and consists of a Region Proposal Network (RPN) and a Roi Pooling Layer coupled with a fully connected network that we called "Detector".
+
+This kind of network is called "two-stage" network because the training phase is carried on in two step:
+\begin{enumerate}
+    \item The feature maps generated by the backbone are feed into the RPN network. It generates a batch of proposals and pass them down to the Detector;
+    \item the Detector takes the feature maps and the proposals, uses the latter to cut the corresponding regions on the feature maps and classifies the cuts.
+\end{enumerate}
+RPN and Detector share the same backbone weights and have distinct loss functions.
+
+Depending on how the network works, the training phase is carried out in a stochastic gradient descent fashion: the network is feed with one single image at a time, but besides the feature extraction backbone there are some specific functions that generate the actual ground truth batch that RPN uses in order to compute its loss. The output of the RPN is then filtered through a non-maximum-suppression algorithm (NMS \cite{nms}) based on the intersection-over-union score (IoU \cite{iou}). From the result, an equal number of positive (foreground) and negative (background) samples are drawn and passed to the Detector. This number is one of the hyper-parameters of the model.
+
+\subsection{Region Proposal Network}\label{subsec:rpn-net}
+"A Region Proposal Network (RPN) takes an image (of any size) as input and outputs a set of rectangular object proposals, each with an objectness score." \cite{faster-rcnn}
+The structure of this network is the following:
+\begin{itemize}
+    \item 1 convolutional layer with 3x3x512 filters, initialized with a Gaussian distribution centered in 0 with a stdev of 0.01  \cite{faster-rcnn}, followed by a ReLU activation layer;
+    \item 1 convolutional layer with 1x1xnum\_classes filters, initialized with a uniform distribution;
+    \item 1 convolutional layer with 1x1x4xnum\_classes filters, initialized to the constant 0.
+\end{itemize}
+
+The second layer is in charge to determine the "objectness" score of a candidate region, while its sibling, the third layer, is in charge of outputting the difference in coordinates of such proposals with respect to model anchors.
+
+The output of the RPN net goes trough the NMS algorithm based on IoU score. The results is the set of ROI proposals that the Detector will have to classify and locate.
+
+Hyper-parameters of RPN module are:
+\begin{itemize}
+    \item the number of regions to evaluate: 256;
+    \item number of output ROI from NMS: 2000;
+    \item NMS positive overlap threshold: 0.7, negative overlap threshold: 0.3.
+\end{itemize}
+
+The RPN loss function is:
+\[L({p_i}, {t_i}) = \dfrac{1}{N_{cls}^{rpn}} \sum_{i} L_{cls}^{rpn}(p_i, p_i^*) + \lambda \dfrac{1}{N_{reg}^{rpn}} \sum_{i} p_i^* L_{reg}^{rpn}(t_i, t_i^*) \]	
+where the first term is the binary cross entropy and represents the loss related to the "objectness" score; the second term is the smooth $L_1$ score as in \cite{huber-loss}. The $p_i^*$ multiplier acts as a kind of mask, activating the regression loss only for positive proposals.
+
+\subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
+ROI max pooling works by dividing the hxw RoI window into an HxW grid of approximately size $\frac{h}{H} x \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
+
+ROI pooling layer is needed because the last Faster R-CNN module is a fully connected network that needs fixed-length feature vector as input, but proposals from RPN can have different height and width. So, ROI pooling layer scales down and resizes proposals to a $nxm$ map, where $n$ and $m$ are model hyper-parameters. We chose $n=m=7$ as in \cite{faster-rcnn}.
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{roi-pooling}
+  \caption{ROI Pooling Layer (image courtesy of \cite{roi-pooling})}
+  \label{fig:roi-pooling}
+\end{figure}
+
+\subsection{Detector}\label{subsec:detector}
+The last Faster R-CNN module is a fully connected network that aims to classify RPN proposals among possible object categories and output bounding boxes coordinates refinements.
+
+It consists of:
+\begin{itemize}
+    \item ROI pooling layer (described above);
+    \item 2 fully connected layers with 4096 units and $0.5$ of dropout probability, each one followed by ReLU activation;
+    \item 1 fully connected with $num\_classes$ units, initialized to 0 and followed by a softmax activation;
+    \item 1 fully connected with $4*num\_classes$ units, initialized to 0 and followed by a linear activation.
+\end{itemize}
+In our dataset we had $num\_classes=6$, where 5 were actual classes and the last was the background class.
+
+The model loss is:
+\[L({p_i}, {t_i}) = \dfrac{1}{N_{cls}^{det}} \sum_{i} L_{cls}^{det}(q_i, q_i^*) + \lambda \dfrac{1}{N_{reg}^{det}} \sum_{i}L_{reg}^{det}(s_i, s_i^*) \]
+
+where the first term is the categorical cross entropy and represents the classification loss with respect to object classes and the second term is again the $smooth L_1$ that represents the shift regression from the proposed regions to the actual coordinates shifts.
+
+\subsection{Focal Loss}\label{subsec:focal-loss}
+In some of our experiments we also tried to overcome the unbalancedness of the dataset by exploiting focal loss \cite{focal-loss}.
+Authors in \cite{focal-loss} proposed focal loss as a way to down weight background examples with respect to foreground ones. Thus they claim that thanks to focal loss it is not necessary to restrict RPN proposal to a fixed number and ratio and to perform biased sampling on the Detector stage.
+
+Anyway we implemented focal loss with a slightly different goal: to help the model to distinguish between rare and common positive samples. Indeed we mantained the fixed RPN proposals and applied 1:1 biased sampling to the ROI proposed. In this way we think the model could converge faster, and, once it starts detecting objects, the focal loss should help him in better discriminate between classes.
+Moreover, in \cite{focal-loss} they proposed focal loss for one-stage detectors, while we applied it to a two-stage detector.
+
+In the experiments where focal loss is applied, the Detector loss becomes:
+\[L({p_i}, {t_i}) = \dfrac{1}{N_{cls}^{det}} \sum_{i} FL_{cls}^{det}(q_i, q_i^*) + \lambda \dfrac{1}{N_{reg}^{det}} \sum_{i}L_{reg}^{det}(s_i, s_i^*) \]
+where
+\[FL_{cls}^{det}(q_i, q_i^*) = \alpha (1-\gamma)^2 CE(q_i, q_i^*)\]
+where $CE(q_i, q_i^*)$ is the categorical cross entropy. 
+
+We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \cite{focal-loss}.
+
+\chapter{Experimental setup and results}\label{chap:experiments}
+ 
+ DA METTERE DA QUALCHE PARTE:
+ [As mentioned before, the goal was to detect very small objects, with respect to the dimensions usually detected in other deep learning works [CITAZIONE QUI].
+
+
+B16
+As we've seen before, the bounding box shapes distribution shows that the 99\% of the objects to detect is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before rescaling.
+After rescaling these values become: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
+
+backbone with a receptive field smaller than the objects to detect performs on this task.
+Indeed the receptive field of B16 backbone (the feature extraction part) is 16, with a stride of 4. So, given an input image of size 100x100px, the last layer feature maps have a size of 25x25.
+
+In this model we used the following values for anchor sizes and ratios:
+\begin{itemize}
+  \item anchor size: [4, 8, 16, 24, 32, 64]
+  \item anchor ratio: [2: 1, 1: 2, 1:1]
+\end{itemize}
+
+This imply that, at training time, the model generates 6x3x25x25 anchors ground truth.
+
+B44
+In this model we used the same values for anchor sizes and ratios as in the B16:
+\begin{itemize}
+  \item anchor size: [4, 8, 16, 24, 32, 64]
+  \item anchor ratio: [2: 1, 1: 2, 1:1]
+\end{itemize}
+
+This imply that, at training time, the model generates 6x3x12x12 anchors ground truth.
+
+VGG
 In this model, anchor sizes and ratios used are:
 \begin{itemize}
   \item anchor size: [128, 256, 512]
   \item anchor ratio: [2: 1, 1: 2, 1:1]
 \end{itemize}
 
-This imply that, at training time, the model generates 3x3x37x37 anchors ground truth.
+This imply that, at training time, the model generates 3x3x37x37 anchors ground truth.]
 
-\begin{figure}[h]
+The hyperparameters listed in table \ref{table:hyperparameters} were mainly taken from the corresponding models' papers, in order to have a well-estabilished benchmark, even though some of them were adjusted based on available resources (e.g. the batch size).
+
+B16_50_100
+B16_20_100 + FL
+B16_20_100 + BD
+
+\begin{table}[h]
   \center
-  \includegraphics[width=0.85\linewidth]{bidaf}
-  \caption{BiDAF model (image courtesy of \cite{bidaf})}
-  \label{fig:bidaf}
-\end{figure}
-
-\section{Output Architecture}\label{sec:output-architecture}
-
-The output module is composed by two fully-connected layers, used to identify the start and end token indexes of the answer in the given context. The start index classifier directly receives the output of the previous modules (e.g. in the BiDAF model that would correspond to the output of the modeling layer), while the same output vector is first passed into a single layer recurrent encoder before entering into the end index classifier. This additional RNN is used to implicitly enforce the constraint that the end index should follow the start one.
-
-We then compute a softmax over both logits, so as to obtain a start and end index probability for each token in the context. To find the correct section of context that forms the answer, we compute the joint probability distribution (by multiplying each pair of start/end probabilities, for each token) and we take the start/end indexes corresponding to the maximum combined probability (respecting the assumption that the start index must precede the end one).
-
-Finally, thanks to HuggingFace's tokenizers \cite{tokenizers}, we are able to simply convert start/end indexes over tokens to their corresponding values over original characters' positions.
-
-The output layer is also responsible for the computation of the loss, which is a simple mean of cross-entropy losses of the start and end token probabilities.
-
-\subsection{Region Proposal Network Net}\label{subsec:rpn-net}
-All the Transformer models are based on BERT \cite{bert}, which is a language model composed by a multi-layer bidirectional encoder-decoder structure \cite{transformers}. Our experiments are all performed using the base, uncased implementation of BERT, which has $12$ Transformer layers and $768$ as its hidden size.
-
-The peculiarity of its Transformer architecture allows the model to learn the context of a word based on all of its surroundings, at the same time, without having to perform a sequential scan of the input, as done in standard RNNs. This is reflected in its pre-training, which is composed of two tasks:
-\begin{itemize}
-  \item Masked Language Modeling (MLM): at a high level, it is performed by masking $15\%$ of the words in each sequence and replacing them with a $[MASK]$ token, so that the model is required to predict the original value of the masked words, using the available ones
-  \item Next Sentence Prediction (NSP): achieved giving as input to the model a pair of sentences (formatted as in \ref{sec:tokenization}), which are in $50\%$ of the cases two subsequent sentences or a random picked pair otherwise, so that the model is asked to identify if the second sentence follows the first one in the pair
-\end{itemize}
-The first task, MLM, is used to gain a detailed understanding of the processed language, while the second task, NSP, is used to let the model have a broader comprehension of semantic connections.
-
-BERT is trained using both tasks together, with the goal of minimizing the combined loss.
-
-\subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
-BERT performances, as for the majority of large-scale language models, are inevitably intertwined with their number of parameters. DistilBERT \cite{distilbert,distilbert-article} tries to reduce this number using a technique called distillation, which consists in training a smaller "student" network to mimic the full output of the big "teacher" model \cite{distillation}. Specifically, DistilBERT has about half the parameters of BERT and retains $95\%$ of its performance on the GLUE benchmark \cite{glue}.
-
-\subsection{Detector}\label{subsec:electra-model}
-ELECTRA (Efficiently Learning an Encoder that Classifies Token Replacements Accurately) \cite{electra} has the same architecture as BERT, but uses a new pre-training approach which aims to outperform the MLM strategy with RTD (Replaced Token Detection). Its structure is composed of three steps, shown in figure \ref{fig:electra}:
-\begin{enumerate}
-  \item Given an input sequence, randomly replace tokens with a $[MASK]$ token
-  \item The generator (that performs a small MLM) predicts the original token for the masked one
-  \item The new sequence (with the replaced token) is given to the discriminator (ELECTRA), whose objective is to identify if each token is part of the original sequence or if it has been replaced by the generator
-\end{enumerate}
-At the end of training the generator is not useful anymore, so that only the discriminator needs to be saved.
-This new pre-training task allows the model to compute the loss over each and every input token (not only on the masked ones, as done in BERT), which is what sets apart ELECTRA in terms of convergence speed and performance on downstream problems.
-
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{electra-pretraining}
-  \caption{ELECTRA RTD pre-training task (image courtesy of \cite{electra})}
-  \label{fig:electra}
-\end{figure}
-
-
-\chapter{Experimental setup and results}\label{chap:experiments}
+  \begin{tabular}{|c|c|c|c|c|}
+    \hline
+                        & \textbf{Epochs} & \textbf{Batch size} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
+    \textbf{Baseline}   & $30$            & $128$               & Adam               & $1e-3$                 \\ \hline
+    \textbf{BiDAF}      & $12$            & $60$                & Adadelta           & $0.5$                  \\ \hline
+    \textbf{BERT}       & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
+    \textbf{DistilBERT} & $3$             & $16$                & Adam               & $5e-5$                 \\ \hline
+    \textbf{ELECTRA}    & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
+  \end{tabular}
+  \caption{Hyperparameters}
+  \label{table:hyperparameters}
+\end{table}
  
-\section{Data handling}\label{sec:data-handling}
-Given the JSON training set, we decided to parse it into a suitable tabular data structure, which turned out to be useful even for subsequent pre-processing tasks. In particular, since each context has multiple question/answer pairs and each question can have multiple answers, we allocated one row for each context/question/answer triple, thus replicating the same context and question multiple times, in order to consider it as a separate example.
+\section{Data pre-processing}\label{sec:data-handling}
+Given the image and the dataset described in \ref{chap:dataset-description} we firstly cut out an around $4000$x$4000$px image from the original image: this is the region that contains the ground truths from the dataset.
+Then we generated 3 set of patches, $[20\_100]$, $[50\_100]$, $[100\_600]$, in order to run different experiments. In the naming convention $[n\_m]$, $n$ is the size of the cut out patch from the $4000$x$4000$px image, and $m$ is the scaled patch size before feeding the network.
 
-Regarding the splitting strategy for the dataset, we went for a simple holdout, thus setting aside $20\%$ of the whole dataset for validation purposes. The way the validation set is built guarantees that the entire set of rows referencing to the same context is kept into the same split, thus avoiding unjustifiable boosting of results.
+During patches generation we cut a square of side $\sqrt{10000}$ in order to have a maximum amount of $10000$ patches. We decided to use a step of size $\frac{n}{2}$ in order to avoid to lose the complete shape of the objects.
+From this set we removed patches with no ground truth, patches that contained part of blacklisted objects and patches smaller then $n$. The latter was in order to avoid issues on borders.
+We also discarded objects if they were captured for less than $80\%$ of their surface.
 
-As an additional test, we evaluated all of our models on the official SQuAD v1.1 dev set. The main difference between this dataset and the training one is that the same question can have multiple correct answers.
+Each patch was casted to the range 0-255 using the base 10 logarithmic scale, where the minimum value is given by the standard deviation of the noise calculated over the entire image, while the maximum value is given by the magnitude of the highest value in the patch. 
 
-Moreover, models are re-trained on the whole dataset (by merging training and validation splits), so as to simulate the cross-validation strategy. About re-training, results showed that this process only gives marginal improvements at the expense of a much more difficult way of choosing the best weights snapshots (since there are no validation metrics to observe, thus leaving only training loss available). Because of this, results reported in \ref{sec:results} do not show such training runs, but only their training/validation counterparts.  
+At training time we normalized patches values by dividing for their maximum value. We also tried zero-centering as in [claran] but we discovered that patch normalization worked best.
 
-\section{Tokenization}\label{sec:tokenization}
-Tokenization has the following meaning: given a string of text, its task is to split it into sub-strings (called tokens), depending on the chosen algorithm. Different models call for different tokenization pipelines. In our case, we have two macro-categories:
-\begin{enumerate}
-  \item Recurrent-based models tokenizer: splits words by whitespaces and punctuations, removes accents and applies a lowercasing function to all the tokens. Moreover, questions are padded (not truncated), while contexts are truncated and padded. Taking inspiration from \cite{max-context-tokens}, the maximum number of tokens for truncating contexts was fixed to $300$
-  \item Transformer-based models tokenizer: splits words using the WordPiece algorithm (introduced in \cite{wordpiece}), normalizes unicode and foreign characters, removes accents and applies a lowercasing function to all the tokens, while also merging together questions and contexts as $[CLS] q_1 q_2 \dots q_n [SEP] c_1 c_2 \dots c_m [SEP]$ (it leverages the special tokens $[CLS]$ and $[SEP]$). Moreover, the combined question/context sentence is truncated to a maximum number of tokens ($512$, as in \cite{bert}) and padded to the right
-\end{enumerate}
-Tokenization happens on the fly at the batch level, thus enabling us to perform dynamic padding (based on the longest sequence in a batch) and avoiding the pre-tokenization overhead.
+Our code supports also augmentation on the fly, and in particular we implemented horizontal and vertical flipping, and the four 90° rotations. However we think this is not strictly necessary in this specific projects because shapes to predicts are very isomorphic with no intrinsic orientation, and so we did not use it in our experiments.
 
-The tokenizer is also used as some kind of pre-processor, to remove from the training dataset those rows whose contexts would not contain the relative answer, after truncation.
+Regarding the splitting strategy for the dataset, we went for a simple holdout, thus setting aside $20\%$ of the whole dataset for validation purposes. 
+During splitting we can also decide whether to balance the dataset: we ran different experiments in order to compare this strategy with the focal loss mentioned in \ref{subsec:focal-loss}.
+In order to balance the dataset we simply find patches that contains the rare classes alone, we compute the frequencies of rare classes and we sample with repetition from these sets until the final class distribution becomes uniform. As it is this approach is not very robust, but it can be made better coupling the balancing with the augmentation described before.
 
-\section{Embeddings}\label{sec:embeddings}
-In recurrent-based models, tokens are numerically encoded using the standard GloVe embeddings. In particular, we tested different types of GloVe models, with different embedding dimensions:
-\begin{itemize}
-  \item Wikipedia 2014 and Gigaword 5 (6B tokens, 400K vocab, uncased, 300d vectors)
-  \item Twitter (2B tweets, 27B tokens, 1.2M vocab, uncased, 200d vectors)
-\end{itemize}
+We decided to run all of our experiments on a total amount of 350 patches, where 280 for the training set and 70 for the evaluation set. Obviously objects contained in a patch varies depending on the $n$, the patch size.
 
-We additionally embedded two more tokens (not present in the standard GloVe vocabulary):
-\begin{enumerate}
-  \item $[PAD]$: the corresponding vector, which is used to pad sequences to a fixed lenght, contains all zeros
-  \item $[UNK]$: the corresponding vector, which is used to handle OOV (Out Of Vocabulary) words, is the mean of all the GloVe vectors, as reported by Pennington (one of GloVe's authors) \cite{unk}
-        \begin{displayquote}I've found that just taking an average of all or a subset of the word vectors produces a good unknown vector \end{displayquote}
-\end{enumerate}
+The following are the class distribution for each set of patches:
 
-In Transformer-based models, we instead rely on the wrapped language models of the HuggingFace library \cite{huggingface}, so that there is no need to manually handle token embeddings.
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{20-100}
+  \caption{Class distribution for 20_100 set}
+  \label{fig:20_100}
+\end{figure}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{50-100}
+  \caption{Class distribution for 50_100 set}
+  \label{fig:50_100}
+\end{figure}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{100-600}
+  \caption{Class distribution for 100_600 set}
+  \label{fig:100_600}
+\end{figure}
 
 \section{Metrics}
-Models are evaluated at the end of each epoch and metrics are computed for both the training and validation set. In our case, the validation set was mainly used to track models' performance on unseen data, in order to avoid overfitting problems.
-
-Metrics used for evaluating the models are F1 and EM (Exact Match) and they were taken from the official SQuAD evaluation script. The F1 score ($f1=\frac{2\cdot p \cdot r}{p+r}$), defined as the harmonic mean between precision ($p=\frac{TP}{TP+FP}$) and recall ($r=\frac{TP}{TP+FN}$), is computed per question and then averaged across all questions. The EM score is instead computed as the number of questions that are answered in exact same words as the ground truth, divided by the total number of questions.
-
-Since the same question can have multiple ground truths (specifically, in the dev set), there is the need to select just one for each question. To fulfill this requirement, only the nearest ground truth for each prediction is considered: given a prediction $p=[p_s, p_e]$, where $p_s$ is the start index of the predicted answer and $p_e$ is the corresponding end index, and a set of associated ground truths $G=\{[g_s^{(0)},g_e^{(0)}], \dots, [g_s^{(n)},g_e^{(n)}]\}$, the selected ground truth is $\min_{g\in G}\Vert p - g\Vert_2$.
-
-Moreover, we noticed that the training set does not have multiple answers for the same question, so this "nearest answer" approach comes into play only at inference time: this is actually the desired behavior, since at training time the described technique could lead to an unstable learning process, given by the non-stationarity of the target distribution.
+Metrics adopted to evaluate the models are mAP for the IoU threshold $0.5$, macro-precision and macro-recall.
+The evaluation step is carried out at the end of each epoch: in this way we track metrics on validation set and save weights when mAP increases.[citazione per giustificare map]
+On the training set we track the four losses and classification accuracy of Detector.
 
 \section{Environment}
-The main third-party libraries on which the project is based on are PyTorch \cite{pytorch}, an open source machine learning framework with automatic differentiation and eager execution, and HuggingFace \cite{huggingface}, a library to build, train and deploy state of the art NLP models.
+The main third-party libraries on which the project is based on are Tensorflow \cite{tensorflow} and Keras \cite{keras}, being the first a machine learning system that operates at large scale and in heterogeneous environments and the latter an API that speeds deep learning model implementation up.
 
-All of the training and validation processes were executed on Google Colaboratory \cite{colab}, a platform that gives the possibility to exploit some computational resources for free. In particular, Colab allows you to select a GPU runtime, that boosts the training time of neural models and most of the times we were assigned an NVIDIA Tesla T4 GPU, with 16GB of RAM.
+All of the training and validation processes were executed on a MacBook Pro with 2GHz Intel Core i5 quad-core, 16 GB RAM and an Intel Iris Plus Graphics 1536 MB; and on [Inserisci pc Alice].
 
-Training and evaluation metrics, along with model checkpoints and results, are directly logged into a W\&B project \cite{wandb}, which is openly accessible \href{https://wandb.ai/wadaboa/squad-qa}{here}.
+We tried also to use Google Colaboratory \cite{colab}, a platform that gives the possibility to exploit some computational resources for free, but because of its commercial limits, after few hours of batch computation they cut down our resources and training of models became 30x slower than on the MacBook.
 
 \section{Results}\label{sec:results}
-Table \ref{table:results} shows the best results obtained in the training, validation and testing phases of each model, with the hyperparameters listed in table \ref{table:hyperparameters}. In particular, by "training"/"validation" we mean metrics computed on the training/validation splits described in \ref{sec:data-handling}, while "testing" represents metrics obtained on the official SQuAD v1.1 dev set.
+Table \ref{table:results} shows the results obtained on the validation set for each model, with the hyperparameters listed in table \ref{table:hyperparameters}.
+
+colonne: num epoche corrispondeti ai valori riportati + mAP + mPrec + mRecall
 
 \begin{table}[h]
   \center
@@ -391,63 +469,63 @@ Table \ref{table:results} shows the best results obtained in the training, valid
   \label{table:results}
 \end{table}
 
-The hyperparameters listed in table \ref{table:hyperparameters} were mainly taken from the corresponding models' papers, in order to have a well-estabilished benchmark, even though some of them were adjusted based on available resources (e.g. the batch size).
 
-\begin{table}[h]
-  \center
-  \begin{tabular}{|c|c|c|c|c|}
-    \hline
-                        & \textbf{Epochs} & \textbf{Batch size} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
-    \textbf{Baseline}   & $30$            & $128$               & Adam               & $1e-3$                 \\ \hline
-    \textbf{BiDAF}      & $12$            & $60$                & Adadelta           & $0.5$                  \\ \hline
-    \textbf{BERT}       & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
-    \textbf{DistilBERT} & $3$             & $16$                & Adam               & $5e-5$                 \\ \hline
-    \textbf{ELECTRA}    & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
-  \end{tabular}
-  \caption{Hyperparameters}
-  \label{table:hyperparameters}
-\end{table}
 
 
 \chapter{Analysis of results}\label{chap:analysis-results}
-For the results analysis, we focused on misclassified examples on the SQuAD v1.1 dev set. In particular, table \ref{table:errors} shows some errors (defined as those answers whose EM is zero) that are common in both of our best architectures, i.e. BiDAF and ELECTRA.
+For the results analysis we report here some examples of prediction for each best model for different patches. We chose patches with different characteristics, like number, dimension and brightness of objects.
 
-The total number of errors with BiDAF is exactly \num{4222}, while ELECTRA halves this metric to \num{2062}. Instead, the amount of common errors, i.e. the questions whose predicted answer is wrong with both models, is equal to \num{1535} (almost covering all of ELECTRA's errors).
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{b16-20-pred}
+  \caption{Example of predictions from B16 model on the 20_100 set.}
+  \label{fig:100_600}
+\end{figure}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{b16-50-pred}
+  \caption{Example of predictions from B16 model on the 50_100 set.}
+  \label{fig:100_600}
+\end{figure}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{b44-20-pred}
+  \caption{Example of predictions from B44 model.}
+  \label{fig:100_600}
+\end{figure}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{vgg16-100-pred}
+  \caption{Example of predictions from VGG16 model.}
+  \label{fig:100_600}
+\end{figure}
+...
 
-By analyzing the common errors, we can focus on the hardest examples in the dataset. In order to categorize such misclassifications, we manually observed a random subset of $50$ elements and reported (in table \ref{table:errors}) the most frequent and interesting patterns.
-
-\begin{longtable}{m{0.30\linewidth}|m{0.6\linewidth}}
-  \textbf{Error type} & \textbf{Example} \\ \hline \endhead
-  Word boundaries \newline \small{(answers that are correct but are either too specific or too generic)} & \textbf{Context}: In cases where the criminalized behavior is pure speech, civil disobedience can consist simply of engaging in the forbidden speech. An example would be WBAI's broadcasting the track "Filthy Words" from a George Carlin comedy album, which eventually led to the 1978 Supreme Court case of FCC v. Pacifica Foundation. Threatening government officials is another classic way of expressing defiance toward the government and unwillingness to stand for its policies. For example, Joseph Haas was arrested for allegedly sending an email to the Lebanon, New Hampshire city councilors stating, "Wise up or die." \newline
-  \textbf{Question}: What is one criminal behavior that is hard to stop by authorities? \newline
-  \textbf{Answers}: [pure speech, forbidden speech, engaging in forbidden speech] \newline
-  \textbf{Predictions}: [ELECTRA] speech [BiDAF] civil disobedience can consist simply of engaging in forbidden speech \\ \hline
-  Question comprehension \newline \small{(answers that clearly show one of the models was not able to fully capture the meaning of the question)} & \textbf{Context}: Although Kenya is the biggest and most advanced economy in east and central Africa, and has an affluent urban minority, it has a Human Development Index (HDI) of 0.519, ranked 145 out of 186 in the world. As of 2005, 17.7\% of Kenyans lived on less than \$1.25 a day. The important agricultural sector is one of the least developed and largely inefficient, employing 75\% of the workforce compared to less than 3\% in the food secure developed countries. Kenya is usually classified as a frontier market or occasionally an emerging market, but it is not one of the least developed countries. \newline
-  \textbf{Question}: What is Kenya's HDI? \newline
-  \textbf{Answers}: [0519 ranked 145 out of 186 in world, 0519] \newline
-  \textbf{Predictions}: [ELECTRA] human development index [BiDAF] human development index \\ \hline
-  Antonyms \newline \small{(answers for which one of the models predicted the exact opposite meaning of the correct one)} & \textbf{Context}: Luther secretly returned to Wittenberg on 6 March 1522. He wrote to the Elector: "During my absence, Satan has entered my sheepfold, and committed ravages which I cannot repair by writing, but only by my personal presence and living word." For eight days in Lent, beginning on Invocavit Sunday, 9 March, Luther preached eight sermons, which became known as the "Invocavit Sermons". In these sermons, he hammered home the primacy of core Christian values such as love, patience, charity, and freedom, and reminded the citizens to trust God's word rather than violence to bring about necessary change. \newline
-  \textbf{Question}: How did Luther want people to bring about change? \newline
-  \textbf{Answers}: [trust gods word, love patience charity and freedom] \newline
-  \textbf{Predictions}: [ELECTRA] violence [BiDAF] reminded citizens to trust gods word rather than violence \\ \hline
-  Mathematical operations \newline \small{(answers that show models' limitations in producing sound outputs when math operations are expressed in natural language)} & \textbf{Context}: In July 1888, Brown and Peck negotiated a licensing deal with George Westinghouse for Tesla's polyphase induction motor and transformer designs for \$60,000 in cash and stock and a royalty of \$2.50 per AC horsepower produced by each motor. Westinghouse also hired Tesla for one year for the large fee of \$2,000 (\$52,700 in today's dollars) per month to be a consultant at the Westinghouse Electric \& Manufacturing Company's Pittsburgh labs. \newline
-  \textbf{Question}: How much did Westinghouse pay for Tesla's designs? \newline
-  \textbf{Answers}: [60000 in cash and stock and royalty of 250 per ac horsepower produced by each motor, 60000 in cash and stock and royalty] \newline
-  \textbf{Predictions}: [ELECTRA] 60000 [BiDAF] 60000 
-  \label{table:errors}
-\end{longtable}
+As we can see...
 
 \chapter{Discussion}\label{chap:discussion}
 
-In this work, we addressed the problem of question answering on the SQuAD v1.1 dataset, by leveraging both recurrent-based models and Transformer-based ones. Our Baseline is outperformed by every other architecture, as expected, and models based on BERT are able to almost reach human level performance, when evaluated on the F1 score metric (for reference, that is around $90\%$). It's worth to notice that current SoTA models are all based on ensembling techniques, even though the gap with good single models is getting smaller and smaller.
+In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch. In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones, for feature extraction, based on the following ideas:
+\begin{itemize}
+\item objects are very small, so the receptive field of the network has to be chosen accurately \cite{effective-rf};
+\item objects have very simple shapes, so there is no need for a very deep convolutional pipeline;
+\item objects are very similar, so there is no need for a large dataset;
+\item the vast majority of objects are isomorphic, so there is no need for image flipping and rotation during training.
+\end{itemize}
 
-We mainly worked on implementing custom recurrent-based models, such as the BiDAF network, and on giving the same output interface to each and every model, so as to gain modularity and fairness in the evaluation metrics of the backbone.
+As described in \ref{chap:analysis-results} the best performing model is ...
+although its mAP score is not comparable to SoTA models.
 
-Evaluation was done on the training and validation splits of the whole dataset and on a separate test set, which is the official SQuAD v1.1 dev set: our results are on par with those reported in the literature.
+-- FARE RIASSUNTO DELLE DIFFERENZE TRA GLI ERRORI 
 
-Further interesting analysis could be performed on the produced outputs, to reach a better understanding of the implemented models. Anyway, conducted experiments show that both recurrent-based and Transformer-based models perform similar errors, such as those on word boundaries and question comprehension. The total number of errors, in the SQuAD v1.1 dev set, that are common in every model is exactly \num{940}.
+The interesting this is that a simple model as B16 outperforms a complex one like VGG16. [CONTROLLARE QUI]
 
-Future improvements could be related to including character embeddings in the BiDAF architecture (as done in the original paper), using a better fine-tuning procedure for Transformer-based models (as described in \ref{chap:introduction}) and handling OOV words with more sophisticated procedures for recurrent-based models. Other things to try are the following: stacking a BiDAF architecture on top of a BERT one or simply modifying the output layer to include other modules, like convolutional ones.
+We didn't took for grantend the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
+
+Future improvements could be using Feature Pyramid Network as in \cite{fpn} in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
+
+We think also that combining the different sky image provided in the challenge, as they were different channel in an RGB image, could bring more information to the network and could lead to a performance improvements.
+
 
 \printbibliography
 \end{document}

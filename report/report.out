@@ -1,15 +1,15 @@
 \BOOKMARK [0][-]{chapter.1}{Summary}{}% 1
 \BOOKMARK [0][-]{chapter.2}{Background}{}% 2
 \BOOKMARK [0][-]{chapter.3}{Dataset description}{}% 3
-\BOOKMARK [0][-]{chapter.4}{System description}{}% 4
-\BOOKMARK [1][-]{section.4.1}{Feature Extraction Backbone}{chapter.4}% 5
-\BOOKMARK [1][-]{section.4.2}{Output Architecture}{chapter.4}% 6
-\BOOKMARK [0][-]{chapter.5}{Experimental setup and results}{}% 7
-\BOOKMARK [1][-]{section.5.1}{Data handling}{chapter.5}% 8
-\BOOKMARK [1][-]{section.5.2}{Tokenization}{chapter.5}% 9
-\BOOKMARK [1][-]{section.5.3}{Embeddings}{chapter.5}% 10
-\BOOKMARK [1][-]{section.5.4}{Metrics}{chapter.5}% 11
-\BOOKMARK [1][-]{section.5.5}{Environment}{chapter.5}% 12
-\BOOKMARK [1][-]{section.5.6}{Results}{chapter.5}% 13
+\BOOKMARK [1][-]{section.3.1}{Ground truth data}{chapter.3}% 4
+\BOOKMARK [1][-]{section.3.2}{Image analysis}{chapter.3}% 5
+\BOOKMARK [0][-]{chapter.4}{System description}{}% 6
+\BOOKMARK [1][-]{section.4.1}{Feature Extraction Backbone}{chapter.4}% 7
+\BOOKMARK [1][-]{section.4.2}{Output Architecture}{chapter.4}% 8
+\BOOKMARK [0][-]{chapter.5}{Experimental setup and results}{}% 9
+\BOOKMARK [1][-]{section.5.1}{Data pre-processing}{chapter.5}% 10
+\BOOKMARK [1][-]{section.5.2}{Metrics}{chapter.5}% 11
+\BOOKMARK [1][-]{section.5.3}{Environment}{chapter.5}% 12
+\BOOKMARK [1][-]{section.5.4}{Results}{chapter.5}% 13
 \BOOKMARK [0][-]{chapter.6}{Analysis of results}{}% 14
 \BOOKMARK [0][-]{chapter.7}{Discussion}{}% 15
