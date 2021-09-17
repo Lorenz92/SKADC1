@@ -227,12 +227,37 @@ class SKADataset:
 
             def _dataset_plot(df):
                 # histogram of height and width
-                plt.figure(figsize=(8,6))
-                plt.hist(df['width'], bins=400, alpha=0.5, label="width ")
-                plt.hist(df['height'], bins=200, alpha=0.5, label="height")
-                plt.ylim((0, 11500))
-                plt.xlim((0, 50))
+                # plt.figure(figsize=(8,6))
+                # plt.hist(df['width'], bins=400, alpha=0.5, label="width ")
+                # plt.hist(df['height'], bins=200, alpha=0.5, label="height")
+                # plt.ylim((0, 11500))
+                # plt.xlim((0, 50))
+                #plt.figure(figsize=(8,6))
+                fig1, ax1 = plt.subplots()
+                ax1.set_title(' Log 10 sizes boxplot')
+                ax1.boxplot([df['width'],df['height']])
+                plt.xticks([1, 2], ['width', 'height'])
+                plt.ylim((0, 100))
+                
+                fig, ax = plt.subplots(figsize = (8,6))
+                sizes =pd.concat([df['width'], df['height']])
+                sizes.plot(kind = "hist", density = True, alpha = 0.65, bins = 600) # change density to true, because KDE uses density
 
+                 # Quantile lines
+                quant_50, quant_75, quant_90,quant_99 =  sizes.quantile(0.5), sizes.quantile(0.75), sizes.quantile(0.90), sizes.quantile(0.99)
+                quants = [quant_50, 1, 0.56],  [quant_75, 0.8, 0.56], [quant_90, 0.8, 0.56], [quant_99, 0.8, 0.56]
+                for i in quants:
+                    ax.axvline(i[0], alpha = i[1], ymax = i[2], color='r', linestyle = ":")
+
+                # Annotations
+                ax.text(quant_50-.13, 0.40, "50th", size = 12, alpha = 1)
+                ax.text(quant_75-.13, 0.50, "75th", size = 12, alpha = 0.85)
+                ax.text(quant_90-.13, 0.60, "90th", size = 12, alpha = 0.85)
+                ax.text(quant_99-.25, 0.70, "99th Percentile",size = 12, alpha = 1)
+
+                plt.xlim((0, 25))
+                plt.suptitle('sizes distribution', fontsize=16)
+                
                 #scatter plot of class 
                 patch_class_list = df['class_label'].unique() 
 
@@ -424,7 +449,7 @@ class SKADataset:
         print()
         print('-'*10)
         print('Starting training image preprocessing...')
-        self.training_image, self.pixel_mean, self.training_image_not_rgb, self.stdev = self.preprocess_train_image(plot_noise=show_plot)
+        #self.training_image, self.pixel_mean, self.training_image_not_rgb, self.stdev = self.preprocess_train_image(plot_noise=show_plot)
         print('End of training image preprocessing.')
 
         return
