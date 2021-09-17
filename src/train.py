@@ -228,10 +228,9 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                     models.load_weigths(rpn_model_eval, detector_model_eval, backbone, checkpoint=f'loss_0_frcnn_{backbone}.h5')
                     models.compile_models(rpn_model_eval, detector_model_eval, total_model_eval, rpn_losses=[loss.rpn_loss_cls, loss.rpn_loss_regr], detector_losses=[loss.detector_loss_cls, loss.detector_loss_regr], class_list=class_list)
 
-
                     _, mAP, mPrecision, mRecall = utils.evaluate_model(rpn_model_eval, detector_model_eval, backbone, val_patch_list, class_list, map_threshold=.5, acceptance_treshold=.5)
                     
-                    # This is a ssfety chck because scikit mAP has an ambiguous behaviour when FN = 100%
+                    # This is a safety chck because scikit mAP has an ambiguous behaviour when FN = 100%
                     if (mPrecision == 0. and mAP == 1.):
                         mAP=0.
                     
@@ -258,6 +257,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                         print('mAP increased from {} to {}, saving weights'.format(best_mAP,mAP))
                         best_mAP = mAP
                         total_model.save_weights(f'{config.MODEL_WEIGHTS}/{backbone}/map_{counter}_frcnn_{backbone}.h5')
+                        
                     
                     start_time = time.time()
                     break

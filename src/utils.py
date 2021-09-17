@@ -1,4 +1,5 @@
 import os
+from tqdm import tqdm
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -554,7 +555,7 @@ def plot_scores(history):
 
     plt.figure(figsize=(15,5))
     plt.subplot(1,2,1)
-    plt.plot(np.arange(0, r_epochs), history[:,1], 'r')
+    plt.plot(np.arange(0, r_epochs), history[:,2], 'r')
     plt.title('macro Recall')
     plt.show()
 
@@ -692,7 +693,7 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
             bboxes[cls_name].append([config.rpn_stride*x, config.rpn_stride*y, config.rpn_stride*(x+w), config.rpn_stride*(y+h)])
             probs[cls_name].append(np.max(P_cls[0, ii, :]))
    
-    print(f'Elapsed:{time.time()-start}')
+    # print(f'Elapsed:{time.time()-start}')
     return bboxes, probs
 
 def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_list, map_threshold, acceptance_treshold, save_eval_results=False):
@@ -702,9 +703,9 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
     mRec = []
     val_datagen = prep.get_anchor_gt(config.TRAIN_PATCHES_FOLDER, val_patch_list, backbone=backbone, mode='eval', infinite_loop=False)
 
-    for patch in val_datagen:
+    for patch in tqdm(val_datagen,total=len(val_patch_list)):
         image, _, _, _, _, patch_id = patch
-        print(patch_id)
+        # print(patch_id)
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)        
         detections = get_detections(patch_id, bboxes, probs, save_eval_results)
         macro_AP, macro_prec, macro_rec= get_img_scores(detections, patch_id, map_threshold)
