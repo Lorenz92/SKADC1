@@ -1,5 +1,5 @@
 import os
-from src.layers import Expander, RpnNet, RoiPoolingConv, Detector, vgg16, resnet50, baseline_8, baseline_16, baseline_44
+from src.layers import Expander, RpnNet, RoiPoolingConv, Detector, vgg16, baseline_16, baseline_44
 import src.config as config
 import src.utils as utils
 import keras
@@ -21,10 +21,6 @@ def get_train_model(input_shape_1, input_shape_2, anchor_num, pooling_regions, n
     if backbone == 'vgg16':
         # Load pretrained VGG16 without last MaxPool layer
         x = vgg16(x)
-    elif backbone == 'resnet50':
-        x = resnet50(x, train_stage2 = False, train_stage3 = True, train_stage4 = True)
-    elif backbone == 'baseline_8':
-        x = baseline_8(x)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
     elif backbone == 'baseline_44':
@@ -61,12 +57,6 @@ def get_eval_model(input_shape_1, input_shape_2, input_shape_fmap, anchor_num, p
     if backbone == 'vgg16':
         x = vgg16(x)
         input_shape_fmap = (37, 37, 512)
-    elif backbone == 'resnet50':
-        x = resnet50(x)
-        input_shape_fmap = (38, 38, 1024)
-    elif backbone == 'baseline_8':
-        x = baseline_8(x)        
-        input_shape_fmap = (50, 50, 64)
     elif backbone == 'baseline_16':
         x = baseline_16(x)
         # input_shape_fmap = (37, 37, 128)
@@ -101,15 +91,7 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
         weights = f'{config.MODEL_WEIGHTS}/{backbone}/{checkpoint}'
 
     else:
-        if backbone == 'baseline_8':
-            weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
-            # Download VGG16 weights
-            # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
-            if not os.path.exists(weights):
-                utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
-                'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
-        
-        elif backbone == 'baseline_16':
+        if backbone == 'baseline_16':
             weights = f'{config.MODEL_WEIGHTS}/{backbone}/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
             # Download VGG16 weights
             # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5'
@@ -133,15 +115,6 @@ def load_weigths(rpn_model, detector_model, backbone, resume_train=True, checkpo
             if not os.path.exists(weights):
                 utils.download_data('vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', 
                 'https://github.com/fchollet/deep-learning-models/releases/download/v0.1/vgg16_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
-        
-        elif backbone == 'resnet50':
-            weights = f'{config.MODEL_WEIGHTS}/{backbone}/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
-            # Download ResNet50 weights
-            # 'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5'
-            if not os.path.exists(weights):
-                utils.download_data('resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5', 
-                'https://github.com/fchollet/deep-learning-models/releases/download/v0.2/resnet50_weights_tf_dim_ordering_tf_kernels_notop.h5', config.MODEL_WEIGHTS + f'/{backbone}')
-            
         else:
             raise ValueError('Please choose a valid model')
 
@@ -155,8 +128,6 @@ def compile_models(rpn_model, detector_model, total_model, rpn_losses, detector_
 
     rpn_optimizer = Adam(lr=rpn_lr, clipnorm=rpn_clipnorm)
     detector_optimizer = Adam(lr=detector_lr, clipnorm=detector_clipnorm)
-    # rpn_optimizer = Adam(lr=5e-2)
-    # detector_optimizer = Adam(lr=5e-2)
 
     rpn_loss_cls = rpn_losses[0]
     rpn_loss_regr = rpn_losses[1]

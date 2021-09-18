@@ -1,0 +1,68 @@
+This is BibTeX, Version 0.99d (TeX Live 2020)
+Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
+The top-level auxiliary file: report.aux
+The style file: biblatex.bst
+Reallocated glb_str_ptr (elt_size=4) to 20 items from 10.
+Reallocated global_strs (elt_size=200001) to 20 items from 10.
+Reallocated glb_str_end (elt_size=4) to 20 items from 10.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: report-blx.bib
+Database file #2: references.bib
+Warning--string name "https://arxiv.org/abs/1708.02002" is undefined
+--line 163 of file references.bib
+Biblatex version: 3.13
+Reallocated wiz_functions (elt_size=4) to 9000 items from 6000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+You've used 25 entries,
+            6365 wiz_defined-function locations,
+            1326 strings with 15097 characters,
+and the built_in function-call counts, 241097 in all, are:
+= -- 18673
+> -- 3782
+< -- 933
++ -- 7450
+- -- 1789
+* -- 18869
+:= -- 29823
+add.period$ -- 0
+call.type$ -- 25
+change.case$ -- 318
+chr.to.int$ -- 62
+cite$ -- 48
+duplicate$ -- 26383
+empty$ -- 19577
+format.name$ -- 2661
+if$ -- 47065
+int.to.chr$ -- 0
+int.to.str$ -- 56
+missing$ -- 0
+newline$ -- 1309
+num.names$ -- 1106
+pop$ -- 9745
+preamble$ -- 1
+purify$ -- 598
+quote$ -- 0
+skip$ -- 5088
+stack$ -- 0
+substring$ -- 33293
+swap$ -- 4940
+text.length$ -- 972
+text.prefix$ -- 33
+top$ -- 1
+type$ -- 838
+warning$ -- 0
+while$ -- 4374
+width$ -- 0
+write$ -- 1285
+(There was 1 warning)

@@ -78,25 +78,30 @@
 \@writefile{lot}{\addvspace {10\p@ }}
 \newlabel{chap:dataset-description}{{3}{4}{Dataset description}{chapter.3}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {3.1}Ground truth data}{4}{section.3.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Hyperparameters\relax }}{5}{table.caption.3}\protected@file@percent }
+\newlabel{sec:ground_truth_data}{{3.1}{4}{Ground truth data}{section.3.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Number of sources, width and height distribution for each class\relax }}{5}{table.caption.3}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{table:hyperparameters}{{3.1}{5}{Hyperparameters\relax }{table.caption.3}{}}
+\newlabel{table:class_analysis}{{3.1}{5}{Number of sources, width and height distribution for each class\relax }{table.caption.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Dataset class distribution\relax }}{5}{figure.caption.4}\protected@file@percent }
+\newlabel{fig:scatter_class}{{3.1}{5}{Dataset class distribution\relax }{figure.caption.4}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {3.2}Image analysis}{5}{section.3.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Linear transformation on the left and logarithmic transformation on the rigth, of the given image.\relax }}{6}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:image_transf}{{3.2}{6}{Linear transformation on the left and logarithmic transformation on the rigth, of the given image.\relax }{figure.caption.5}{}}
 \citation{cnn-features}
 \abx@aux@cite{cnn-features}
 \abx@aux@segm{0}{0}{cnn-features}
-\@writefile{toc}{\contentsline {chapter}{\numberline {4}System description}{6}{chapter.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {4}System description}{7}{chapter.4}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{chap:system-description}{{4}{6}{System description}{chapter.4}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {4.1}Feature Extraction Backbone}{6}{section.4.1}\protected@file@percent }
-\newlabel{sec:feature-extraction-backbone}{{4.1}{6}{Feature Extraction Backbone}{section.4.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}B16 - Baseline 16}{6}{subsection.4.1.1}\protected@file@percent }
-\newlabel{subsec:b16}{{4.1.1}{6}{B16 - Baseline 16}{subsection.4.1.1}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}B44 - Baseline 44}{7}{subsection.4.1.2}\protected@file@percent }
-\newlabel{subsec:b44}{{4.1.2}{7}{B44 - Baseline 44}{subsection.4.1.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.3}VGG16}{7}{subsection.4.1.3}\protected@file@percent }
-\newlabel{subsec:vgg16}{{4.1.3}{7}{VGG16}{subsection.4.1.3}{}}
+\newlabel{chap:system-description}{{4}{7}{System description}{chapter.4}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.1}Feature Extraction Backbone}{7}{section.4.1}\protected@file@percent }
+\newlabel{sec:feature-extraction-backbone}{{4.1}{7}{Feature Extraction Backbone}{section.4.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.1}B16 - Baseline 16}{7}{subsection.4.1.1}\protected@file@percent }
+\newlabel{subsec:b16}{{4.1.1}{7}{B16 - Baseline 16}{subsection.4.1.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.2}B44 - Baseline 44}{8}{subsection.4.1.2}\protected@file@percent }
+\newlabel{subsec:b44}{{4.1.2}{8}{B44 - Baseline 44}{subsection.4.1.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1.3}VGG16}{8}{subsection.4.1.3}\protected@file@percent }
+\newlabel{subsec:vgg16}{{4.1.3}{8}{VGG16}{subsection.4.1.3}{}}
 \citation{nms}
 \abx@aux@cite{nms}
 \abx@aux@segm{0}{0}{nms}
@@ -109,10 +114,10 @@
 \citation{faster-rcnn}
 \abx@aux@cite{faster-rcnn}
 \abx@aux@segm{0}{0}{faster-rcnn}
-\@writefile{toc}{\contentsline {section}{\numberline {4.2}Output Architecture}{8}{section.4.2}\protected@file@percent }
-\newlabel{sec:output-architecture}{{4.2}{8}{Output Architecture}{section.4.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}Region Proposal Network}{8}{subsection.4.2.1}\protected@file@percent }
-\newlabel{subsec:rpn-net}{{4.2.1}{8}{Region Proposal Network}{subsection.4.2.1}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {4.2}Output Architecture}{9}{section.4.2}\protected@file@percent }
+\newlabel{sec:output-architecture}{{4.2}{9}{Output Architecture}{section.4.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.1}Region Proposal Network}{9}{subsection.4.2.1}\protected@file@percent }
+\newlabel{subsec:rpn-net}{{4.2.1}{9}{Region Proposal Network}{subsection.4.2.1}{}}
 \citation{huber-loss}
 \abx@aux@cite{huber-loss}
 \abx@aux@segm{0}{0}{huber-loss}
@@ -125,67 +130,69 @@
 \citation{roi-pooling}
 \abx@aux@cite{roi-pooling}
 \abx@aux@segm{0}{0}{roi-pooling}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{10}{subsection.4.2.2}\protected@file@percent }
+\newlabel{subsec:roi-pooling}{{4.2.2}{10}{Roi Pooling Layer}{subsection.4.2.2}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }}{10}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:roi-pooling}{{4.1}{10}{ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }{figure.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Detector}{10}{subsection.4.2.3}\protected@file@percent }
+\newlabel{subsec:detector}{{4.2.3}{10}{Detector}{subsection.4.2.3}{}}
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{9}{subsection.4.2.2}\protected@file@percent }
-\newlabel{subsec:roi-pooling}{{4.2.2}{9}{Roi Pooling Layer}{subsection.4.2.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Detector}{9}{subsection.4.2.3}\protected@file@percent }
-\newlabel{subsec:detector}{{4.2.3}{9}{Detector}{subsection.4.2.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.4}Focal Loss}{9}{subsection.4.2.4}\protected@file@percent }
-\newlabel{subsec:focal-loss}{{4.2.4}{9}{Focal Loss}{subsection.4.2.4}{}}
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }}{10}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:roi-pooling}{{4.1}{10}{ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }{figure.caption.4}{}}
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.4}Focal Loss}{11}{subsection.4.2.4}\protected@file@percent }
+\newlabel{subsec:focal-loss}{{4.2.4}{11}{Focal Loss}{subsection.4.2.4}{}}
+\citation{faster-rcnn}
+\abx@aux@cite{faster-rcnn}
+\abx@aux@segm{0}{0}{faster-rcnn}
 \@writefile{toc}{\contentsline {chapter}{\numberline {5}Experimental setup and results}{12}{chapter.5}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
 \newlabel{chap:experiments}{{5}{12}{Experimental setup and results}{chapter.5}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.1}Data pre-processing}{12}{section.5.1}\protected@file@percent }
-\newlabel{sec:data-handling}{{5.1}{12}{Data pre-processing}{section.5.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Hyperparameters\relax }}{13}{table.caption.5}\protected@file@percent }
-\newlabel{table:hyperparameters}{{5.1}{13}{Hyperparameters\relax }{table.caption.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Class distribution for 20_100 set\relax }}{13}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:20_100}{{5.1}{13}{Class distribution for 20_100 set\relax }{figure.caption.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Class distribution for 50_100 set\relax }}{13}{figure.caption.7}\protected@file@percent }
-\newlabel{fig:50_100}{{5.2}{13}{Class distribution for 50_100 set\relax }{figure.caption.7}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.1}Receptive Field}{12}{section.5.1}\protected@file@percent }
+\newlabel{sec:receptive-field}{{5.1}{12}{Receptive Field}{section.5.1}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }}{13}{table.caption.7}\protected@file@percent }
+\newlabel{table:experimental_setup}{{5.1}{13}{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }{table.caption.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Hyperparameters\relax }}{13}{table.caption.8}\protected@file@percent }
+\newlabel{table:hyperparameters}{{5.2}{13}{Hyperparameters\relax }{table.caption.8}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.2}Data pre-processing}{13}{section.5.2}\protected@file@percent }
+\newlabel{sec:data-handling}{{5.2}{13}{Data pre-processing}{section.5.2}{}}
+\citation{claran}
+\abx@aux@cite{claran}
+\abx@aux@segm{0}{0}{claran}
 \citation{tensorflow}
 \abx@aux@cite{tensorflow}
 \abx@aux@segm{0}{0}{tensorflow}
 \citation{keras}
 \abx@aux@cite{keras}
 \abx@aux@segm{0}{0}{keras}
+\@writefile{toc}{\contentsline {section}{\numberline {5.3}Metrics}{14}{section.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5.4}Environment}{14}{section.5.4}\protected@file@percent }
 \citation{colab}
 \abx@aux@cite{colab}
 \abx@aux@segm{0}{0}{colab}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Class distribution for 100_600 set\relax }}{14}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:100_600}{{5.3}{14}{Class distribution for 100_600 set\relax }{figure.caption.8}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5.2}Metrics}{14}{section.5.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5.3}Environment}{14}{section.5.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5.4}Results}{14}{section.5.4}\protected@file@percent }
-\newlabel{sec:results}{{5.4}{14}{Results}{section.5.4}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Best results\relax }}{14}{table.caption.9}\protected@file@percent }
-\newlabel{table:results}{{5.2}{14}{Best results\relax }{table.caption.9}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Analysis of results}{15}{chapter.6}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Class distribution for 20_100 set\relax }}{15}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:20_100}{{5.1}{15}{Class distribution for 20_100 set\relax }{figure.caption.9}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Class distribution for 50_100 set\relax }}{15}{figure.caption.10}\protected@file@percent }
+\newlabel{fig:50_100}{{5.2}{15}{Class distribution for 50_100 set\relax }{figure.caption.10}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5.5}Results}{15}{section.5.5}\protected@file@percent }
+\newlabel{sec:results}{{5.5}{15}{Results}{section.5.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Class distribution for 100_600 set\relax }}{16}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:100_600}{{5.3}{16}{Class distribution for 100_600 set\relax }{figure.caption.11}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces Best results\relax }}{16}{table.caption.12}\protected@file@percent }
+\newlabel{table:results}{{5.3}{16}{Best results\relax }{table.caption.12}{}}
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Analysis of results}{17}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{chap:analysis-results}{{6}{15}{Analysis of results}{chapter.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Example of predictions from B16 model on the 20_100 set.\relax }}{15}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:100_600}{{6.1}{15}{Example of predictions from B16 model on the 20_100 set.\relax }{figure.caption.10}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Example of predictions from B16 model on the 50_100 set.\relax }}{15}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:100_600}{{6.2}{15}{Example of predictions from B16 model on the 50_100 set.\relax }{figure.caption.11}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Example of predictions from B44 model.\relax }}{15}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:100_600}{{6.3}{15}{Example of predictions from B44 model.\relax }{figure.caption.12}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.4}{\ignorespaces Example of predictions from VGG16 model.\relax }}{16}{figure.caption.13}\protected@file@percent }
-\newlabel{fig:100_600}{{6.4}{16}{Example of predictions from VGG16 model.\relax }{figure.caption.13}{}}
+\newlabel{chap:analysis-results}{{6}{17}{Analysis of results}{chapter.6}{}}
 \citation{effective-rf}
 \abx@aux@cite{effective-rf}
 \abx@aux@segm{0}{0}{effective-rf}
@@ -195,7 +202,56 @@
 \citation{frcnn-small-obj}
 \abx@aux@cite{frcnn-small-obj}
 \abx@aux@segm{0}{0}{frcnn-small-obj}
-\@writefile{toc}{\contentsline {chapter}{\numberline {7}Discussion}{17}{chapter.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Discussion}{18}{chapter.7}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{chap:discussion}{{7}{17}{Discussion}{chapter.7}{}}
+\newlabel{chap:discussion}{{7}{18}{Discussion}{chapter.7}{}}
+\abx@aux@refcontextdefaultsdone
+\abx@aux@defaultrefcontext{0}{tensorflow}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{bonaldi2021square}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{frcnn-small-obj}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{keras}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{fast-rcnn}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{rcnn}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{colab}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{mask-rcnn}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{huber-loss}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{fpn}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{focal-loss}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{ssd}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{effective-rf}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{roi-pooling}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{nms}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{yolo}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{faster-rcnn}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{iou}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{vgg}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{ska-site}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{transfer-learning-1}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{transfer-learning-2}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{claran}{nyt/global//global/global}
+\abx@aux@defaultrefcontext{0}{cnn-features}{nyt/global//global/global}
+\abx@aux@defaultlabelprefix{0}{tensorflow}{}
+\abx@aux@defaultlabelprefix{0}{bonaldi2021square}{}
+\abx@aux@defaultlabelprefix{0}{frcnn-small-obj}{}
+\abx@aux@defaultlabelprefix{0}{keras}{}
+\abx@aux@defaultlabelprefix{0}{fast-rcnn}{}
+\abx@aux@defaultlabelprefix{0}{rcnn}{}
+\abx@aux@defaultlabelprefix{0}{colab}{}
+\abx@aux@defaultlabelprefix{0}{mask-rcnn}{}
+\abx@aux@defaultlabelprefix{0}{huber-loss}{}
+\abx@aux@defaultlabelprefix{0}{fpn}{}
+\abx@aux@defaultlabelprefix{0}{focal-loss}{}
+\abx@aux@defaultlabelprefix{0}{ssd}{}
+\abx@aux@defaultlabelprefix{0}{effective-rf}{}
+\abx@aux@defaultlabelprefix{0}{roi-pooling}{}
+\abx@aux@defaultlabelprefix{0}{nms}{}
+\abx@aux@defaultlabelprefix{0}{yolo}{}
+\abx@aux@defaultlabelprefix{0}{faster-rcnn}{}
+\abx@aux@defaultlabelprefix{0}{iou}{}
+\abx@aux@defaultlabelprefix{0}{vgg}{}
+\abx@aux@defaultlabelprefix{0}{ska-site}{}
+\abx@aux@defaultlabelprefix{0}{transfer-learning-1}{}
+\abx@aux@defaultlabelprefix{0}{transfer-learning-2}{}
+\abx@aux@defaultlabelprefix{0}{claran}{}
+\abx@aux@defaultlabelprefix{0}{cnn-features}{}

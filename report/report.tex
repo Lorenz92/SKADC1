@@ -10,6 +10,7 @@
 \usepackage{fancyvrb}
 \usepackage[english]{babel}
 \usepackage{csquotes}
+\usepackage{verbatim}
 \usepackage{hyperref}
 \hypersetup{
    colorlinks=true,
@@ -76,12 +77,12 @@
   \textbf{SKA Data Challenge\footnote{The code for the project is publicly available on \href{https://github.com/Lorenz92/SKADC1}{GitHub}}}
   \begin{figure}[!htb]
     \centering
-    \includegraphics[width = 100pt]{nice-detection}
+    \includegraphics[width = 100pt]{nice-detection.png}
   \end{figure} \\
   Deep Learning course final project
 }
 
-\author{Alice Zandegiacomo (\href{mailto:alice.zandegiacomo@studio.unibo.it}{alice.zandegiacomo@studio.unibo.it}) \\ Lorenzo Cellini (\href{mailto:lorenzo.cellini3@studio.unibo.it}{lorenzo.cellini3@studio.unibo.it})}
+\author{Lorenzo Cellini (\href{mailto:lorenzo.cellini3@studio.unibo.it}{lorenzo.cellini3@studio.unibo.it}) \\ Alice Zandegiacomo (\href{mailto:alice.zandegiacomo@studio.unibo.it}{alice.zandegiacomo@studio.unibo.it})}
 \date{\today}
 \maketitle
 \newpage
@@ -143,7 +144,7 @@ Search of the Fast R-CNN with a Region Proposal Network without loosing accuracy
 
 The data provided by the SKA (Square Kilometer Array) challenge, consists in a series of astronomical high resolution images created through data simulations \cite{bonaldi2021square}.  Images are a simulated SKA continuum image in total intensity at 3 frequencies: 560 MHz, 1.4 GHz and  9.2 GHz, each of witch has 3 different exposures: 8 h, 100 h, 1000 h. For each frequency band a catalogue revealing only a fraction of the simulated galaxies was released. We choose to analyse the image at 560 MHz with 1000 hours of exposure. 
 
-\section{Ground truth data}
+\section{Ground truth data} \label{sec:ground_truth_data}
 Each row of the ground-truth catalogue contains the subsequent information of the correspondent source: 
 \begin{itemize}
     \item RA (core)  [degs]    Right ascension of the source core
@@ -161,30 +162,62 @@ Each row of the ground-truth catalogue contains the subsequent information of th
     \item    x    [none]    pixel x coordinate of the centroid, starting from 0
     \item   y    [none]    pixel y coordinate of the centroid,starting from 0
 \end{itemize}
-We used declination, right ascension, minor and major axis to obtain the pixel coordinates of the source center and its bounding box. We assigned to each source a class label, given by the concatenation of SIZE and CLASS and all sources with selection equal to 0 were discarded. At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results. 
+We used declination, right ascension, minor and major axis to obtain the pixel coordinates of the source center and its bounding box. At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results.
 
+We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS. In total there are 5 classes. 
+
+An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots in table \ref{table:class_analysis}. In particular class $2\_3$ is highly represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
+Balancing this dataset is a tricky task because patches contain several sources of different classes, depending on patch dimension. Indeed we tried two different approach to overcome this problem: find and re-sample patches that contain only the rare classes and use focal loss for the classification task.
 \begin{table}[h]
   \center
   \begin{tabular}{|c|c|c|c|c|}
     \hline
-                        & \textbf{Epochs} & \textbf{Batch size} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
-    \textbf{Baseline}   & $30$            & $128$               & Adam               & $1e-3$                 \\ \hline
-    \textbf{BiDAF}      & $12$            & $60$                & Adadelta           & $0.5$                  \\ \hline
-    \textbf{BERT}       & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
-    \textbf{DistilBERT} & $3$             & $16$                & Adam               & $5e-5$                 \\ \hline
-    \textbf{ELECTRA}    & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
+    \textbf{CLASS}& \textbf{number of sources} & \textbf{width (px)} & \textbf{height (px)} \\ 
+    \hline
+    \textbf{1_1} & 112 & $15.9\pm21.9$ & $15.1\pm13.2$ \\ 
+    \hline
+    \textbf{2_1} & 34 & $6.2\pm1.3$ & $6.2\pm1.5$ \\ 
+    \hline
+    \textbf{2_2} & 262 & $5.0\pm0.2$ & $5.0\pm0.2$ \\ 
+    \hline
+    \textbf{3_3} & 234 & $16.1\pm8.1$ & $17.6\pm10.8$ \\ 
+    \hline
+    \textbf{2_3} & 18580 & $6.0\pm2.1$ & $6.1\pm2.0$ \\ 
+    \hline
   \end{tabular}
-  \caption{Hyperparameters}
-  \label{table:hyperparameters}
+  \caption{Number of sources, width and height distribution for each class}
+  \label{table:class_analysis}
 \end{table}
 
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.85\linewidth]{scatter_class.png}
+  \caption{Dataset class distribution}
+  \label{fig:scatter_class}
+\end{figure}
+
 \section{Image analysis}
-The image size is (32768 32768) pixels while the portion of the image that contains the ground truth boxes is 4000 x 4000 pixels .
-Images were given in FITS format, since they are a simulation of a radiotelescope acquisition, the range of each pixel is between 0 and 1. Negative values are due to the noise simulation. 
-We convert the fits image in png image, in order to have patches with 255 gray levels. 
-The brightest source in the fits image has value of 0.006586 while the minimum gray level is ... due to noise. To transform the float values into integer ones we tried different approaches, firstly we applyed a linear transformation cosidering the maximum GL value as 255 and set the lower value equal zero. In this way we delete the negative noise signal. We discarded this attempt because the distribution of sources intensities was not linearly distributed between min and max range, but the majority of them has a very low intensity. The image transformed into integers was almost completely black with the exception of very few sources and most of the ground truth boxes were indetectable (fig ...).
-A second attempt was performing a gamma transformation in order to enhance the signal of low intensitys sources. We tried several gamma values between 0.2 and 1 but also with this method many sources were too dark.
-The choose method was to scale the image intensity range using a base 10 logarithm scale: the magnitude range was defined by the magnitude of the noise standard deviation and of the maximum gray value. The image noise is caused by electronic noise and is well fitted by a gaussian distribution centered in zero.  We obtain the standard deviation  looking at the negative values of the gray level distribution, which are necessary caused by noise. 
+The image size is 32768x32768 pixels while the portion of the image that contains the ground truth boxes is around 4000x4000 pixels.
+Images were given in FITS format. Since they are a simulation of a radiotelescope acquisition the range of each pixel should be between 0 and 1.
+The brightest source in the fits image has value of 0.006586 while the minimum gray level is  $-1.9 \times 10^{-6}$ due to noise simulation.
+
+We converted the pixel value range from [0,1] to [0,255] experimenting with different approaches: firstly we applied a linear transformation considering the maximum GL value as 255 and set the lower value equal to 0. In this way we removed the negative noise signal. Unfortunately, because the sources intensity was not linearly distributed in the range [0,1], but the majority of them had a very low intensity, the resulting image was almost completely black with the exception of very few sources and most of the ground truth boxes were undetectable, \ref{fig:image_transf} (on the left).
+
+The second attempt was using a $\gamma$ function in order to enhance the signal of low intensity sources. We tried several $\gamma$ values between 0.2 and 1, but again many sources were too dark.
+
+Finally, the chosen method was to scale the image intensity range using a base 10 logarithm scale: the magnitude range was defined by the magnitude of the noise standard deviation and of the maximum gray value, \ref{fig:image_transf} (on the rigth). Indeed, the image noise is caused by electronic noise and is well fitted by a Gaussian distribution centered in zero. We obtained the standard deviation looking at the negative values of the gray level distribution, which are necessary caused by noise, and we use it to scale pixel values up.
+
+\begin{figure}[!htb]
+  \minipage{0.5\textwidth}
+    \includegraphics[width=\linewidth]{RGB_linear.png}
+  \endminipage\hfill
+  \minipage{0.5\textwidth}
+    \includegraphics[width=\linewidth]{RGB_log.png}
+  \endminipage\hfill
+  \caption{Linear transformation on the left and logarithmic transformation on the rigth, of the given image.}
+  \label{fig:image_transf}
+\end{figure}
+
 
 \chapter{System description}\label{chap:system-description}
 
@@ -197,7 +230,7 @@ The following is a detailed description of the models. Beware that in each model
 \section{Feature Extraction Backbone}\label{sec:feature-extraction-backbone}
 Basically, in this work we tested:
 \begin{enumerate}
-\item wether a simple model, meaning "not very deep", is enough for the small object detection task, and;
+\item wether a simple model, meaning "not very deep", is enough for the small and simple-shape object detection task, and;
 \item how detection performance varies when changing the receptive field size of the model with respect to objects size.
 \end{enumerate}
 
@@ -220,7 +253,7 @@ With the B16 model, we wanted to test how a shallow feature extraction network p
 
 Furthermore, we tested how the relation between the receptive field size and the object size, influences the learning: indeed, B16 has a receptive field size of 16 and this is smaller than any object size for the 20\_100 set, but bigger than the 80\% of the objects in the 50\_100 set. More details in chapter \ref{chap:experiments}.
 
-With this architecture, the final feature map size is $\frac{1}{4}$ of the input image.
+With this architecture, the final feature map size $r$ is $\frac{1}{4}$ of the input image.
 
 \subsection{B44 - Baseline 44}\label{subsec:b44}
 The second backbone we implemented has the following structure:
@@ -277,7 +310,7 @@ The structure of this network is the following:
     \item 1 convolutional layer with 1x1x4xnum\_classes filters, initialized to the constant 0.
 \end{itemize}
 
-The second layer is in charge to determine the "objectness" score of a candidate region, while its sibling, the third layer, is in charge of outputting the difference in coordinates of such proposals with respect to model anchors.
+The second layer is in charge to determine the "objectness" score of a candidate region, (which can be interpreted as the probability that the region contains an object) while its sibling, the third layer, is in charge of outputting the difference in coordinates of such proposals with respect to model anchors.
 
 The output of the RPN net goes trough the NMS algorithm based on IoU score. The results is the set of ROI proposals that the Detector will have to classify and locate.
 
@@ -293,12 +326,12 @@ The RPN loss function is:
 where the first term is the binary cross entropy and represents the loss related to the "objectness" score; the second term is the smooth $L_1$ score as in \cite{huber-loss}. The $p_i^*$ multiplier acts as a kind of mask, activating the regression loss only for positive proposals.
 
 \subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
-ROI max pooling works by dividing the hxw RoI window into an HxW grid of approximately size $\frac{h}{H} x \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
+ROI max pooling works by dividing the $h \times w$ RoI window into an $H \times W$ grid of approximately size $\frac{h}{H} x \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
 
-ROI pooling layer is needed because the last Faster R-CNN module is a fully connected network that needs fixed-length feature vector as input, but proposals from RPN can have different height and width. So, ROI pooling layer scales down and resizes proposals to a $nxm$ map, where $n$ and $m$ are model hyper-parameters. We chose $n=m=7$ as in \cite{faster-rcnn}.
+ROI pooling layer is needed because the last Faster R-CNN module is a fully connected network that needs fixed-length feature vector as input, but proposals from RPN can have different height and width. So, ROI pooling layer scales down and resizes proposals to a $n \times m$ map, where $n$ and $m$ are model hyper-parameters. We chose $n=m=7$ as in \cite{faster-rcnn}.
 \begin{figure}[h]
   \center
-  \includegraphics[width=0.85\linewidth]{roi-pooling}
+  \includegraphics[width=0.5\linewidth]{roi-pooling}
   \caption{ROI Pooling Layer (image courtesy of \cite{roi-pooling})}
   \label{fig:roi-pooling}
 \end{figure}
@@ -310,21 +343,21 @@ It consists of:
 \begin{itemize}
     \item ROI pooling layer (described above);
     \item 2 fully connected layers with 4096 units and $0.5$ of dropout probability, each one followed by ReLU activation;
-    \item 1 fully connected with $num\_classes$ units, initialized to 0 and followed by a softmax activation;
-    \item 1 fully connected with $4*num\_classes$ units, initialized to 0 and followed by a linear activation.
+    \item 1 fully connected layer with $num\_classes$ units, initialized to 0 and followed by a softmax activation;
+    \item 1 fully connected layer with $4*num\_classes$ units, initialized to 0 and followed by a linear activation.
 \end{itemize}
 In our dataset we had $num\_classes=6$, where 5 were actual classes and the last was the background class.
 
 The model loss is:
 \[L({p_i}, {t_i}) = \dfrac{1}{N_{cls}^{det}} \sum_{i} L_{cls}^{det}(q_i, q_i^*) + \lambda \dfrac{1}{N_{reg}^{det}} \sum_{i}L_{reg}^{det}(s_i, s_i^*) \]
 
-where the first term is the categorical cross entropy and represents the classification loss with respect to object classes and the second term is again the $smooth L_1$ that represents the shift regression from the proposed regions to the actual coordinates shifts.
+where the first term is the categorical cross entropy and represents the classification loss with respect to object classes and the second term is again the $smooth-L_1$ that represents the shift regression from the proposed regions to the actual coordinates shifts.
 
 \subsection{Focal Loss}\label{subsec:focal-loss}
 In some of our experiments we also tried to overcome the unbalancedness of the dataset by exploiting focal loss \cite{focal-loss}.
 Authors in \cite{focal-loss} proposed focal loss as a way to down weight background examples with respect to foreground ones. Thus they claim that thanks to focal loss it is not necessary to restrict RPN proposal to a fixed number and ratio and to perform biased sampling on the Detector stage.
 
-Anyway we implemented focal loss with a slightly different goal: to help the model to distinguish between rare and common positive samples. Indeed we mantained the fixed RPN proposals and applied 1:1 biased sampling to the ROI proposed. In this way we think the model could converge faster, and, once it starts detecting objects, the focal loss should help him in better discriminate between classes.
+Anyway we implemented focal loss with a slightly different goal: to help the model to distinguish between rare and common classes positive samples. Indeed we maintained the fixed RPN proposals and applied 1:1 biased sampling to the proposed ROI. In this way we think the model could converge faster, and, once it starts detecting objects, the focal loss should help him better discriminate between classes.
 Moreover, in \cite{focal-loss} they proposed focal loss for one-stage detectors, while we applied it to a two-stage detector.
 
 In the experiments where focal loss is applied, the Detector loss becomes:
@@ -336,64 +369,78 @@ where $CE(q_i, q_i^*)$ is the categorical cross entropy.
 We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \cite{focal-loss}.
 
 \chapter{Experimental setup and results}\label{chap:experiments}
+ We defined 8 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
+
+\begin{itemize}
+    \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: 100x100px for B16 and B44, 600x600px for VGG16.
+    \item size and aspect ratio of anchors: for each model we defined a set of anchors given by the combination of their possible sizes and ratios. Anchors are drawn on the input image and the distance between the centers of two anchors sets is given by the stride of the network, being the latter the re-sizing factor between the input image and the last feature map. In this work strides were: 4 for B16, 8 for B44 and 16 for VGG16. Thus, for each model, the number of anchors is $anchor\_sizes \times anchor\_ratios \times feature\_map\_size$, where $feature\_map\_size$ is in the $r \times r$ format.
+    \item focal loss and dataset balancing: as shown in section \ref{sec:ground_truth_data} the dataset is strongly unbalanced, so we tried to overcome this by using focal loss (cap \ref{subsec:focal-loss}) or by balancing the training dataset (section \ref{sec:data-handling}). These two approaches have been applied separately in different training configurations in order to make a meaningful comparison.  
+    \item normalization of the values of the input patches: in some of the experiments, patches pixel values have been normalized by dividing for the max patch pixel value. A more detailed explanation is given in the next section.
+\end{itemize}
+
+In table \ref{table:experimental_setup} and following chapters we adopt the nomenclature \emph{baseline\_n\_m + FL(focal loss) or BD (balanced dataset)} to unequivocally identify the combination of feature extraction backbone and parameters used in the various tests. Here $n$ and $m$ represent the original patches dimension and the dimension after patch resizing.
+
+\begin{table}[t]
+    \center
+    
+\resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|c|c|c|c|c|c|c|}
+      \hline
+      \textbf{Test name}&  \textbf{Rec. field}& \textbf{Patch(px)}& \textbf{Input(px)} & \textbf{Anchors} & \textbf{Norm.} & \textbf{Focal loss} & \textbf{Balancing} \\ 
+      \hline
+      \textbf{B16_50_100} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & No & No \\
+      \hline
+      \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & Yes & No \\
+      \hline
+      \textbf{B16_50_100+BD} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & No & Yes \\
+      \hline
+      \textbf{B16_20_100} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
+      \hline
+      \textbf{B16_20_100+FL} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & Yes & No \\
+      \hline
+      \textbf{B16_20_100+BD} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & Yes \\
+      \hline
+      \textbf{B44_  } & 44  &20x20 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}}  & - & - & - \\
+      \hline
+      \textbf{VGG16_100_600} & 196 & 100x100 &600x600 & \shortstack{[32,64,128] \\ {[1:1,1:2,2:1]}} & No  & No & No \\
+      \hline
+    \end{tabular}}
+    \caption{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.}
+    \label{table:experimental_setup}
+  \end{table}
  
- DA METTERE DA QUALCHE PARTE:
- [As mentioned before, the goal was to detect very small objects, with respect to the dimensions usually detected in other deep learning works [CITAZIONE QUI].
+The hyperparameters listed in table \ref{table:hyperparameters} were mainly taken from \cite{faster-rcnn}, in order to have a well-established benchmark, even though some of them were adjusted based on available resources (e.g. epochs num) or on our personal thoughts (e.g. we think that increasing Detector ROI would speed the training up).
 
+In each test, 1 epoch consisted in 250 iterations.
 
-B16
-As we've seen before, the bounding box shapes distribution shows that the 99\% of the objects to detect is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before rescaling.
-After rescaling these values become: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
+\section{Receptive Field}\label{sec:receptive-field}
+In this section we want to remark one of the central aspects of this project: we experimented on how the network receptive field interacts with the size of objects to be detected. Indeed we developed 3 different feature extraction backbones with different receptive field size.
 
-backbone with a receptive field smaller than the objects to detect performs on this task.
-Indeed the receptive field of B16 backbone (the feature extraction part) is 16, with a stride of 4. So, given an input image of size 100x100px, the last layer feature maps have a size of 25x25.
+As we've seen before, the ground truth shapes distribution shows that the 99\% of the objects is smaller than $18 \times 18$ pixels and the 90\% is smaller then $8 \times 8$ pixels, before patch resizing.
 
-In this model we used the following values for anchor sizes and ratios:
-\begin{itemize}
-  \item anchor size: [4, 8, 16, 24, 32, 64]
-  \item anchor ratio: [2: 1, 1: 2, 1:1]
-\end{itemize}
+In the \emph{20\_100} set, after resizing the distribution becomes: 99\% smaller than $90 \times 90$ pixels and 90\% smaller then $40 \time 40$ pixels.
+We used this set to feed B16 and B44 models that have respectively a receptive field size smaller then the 100\% of objects to detect (B16) and bigger then the 90\% of objects (B44).
 
-This imply that, at training time, the model generates 6x3x25x25 anchors ground truth.
+In the \emph{50\_100} set, after resizing the distribution becomes: 99\% smaller than 36x36 pixels and 90\% smaller then 16x16 pixels.
+We used this set with B16 that has a receptive field equal to the size of 90\% of objects to detect.
 
-B44
-In this model we used the same values for anchor sizes and ratios as in the B16:
-\begin{itemize}
-  \item anchor size: [4, 8, 16, 24, 32, 64]
-  \item anchor ratio: [2: 1, 1: 2, 1:1]
-\end{itemize}
+In the \emph{100\_600} set, after resizing the distribution becomes: 99\% smaller than 108x108 pixels and 90\% smaller then 48x48 pixels.
+We used this set with VGG16, which has a receptive field size of 196, bigger then any object to be detected.
 
-This imply that, at training time, the model generates 6x3x12x12 anchors ground truth.
-
-VGG
-In this model, anchor sizes and ratios used are:
-\begin{itemize}
-  \item anchor size: [128, 256, 512]
-  \item anchor ratio: [2: 1, 1: 2, 1:1]
-\end{itemize}
-
-This imply that, at training time, the model generates 3x3x37x37 anchors ground truth.]
-
-The hyperparameters listed in table \ref{table:hyperparameters} were mainly taken from the corresponding models' papers, in order to have a well-estabilished benchmark, even though some of them were adjusted based on available resources (e.g. the batch size).
-
-B16_50_100
-B16_20_100 + FL
-B16_20_100 + BD
-
-\begin{table}[h]
-  \center
-  \begin{tabular}{|c|c|c|c|c|}
-    \hline
-                        & \textbf{Epochs} & \textbf{Batch size} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
-    \textbf{Baseline}   & $30$            & $128$               & Adam               & $1e-3$                 \\ \hline
-    \textbf{BiDAF}      & $12$            & $60$                & Adadelta           & $0.5$                  \\ \hline
-    \textbf{BERT}       & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
-    \textbf{DistilBERT} & $3$             & $16$                & Adam               & $5e-5$                 \\ \hline
-    \textbf{ELECTRA}    & $3$             & $8$                 & Adam               & $5e-5$                 \\ \hline
-  \end{tabular}
-  \caption{Hyperparameters}
-  \label{table:hyperparameters}
-\end{table}
+We will discuss in \ref{chap:discussion} how the receptive field influenced the results.
+\begin{table}[t]
+    \center
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|c|c|c|c|c|c|c|}
+      \hline
+                          & \textbf{Epochs} & \textbf{RPN regions} & \textbf{Detector ROI} & \textbf{NMS neg-pos} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
+      \textbf{B16}   & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+      \textbf{B44}      & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+      \textbf{VGG16}       & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+    \end{tabular}}
+    \caption{Hyperparameters}
+    \label{table:hyperparameters}
+  \end{table}
  
 \section{Data pre-processing}\label{sec:data-handling}
 Given the image and the dataset described in \ref{chap:dataset-description} we firstly cut out an around $4000$x$4000$px image from the original image: this is the region that contains the ground truths from the dataset.
@@ -403,9 +450,11 @@ During patches generation we cut a square of side $\sqrt{10000}$ in order to hav
 From this set we removed patches with no ground truth, patches that contained part of blacklisted objects and patches smaller then $n$. The latter was in order to avoid issues on borders.
 We also discarded objects if they were captured for less than $80\%$ of their surface.
 
-Each patch was casted to the range 0-255 using the base 10 logarithmic scale, where the minimum value is given by the standard deviation of the noise calculated over the entire image, while the maximum value is given by the magnitude of the highest value in the patch. 
+Each patch was casted to the range 0-255 using the base 10 logarithmic scale, where the minimum value is given by the standard deviation of the noise computed over the entire image, while the maximum value is given by the magnitude of the highest value in the patch. 
 
-At training time we normalized patches values by dividing for their maximum value. We also tried zero-centering as in [claran] but we discovered that patch normalization worked best.
+At training time we normalized patches values by dividing for their maximum value. We also tried zero-centering as in \cite{claran} but we discovered that patch normalization worked best.
+
+Before feeding the network we replicated the same input image 3 times, one for each channel. Our code supports also an "Expander" layer, a 1x1x3 convolutional layer that converts a 1-channel image into a 3-channel one. At the end we decided to not use this layer based on experimental evidences.
 
 Our code supports also augmentation on the fly, and in particular we implemented horizontal and vertical flipping, and the four 90° rotations. However we think this is not strictly necessary in this specific projects because shapes to predicts are very isomorphic with no intrinsic orientation, and so we did not use it in our experiments.
 
@@ -415,23 +464,23 @@ In order to balance the dataset we simply find patches that contains the rare cl
 
 We decided to run all of our experiments on a total amount of 350 patches, where 280 for the training set and 70 for the evaluation set. Obviously objects contained in a patch varies depending on the $n$, the patch size.
 
-The following are the class distribution for each set of patches:
+Figures \ref{fig:20_100}, \ref{fig:50_100} and \ref{fig:100_600} show the class distribution for the three set of input patches.
 
 \begin{figure}[h]
   \center
-  \includegraphics[width=0.85\linewidth]{20-100}
+  \includegraphics[width=0.65\linewidth]{20_100.png}
   \caption{Class distribution for 20_100 set}
   \label{fig:20_100}
 \end{figure}
 \begin{figure}[h]
   \center
-  \includegraphics[width=0.85\linewidth]{50-100}
+  \includegraphics[width=0.65\linewidth]{50_100.png}
   \caption{Class distribution for 50_100 set}
   \label{fig:50_100}
 \end{figure}
 \begin{figure}[h]
   \center
-  \includegraphics[width=0.85\linewidth]{100-600}
+  \includegraphics[width=0.65\linewidth]{100_600.png}
   \caption{Class distribution for 100_600 set}
   \label{fig:100_600}
 \end{figure}
@@ -449,57 +498,57 @@ All of the training and validation processes were executed on a MacBook Pro with
 We tried also to use Google Colaboratory \cite{colab}, a platform that gives the possibility to exploit some computational resources for free, but because of its commercial limits, after few hours of batch computation they cut down our resources and training of models became 30x slower than on the MacBook.
 
 \section{Results}\label{sec:results}
-Table \ref{table:results} shows the results obtained on the validation set for each model, with the hyperparameters listed in table \ref{table:hyperparameters}.
-
-colonne: num epoche corrispondeti ai valori riportati + mAP + mPrec + mRecall
+Table \ref{table:results} shows the results obtained on the test set for each model, with the hyperparameters listed in table \ref{table:hyperparameters}.
 
 \begin{table}[h]
-  \center
-  \begin{tabular}{|c|c|c|c|c|c|c|}
-    \hline
-    \multirow{2}{*}{}   & \multicolumn{2}{c|}{\textbf{Training}} & \multicolumn{2}{c|}{\textbf{Validation}} & \multicolumn{2}{c|}{\textbf{Test}}                                                          \\ \cline{2-7}
-                        & \textbf{F1} (\%) & \textbf{EM} (\%) & \textbf{F1} (\%) & \textbf{EM} (\%) & \textbf{F1} (\%) & \textbf{EM} (\%) \\ \hline
-    \textbf{Baseline}   & $36.21$ & $21.27$ & $37.19$ & $26.47$ & $38.30$ & $27.15$ \\ \hline
-    \textbf{BiDAF}      & $63.42$ & $43.27$ & $68.40$ & $55.31$ & $71.15$ & $60.09$ \\ \hline
-    \textbf{BERT}       & $73.68$ & $56.14$ & $80.28$ & $67.80$ & $83.17$ & $74.17$ \\ \hline
-    \textbf{DistilBERT} & $73.72$ & $55.95$ & $79.26$ & $66.97$ & $82.44$ & $73.64$ \\ \hline
-    \textbf{ELECTRA}    & \textbf{76.42} & \textbf{58.89} & \textbf{84.45} & \textbf{71.83} & \textbf{88.27} & \textbf{80.60} \\ \hline
-  \end{tabular}
-  \caption{Best results}
-  \label{table:results}
-\end{table}
-
-
-
+    \center
+    \resizebox{\textwidth}{!}{%
+    \begin{tabular}{|l|c|c|c|c|c|c|}
+      \hline
+      \multirow{2}{*}{}   & \multicolumn{3}{c|}{\textbf{Training}} & \multicolumn{3}{c|}{\textbf{Test}}                                                          \\ \cline{2-7}
+                          & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%) & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%)  \\ \hline
+      \textbf{B16_50_100}   & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
+      \textbf{B16_50_100 + FL}      & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
+      \textbf{B16_50_100 + BD}       & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
+      \textbf{B16_20_100} & $30.51$ & $15.41$ & $36.82$ & $29.29$ & $17.47$ & $43.21$ \\ \hline
+      \textbf{B16_20_100 + FL}    & $22.69$ & $0.85$ & $3.93$ & $24.21$ & $2.67$ & $6.67$ \\ \hline
+      \textbf{B16_20_100 + BD + Aug}    & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
+      \textbf{B44_20_100}    & $12.28$ & $2.12$ & $13.87$ & $12.46$ & $2.54$ & $14.76$ \\ \hline
+      \textbf{B44_20_100 + FL}    & $11.22$ & $1.66$ & $12.62$ & $11.62$ & $1.86$ & $14.76$ \\ \hline
+      \textbf{VGG16_100_600}    &  &  &  &  &  &  \\ \hline
+    \end{tabular}}
+    \caption{Best results}
+    \label{table:results}
+  \end{table}
 
 \chapter{Analysis of results}\label{chap:analysis-results}
 For the results analysis we report here some examples of prediction for each best model for different patches. We chose patches with different characteristics, like number, dimension and brightness of objects.
 
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{b16-20-pred}
-  \caption{Example of predictions from B16 model on the 20_100 set.}
-  \label{fig:100_600}
-\end{figure}
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{b16-50-pred}
-  \caption{Example of predictions from B16 model on the 50_100 set.}
-  \label{fig:100_600}
-\end{figure}
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{b44-20-pred}
-  \caption{Example of predictions from B44 model.}
-  \label{fig:100_600}
-\end{figure}
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.85\linewidth]{vgg16-100-pred}
-  \caption{Example of predictions from VGG16 model.}
-  \label{fig:100_600}
-\end{figure}
-...
+% \begin{figure}[h]
+%   \center
+%   \includegraphics[width=0.85\linewidth]{b16-20-pred}
+%   \caption{Example of predictions from B16 model on the 20_100 set.}
+%   \label{fig:b16-20-pred}
+% \end{figure}
+% \begin{figure}[h]
+%   \center
+%   \includegraphics[width=0.85\linewidth]{b16-50-pred}
+%   \caption{Example of predictions from B16 model on the 50_100 set.}
+%   \label{fig:b16-50-pred}
+% \end{figure}
+% \begin{figure}[h]
+%   \center
+%   \includegraphics[width=0.85\linewidth]{b44-20-pred}
+%   \caption{Example of predictions from B44 model.}
+%   \label{fig:b44-20-pred}
+% \end{figure}
+% \begin{figure}[h]
+%   \center
+%   \includegraphics[width=0.85\linewidth]{vgg16-100-pred}
+%   \caption{Example of predictions from VGG16 model.}
+%   \label{fig:vgg16-100-pred}
+% \end{figure}
+
 
 As we can see...
 
@@ -510,7 +559,9 @@ In this work, we addressed the problem of small object detection and classificat
 \item objects are very small, so the receptive field of the network has to be chosen accurately \cite{effective-rf};
 \item objects have very simple shapes, so there is no need for a very deep convolutional pipeline;
 \item objects are very similar, so there is no need for a large dataset;
-\item the vast majority of objects are isomorphic, so there is no need for image flipping and rotation during training.
+\item the vast majority of objects are isomorphic, so there is no need for image flipping and rotation during training;
+\item the overlapping of objects is very rare, so no complex shapes are created;
+\item the background is approximately uniform.
 \end{itemize}
 
 As described in \ref{chap:analysis-results} the best performing model is ...
@@ -520,7 +571,9 @@ although its mAP score is not comparable to SoTA models.
 
 The interesting this is that a simple model as B16 outperforms a complex one like VGG16. [CONTROLLARE QUI]
 
-We didn't took for grantend the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
+Another interesting point is that when balancing the dataset, as in B16\_20\_100+BD test, the model is not anymore able to learn in the time frame of 200 epochs. We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. We believe this could be a valid point because we are talking about astronomical objects which could have different emission spectrum.
+
+We don't took for granted the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
 
 Future improvements could be using Feature Pyramid Network as in \cite{fpn} in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
 

@@ -17,34 +17,18 @@ PRIMARY_BEAM_PATH = os.path.join(TRAIN_DATA_FOLDER, 'PrimaryBeam_B1.fits')
 MODEL_WEIGHTS = os.path.join(os.getcwd(), "model")
 
 required_files = [
-    {
-        "file_name": "B1_training_SKA.txt",
-        "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
-    },
+    # {
+    #     "file_name": "B1_training_SKA.txt",
+    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/iTOVkIL6EfXkcdR/download" #54Mb
+    # },
     {
         "file_name": "B1_training_clean_SKA.txt",
         "url": "https://owncloud.ia2.inaf.it/index.php/s/I4HL84Etgw9c2Le/download" #54Mb
     },
     {
-        "file_name": "PrimaryBeam_B1.fits",
-        "url": "https://owncloud.ia2.inaf.it/index.php/s/ZbaSDe7zGBYgxL1/download" #300Kb
-    },
-    # {
-    #     "file_name": "SynthesBeam_B1.fits",
-    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/cwzf1BO2pyg9TVv/download" #4Gb
-    # },
-    {
         "file_name": "560Mhz_1000h.fits",
         "url": "https://owncloud.ia2.inaf.it/index.php/s/hbasFhd4YILNkCr/download" #4Gb
     },
-    #     {
-    #     "file_name": "B5_training_SKA.txt",
-    #     "url": "https://owncloud.ia2.inaf.it/index.php/s/Y5CIa5V3QiBu1M1/download" #54Mb
-    # },
-    # {
-    #     "file_name": "9200Mhz_1000h.fits",
-    #     "url":"https://owncloud.ia2.inaf.it/index.php/s/nK8Pqf3XIaXFuKD/download"
-    # }
 ]
 
 # Dimensions of patches
@@ -103,9 +87,6 @@ resizeFinalDim = None
 # number of ROIs at once
 num_rois = None
 
-# stride at the RPN (this depends on the network configuration)
-# rpn_stride = 16
-
 # scaling the stdev
 std_scaling = 4.0
 classifier_regr_std = [8.0, 8.0, 4.0, 4.0]
@@ -124,3 +105,7 @@ classifier_max_overlap = 0.5
 
 # Ratio between image size before entering the net and last feature map
 in_out_img_size_ratio = None
+
+# Focal loss hyperparameters
+alpha = [.25, .25, .25, .25, .25, .25]
+gamma = 2.

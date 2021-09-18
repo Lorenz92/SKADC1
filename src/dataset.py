@@ -1,11 +1,9 @@
 import os
 from os import listdir
 from IPython.core.display import display
-import itertools
 import numpy as np
 import operator
 import scipy.stats as st
-from scipy.special import erfinv
 import pandas as pd
 import astropy.wcs as pywcs
 from astropy.io import fits
@@ -22,17 +20,21 @@ import src.config as config
 
 class SKADataset:
     """
-    SKA dataset wrapper.
-    Schema:
+    This is the SKA dataset class wrapper.
+    The general idea is:
 
-    1. load dataset
-    1.5. load FITS image
-    2. preprocess
-    3. split train/val
-    TODO: scrivere meglio qui
+    1. the class constructor downloads and then loads the dataset and the FITS image,
+    2. during the preprocessing phase patches are cut from the FITS image and the dataset is enriched accordingly,
+    3. the resulting patch list is splitted into train/val sets.
+
+    A more detailed description is given in the corresponding methods.
     """
 
-    def __init__(self, k, print_info=False, show_plot= False, use_pb=False):
+    def __init__(self, print_info=False, show_plot= False):
+        """
+        Download of needed assets listed in config file and initialization of needed structures 
+        such as dataframes used in the patches generation phase.
+        """
         
         # Save training and test set
         self.train_set_path = config.TRAIN_SET_PATH_CLEANED
@@ -42,7 +44,6 @@ class SKADataset:
         self.test_set_path = None
         self.subset = config.DATA_SUBSET
         self.image_path = config.IMAGE_PATH
-        self.primary_beam_path = config.PRIMARY_BEAM_PATH
 
         # Save column names
         self.col_names = ['ID',
@@ -80,10 +81,6 @@ class SKADataset:
         self.proc_train_df = pd.DataFrame()
         self.stdev = None
         self.log_base = 10.
-
-
-        # Constant used for dataset cleaning
-        mad2sigma = np.sqrt(2) * erfinv(2 * 0.75 - 1)
 
         # Internal preprocessing methods
         
@@ -147,7 +144,7 @@ class SKADataset:
             
             return raw_train_df
 
-        def load_train_image(print_info=False, use_pb=False):
+        def load_train_image(print_info=False):
             fits_image = fits.open(self.image_path)
             if print_info:
                 print(fits_image.info())
@@ -158,48 +155,20 @@ class SKADataset:
             image_data = fits_image[0].data[0,0]
             image_header = fits_image[0].header
             
-            if use_pb:
-                primary_beam = fits.open(self.primary_beam_path)  
-                self.primary_beam_data =  primary_beam[0].data[0,0]
-                self.primary_beam_header =  primary_beam[0].header
-
-            #TODO: add plot function
-
             return image_filename, image_data, image_header
 
-        def process_dataset(use_pb=False, k=2.5, fancy=True):
+        def process_dataset(fancy=True):
             """
-            TODO: write desc
-            """
-            def _apply_primary_beam_correction(k, box, area_pixel, x1, y1, x2, y2):
-                # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
-                
-                # bbox_region = self.image_data[int(np.floor(y1)):int(np.floor(y2)), int(np.floor(x1)):int(np.floor(x2))]
+            This method takes the loaded dataset, converts sources centroids from celestial to pixel coordinates,
+            the applies a correction to the major and minor axis taken from https://github.com/ICRAR/skasdc1/tree/9e150f9b800afd40de90bae589d3e8c013f4b8bc.
 
-                # med = np.nanmedian(bbox_region)
-                # mad = np.nanmedian(np.abs(bbox_region - med))
-                # sigma = mad / mad2sigma
+            Then it compute the enclosing bounding box from the given ellipses and extend the dataset with these new information.
 
-                # threshold = med + k * sigma
-                # print('threshold:', threshold)
+            Finally it discards objects with bounding box area less then 0.
 
-                threshold = k*255.0E-9
-
-                pbwc = pywcs.WCS(self.primary_beam_header)
-
-                total_flux = float(box['FLUX'])
-                total_flux = _primary_beam_gridding(pbwc, total_flux, box['RA (centroid)'], box['DEC (centroid)'], self.primary_beam_data)
-                # total_flux /= area_pixel
-                return total_flux, threshold
-
-            def _primary_beam_gridding(pbwc, total_flux, ra, dec, primary_beam_data):
-                # Taken form https://github1s.com/ICRAR/skasdc1/blob/HEAD/scripts/create_train_data.py
-                # to understand see http://www.alma.inaf.it/images/Imaging_feb16.pdf
-                x, y = pbwc.wcs_world2pix([[ra, dec, 0, 0]], 0)[0][0:2]
-                pb_data = primary_beam_data
-                pbv = pb_data[int(y)][int(x)]
-                return total_flux / pbv
-
+            At the end it slightly enlarges bounding box too small applying a scaling factor of 6 for width/height smaller then 1 px
+            and a factor 3 for width/height between 1 and 2 px.
+            """            
             def _enlarge_bbox(x, scale_factor):
 
                 if (1 < x.width < 2) | (1 < x.height < 2):    
@@ -226,13 +195,6 @@ class SKADataset:
                 return pd.concat([df, df_from_dict], axis=1)
 
             def _dataset_plot(df):
-                # histogram of height and width
-                # plt.figure(figsize=(8,6))
-                # plt.hist(df['width'], bins=400, alpha=0.5, label="width ")
-                # plt.hist(df['height'], bins=200, alpha=0.5, label="height")
-                # plt.ylim((0, 11500))
-                # plt.xlim((0, 50))
-                #plt.figure(figsize=(8,6))
                 fig1, ax1 = plt.subplots()
                 ax1.set_title(' Log 10 sizes boxplot')
                 ax1.boxplot([df['width'],df['height']])
@@ -289,11 +251,10 @@ class SKADataset:
 
             #list  of rows to be deleted due to a too weak flux
             id_to_delete = []
-            faint = 0
             faint_a = 0
 
             for idx, box in tqdm(boxes_dataframe.iterrows(),total=boxes_dataframe.shape[0]):
-            # compute centroid coord to check with gt data
+                # compute centroid coord to check with gt data
                 cx, cy = self.wc.wcs_world2pix([[box['RA (centroid)'], box['DEC (centroid)'], 0, 0]], 0)[0][0:2]
 
                 # Safety check
@@ -341,7 +302,7 @@ class SKADataset:
 
                 major_semia_px = b1 / self.pixel_res_x_arcsec / 2
                 minor_semia_px = b2 / self.pixel_res_x_arcsec / 2
-                pa_in_rad = np.radians(box['PA']) # TODO: ATTENTION: qui dovrebbe essere 180°-box[PA]
+                pa_in_rad = np.radians(box['PA']) # ATTENTION: here should be 180°-box[PA]
                     
                 x1, y1, x2, y2 = utils._get_bbox_from_ellipse(pa_in_rad, major_semia_px, minor_semia_px, cx, cy, self.image_height, self.image_width)
 
@@ -351,15 +312,6 @@ class SKADataset:
                     id_to_delete.append(idx)
                     faint_a += 1
                     continue
-                
-                #TODO: remove this and related variables after the last cleaning attempt
-                if use_pb:
-                    # print('Applying primary beam correction...\n')
-                    total_flux, threshold = _apply_primary_beam_correction( k, box, area_pixel, x1, y1, x2, y2)
-                    if (total_flux < threshold):
-                        id_to_delete.append(idx)
-                        faint += 1
-                        continue
                 
                 orig_area = abs(x2-x1) * abs(y2-y1)
                 
@@ -427,7 +379,7 @@ class SKADataset:
                 utils.download_data(download_info['file_name'], download_info['url'], config.DOWNLOAD_FOLDER)
 
         self.raw_train_df = load_dataset()
-        self.image_filename, self.image_data, self.image_header = load_train_image(print_info=print_info, use_pb=use_pb)
+        self.image_filename, self.image_data, self.image_header = load_train_image(print_info=print_info)
         self.wc = pywcs.WCS(self.image_header)
         self.image_width = self.image_header['NAXIS1']
         self.image_height = self.image_header['NAXIS2']
@@ -440,7 +392,7 @@ class SKADataset:
         self.g = 2 * self.pixel_res_x_arcsec # gridding kernel size as per specs
         self.g2 = self.g ** 2
 
-        self.cleaned_train_df = process_dataset(use_pb, k)
+        self.cleaned_train_df = process_dataset()
         self.x1_min = int(np.floor(min(self.cleaned_train_df['x1'])))
         self.y1_min = int(np.floor(min(self.cleaned_train_df['y1'])))
         self.x2_max = int(np.floor(max(self.cleaned_train_df['x2'])))
@@ -449,7 +401,7 @@ class SKADataset:
         print()
         print('-'*10)
         print('Starting training image preprocessing...')
-        #self.training_image, self.pixel_mean, self.training_image_not_rgb, self.stdev = self.preprocess_train_image(plot_noise=show_plot)
+        self.training_image, self.pixel_mean, self.training_image_not_rgb, self.stdev = self.preprocess_train_image(plot_noise=show_plot)
         print('End of training image preprocessing.')
 
         return
@@ -540,6 +492,21 @@ class SKADataset:
         return img_rgb, pixel_mean, orig_img_zero_clipped, stdev
     
     def generate_patches(self, limit, objects_to_ignore, plot_patches=False, source_dir=False, rgb_norm=False):
+        """
+        This method generate the patch list either by cutting patches directly from the given image (only needed the first time by calling _split_in_patch method),
+        or by retrieving them from a directory (by calling _retrieve_patches_from_dir method). This behaviour is controlled with <source_dir> parameter.
+        Parameters:
+        - limit: defines the maximum amount of patches to be cut by definind a square of side sqrt(limit) on the given image and traversing it while cutting patches
+        - objects_to_ignore: a list of objects ID to be ignored. Patches that contain these objects are discarded
+        - rgb_norm: is a flag that controls whether to scale patches to [0,255] range or not.
+
+        At the end this method saves also useful class properties such as:
+        - patch_list: the list of cut/retrieved patches,
+        - proc_train_df: the training dataset, given by the original with additional patch level information,
+        - patches_dict: a dictionary containing the list of patches by class,
+        - class_list: list of distinct classes,
+        - num_classes: number of distinct classes.
+        """
         def _extract_class_dict(df, filter, val, cols, key):
             return df[df[filter]==val][cols].set_index(key).T.to_dict('list')
         
@@ -782,61 +749,46 @@ class SKADataset:
         print(f'Number of distinct class labels: {self.num_classes}')
         return
     
-    # TODO riscrivere usando la class list
-    def analyze_class_distribution(self):
-
-        # number of possible class combinations in each patch, -1: because if there isn't any class the patch is not saved
-        self.num_combinations = pow(2, self.num_classes) - 1  
-
-        patch_class_list = []
-        patch_class_bool = []
-        patch_class_int = []
-        self.patch_list_per_class = {}
-
-        for j in range(1,self.num_combinations+1):
-            key_j = 'key_{}'.format(j)
-            self.patch_list_per_class[key_j] = []
-
-        for patch_id in self.patch_list:
-            img_data_path = os.path.join(config.TRAIN_PATCHES_FOLDER, patch_id, f"{patch_id}.pkl")
-            img_data_patch = pd.read_pickle(img_data_path)
-
-            patch_class_list = img_data_patch['class_label'].unique() 
-            
-            for class_idx in self.class_list:
-                if class_idx in patch_class_list:
-                    patch_class_bool.append('1')
-                else:
-                    patch_class_bool.append('0')
-                            
-            patch_class_2=''.join(patch_class_bool)
-            b = (int(patch_class_2, base=2))
-            patch_class_int.append(b)
-            self.patch_list_per_class['key_{}'.format(b)].append(patch_id)           
-            #print (b, patch_class_list)
-            patch_class_bool.clear()
-
-        res =[]
-        for idx in range(1, self.num_classes+1):
-            #res.append((bin(idx)))
-            res.append(int(bin(idx)[2:]))
-
-        print('Number of possible class combinations:',self.num_combinations )
-        #print('current combinations:',patch_class_int.unique() )
-        # print(self.patch_list_per_class)    
-        self.class_distribution = patch_class_int
-        plt.hist(patch_class_int )
-        #plt.legend(['columns >= 4 has 'f"{self.class_list[0]}",  'columns ... has'f"{self.class_list[1]}", 'odd columns has'f"{self.class_list[2]}" ])
-        plt.xlabel("Classes and combinations")
-        plt.ylabel("Num patches")
-        plt.title("Histogram") #TODO: scriviamo label più esplicative
-        plt.show()
-        return
 
     def split_train_val(self, random_state, val_portion=.2, balanced=False, size=None):
+        """
+        First, sample a subset of size <size> from the SKADataset.patch_list, then
+        split the the sampled list in train and validation set and plot their distribution.
+        """
+        def _balance_patch_list(balanced):
+            """
+            Takes a flag as parameter and use it to decide wheter repeat patches in order to balance class distribution.
+            It acts directly on SKADataset.patch_list.
+            """
+            balanced_patch_list = self.patch_list.copy()
+            class_freq_dict = {key: len(value) for key, value in self.patches_dict.items()}
+            most_frequent_class = max(class_freq_dict.items(), key=operator.itemgetter(1))[0]
+            max_freq = class_freq_dict[most_frequent_class]
+
+            less_freq_classes = {k:v for k,v in class_freq_dict.items() if k != most_frequent_class}
+
+            for key, _ in less_freq_classes.items():
+                repeated_patches = []
+                # print('minor class:', key, self.patches_dict[key])
+                patch_to_be_repeated = np.setdiff1d(self.patches_dict[key], self.patches_dict[most_frequent_class])
+                # print('patch_to_be_repeated:', patch_to_be_repeated)
+                if len(patch_to_be_repeated)==0:
+                    patch_to_be_repeated = np.array(self.patches_dict[key])
+                if balanced:
+                    try:
+                        ratio = max_freq // len(patch_to_be_repeated)
+                        repeated_patches = np.tile(patch_to_be_repeated, ratio).tolist()
+                        balanced_patch_list += repeated_patches
+                    except:
+                        continue
+                else:
+                    balanced_patch_list += patch_to_be_repeated.tolist()
+
+            return balanced_patch_list
+
         np.random.seed(random_state)
         
-        self.balanced_patch_list = self.balance_patch_list(balanced)
+        self.balanced_patch_list = _balance_patch_list(balanced)
         assert len(self.balanced_patch_list) > 1, 'Attention! There is no balanced_patch_list available!'
         patch_list = self.balanced_patch_list
 
@@ -879,29 +831,4 @@ class SKADataset:
 
         return
 
-    def balance_patch_list(self, balanced):
-        balanced_patch_list = self.patch_list.copy()
-        class_freq_dict = {key: len(value) for key, value in self.patches_dict.items()}
-        most_frequent_class = max(class_freq_dict.items(), key=operator.itemgetter(1))[0]
-        max_freq = class_freq_dict[most_frequent_class]
-
-        less_freq_classes = {k:v for k,v in class_freq_dict.items() if k != most_frequent_class}
-
-        for key, _ in less_freq_classes.items():
-            repeated_patches = []
-            # print('minor class:', key, self.patches_dict[key])
-            patch_to_be_repeated = np.setdiff1d(self.patches_dict[key], self.patches_dict[most_frequent_class])
-            # print('patch_to_be_repeated:', patch_to_be_repeated)
-            if len(patch_to_be_repeated)==0:
-                patch_to_be_repeated = np.array(self.patches_dict[key])
-            if balanced:
-                try:
-                    ratio = max_freq // len(patch_to_be_repeated)
-                    repeated_patches = np.tile(patch_to_be_repeated, ratio).tolist()
-                    balanced_patch_list += repeated_patches
-                except:
-                    continue
-            else:
-                balanced_patch_list += patch_to_be_repeated.tolist()
-
-        return balanced_patch_list
+    

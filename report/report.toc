@@ -5,20 +5,21 @@
 \contentsline {chapter}{\numberline {3}Dataset description}{4}{chapter.3}%
 \contentsline {section}{\numberline {3.1}Ground truth data}{4}{section.3.1}%
 \contentsline {section}{\numberline {3.2}Image analysis}{5}{section.3.2}%
-\contentsline {chapter}{\numberline {4}System description}{6}{chapter.4}%
-\contentsline {section}{\numberline {4.1}Feature Extraction Backbone}{6}{section.4.1}%
-\contentsline {subsection}{\numberline {4.1.1}B16 - Baseline 16}{6}{subsection.4.1.1}%
-\contentsline {subsection}{\numberline {4.1.2}B44 - Baseline 44}{7}{subsection.4.1.2}%
-\contentsline {subsection}{\numberline {4.1.3}VGG16}{7}{subsection.4.1.3}%
-\contentsline {section}{\numberline {4.2}Output Architecture}{8}{section.4.2}%
-\contentsline {subsection}{\numberline {4.2.1}Region Proposal Network}{8}{subsection.4.2.1}%
-\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{9}{subsection.4.2.2}%
-\contentsline {subsection}{\numberline {4.2.3}Detector}{9}{subsection.4.2.3}%
-\contentsline {subsection}{\numberline {4.2.4}Focal Loss}{9}{subsection.4.2.4}%
+\contentsline {chapter}{\numberline {4}System description}{7}{chapter.4}%
+\contentsline {section}{\numberline {4.1}Feature Extraction Backbone}{7}{section.4.1}%
+\contentsline {subsection}{\numberline {4.1.1}B16 - Baseline 16}{7}{subsection.4.1.1}%
+\contentsline {subsection}{\numberline {4.1.2}B44 - Baseline 44}{8}{subsection.4.1.2}%
+\contentsline {subsection}{\numberline {4.1.3}VGG16}{8}{subsection.4.1.3}%
+\contentsline {section}{\numberline {4.2}Output Architecture}{9}{section.4.2}%
+\contentsline {subsection}{\numberline {4.2.1}Region Proposal Network}{9}{subsection.4.2.1}%
+\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{10}{subsection.4.2.2}%
+\contentsline {subsection}{\numberline {4.2.3}Detector}{10}{subsection.4.2.3}%
+\contentsline {subsection}{\numberline {4.2.4}Focal Loss}{11}{subsection.4.2.4}%
 \contentsline {chapter}{\numberline {5}Experimental setup and results}{12}{chapter.5}%
-\contentsline {section}{\numberline {5.1}Data pre-processing}{12}{section.5.1}%
-\contentsline {section}{\numberline {5.2}Metrics}{14}{section.5.2}%
-\contentsline {section}{\numberline {5.3}Environment}{14}{section.5.3}%
-\contentsline {section}{\numberline {5.4}Results}{14}{section.5.4}%
-\contentsline {chapter}{\numberline {6}Analysis of results}{15}{chapter.6}%
-\contentsline {chapter}{\numberline {7}Discussion}{17}{chapter.7}%
+\contentsline {section}{\numberline {5.1}Receptive Field}{12}{section.5.1}%
+\contentsline {section}{\numberline {5.2}Data pre-processing}{13}{section.5.2}%
+\contentsline {section}{\numberline {5.3}Metrics}{14}{section.5.3}%
+\contentsline {section}{\numberline {5.4}Environment}{14}{section.5.4}%
+\contentsline {section}{\numberline {5.5}Results}{15}{section.5.5}%
+\contentsline {chapter}{\numberline {6}Analysis of results}{17}{chapter.6}%
+\contentsline {chapter}{\numberline {7}Discussion}{18}{chapter.7}%

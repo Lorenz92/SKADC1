@@ -77,24 +77,19 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 # Get predicted rpn from rpn model [rpn_cls, rpn_regr]
                 P_rpn = rpn_model.predict_on_batch(image)
                 
-                # R: bboxes (shape=(300,4))
+                # R: bboxes (shape=(2000,4))
                 # Convert rpn layer to roi bboxes
-                R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7) #TODO: try with a lower threshold
-                # print(R)
+                R = utils.rpn_to_roi(P_rpn[0], P_rpn[1], use_regr=True, max_boxes=config.nms_max_boxes, overlap_thresh=0.7)
+                
                 # # note: calc_iou converts from (x1,y1,x2,y2) to (x,y,w,h) format
                 # # X2: bboxes with iou > config.classifier_min_overlap for all gt bboxes in 2000 non_max_suppression bboxes
                 # # Y1: one hot encode for bboxes from above => x_roi (X)
                 # # Y2: corresponding labels and corresponding gt bboxes
                 X2, Y1, Y2, IoUs = utils.calc_iou(R, img_data_aug, class_mapping)
-                # print('IoUs:',IoUs)
-                # tf.print('Y2 shape = ', Y2.shape, output_stream=sys.stderr, sep=',', summarize=-1)
                 
                 # print(IoUs)
                 if IoUs is not None:
                     print(f'Best IoU found in this run: {max(IoUs)}')
-
-                # print(X2, Y1, Y2)
-                # print(Y2)
 
                 # If X2 is None means there are no matching bboxes
                 if X2 is None:
@@ -105,8 +100,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 # Find out the positive anchors and negative anchors
                 neg_samples = np.where(Y1[0, :, -1] == 1) # --> these are bg anchors
                 pos_samples = np.where(Y1[0, :, -1] == 0)
-
-                # tf.print('Y2 = ', Y2[0,pos_samples,...], output_stream=sys.stderr, sep=',', summarize=-1)
 
                 if len(neg_samples) > 0:
                     neg_samples = neg_samples[0]
@@ -121,14 +114,8 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 rpn_accuracy_rpn_monitor.append(len(pos_samples))
                 rpn_accuracy_for_epoch.append((len(pos_samples)))
 
-                # Here we select 64 proposals in the 1:3 ratio:
-                # 64/4*3 positive and 64/4*1 negative
                 num_pos_samples=(config.num_rois//4)*2
                 # num_pos_samples=(config.num_rois//4)*3
-
-                # print('config.num_rois:',config.num_rois)
-                # print('pos threshold:',num_pos_samples)
-                # print('neg threshold:',(config.num_rois//4))
 
                 if config.num_rois > 1:
                     # If number of positive anchors is smaller than num_rois*3/4, take all positive samples and then resample until num_rois*3/4; 
@@ -166,13 +153,7 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
                 #  Y1[:, sel_samples, :] => one hot encode for num_rois bboxes which contains selected neg and pos
                 #  Y2[:, sel_samples, :] => labels and gt bboxes for num_rois bboxes which contains selected neg and pos
                 print('Starting detector model training on batch')
-                # print('sel_samples:', sel_samples)
-
-                # print(f'X2 shape: {X2.shape}')
-                # print('Y2:',Y2[:, sel_samples, :])
                 loss_detector_tot, loss_detector_cls, loss_detector_regr, detector_class_acc, _ = detector_model.train_on_batch([image, X2[:, sel_samples, :]], [Y1[:, sel_samples, :], Y2[:, sel_samples, :]]) 
-                # [P_cls, P_regr] = detector_model.predict([image, X2[:, sel_samples, :]])
-                # print(P_regr)
 
                 losses[iter_num, 0] = loss_rpn_cls
                 losses[iter_num, 1] = loss_rpn_regr
@@ -264,7 +245,6 @@ def train_frcnn(rpn_model, detector_model, total_model, train_patch_list, rpn_mo
 
             except Exception as e:
                 print('Exception: {}'.format(e))
-                # return
                 continue
 
     print('Training complete.')

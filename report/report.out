@@ -7,9 +7,10 @@
 \BOOKMARK [1][-]{section.4.1}{Feature Extraction Backbone}{chapter.4}% 7
 \BOOKMARK [1][-]{section.4.2}{Output Architecture}{chapter.4}% 8
 \BOOKMARK [0][-]{chapter.5}{Experimental setup and results}{}% 9
-\BOOKMARK [1][-]{section.5.1}{Data pre-processing}{chapter.5}% 10
-\BOOKMARK [1][-]{section.5.2}{Metrics}{chapter.5}% 11
-\BOOKMARK [1][-]{section.5.3}{Environment}{chapter.5}% 12
-\BOOKMARK [1][-]{section.5.4}{Results}{chapter.5}% 13
-\BOOKMARK [0][-]{chapter.6}{Analysis of results}{}% 14
-\BOOKMARK [0][-]{chapter.7}{Discussion}{}% 15
+\BOOKMARK [1][-]{section.5.1}{Receptive Field}{chapter.5}% 10
+\BOOKMARK [1][-]{section.5.2}{Data pre-processing}{chapter.5}% 11
+\BOOKMARK [1][-]{section.5.3}{Metrics}{chapter.5}% 12
+\BOOKMARK [1][-]{section.5.4}{Environment}{chapter.5}% 13
+\BOOKMARK [1][-]{section.5.5}{Results}{chapter.5}% 14
+\BOOKMARK [0][-]{chapter.6}{Analysis of results}{}% 15
+\BOOKMARK [0][-]{chapter.7}{Discussion}{}% 16

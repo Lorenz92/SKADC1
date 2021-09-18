@@ -1,0 +1,1334 @@
+% $ biblatex auxiliary file $
+% $ biblatex bbl format version 3.1 $
+% Do not modify the above lines!
+%
+% This is an auxiliary file used by the 'biblatex' package.
+% This file may safely be deleted. It will be recreated as
+% required.
+%
+\begingroup
+\makeatletter
+\@ifundefined{ver@biblatex.sty}
+  {\@latex@error
+     {Missing 'biblatex' package}
+     {The bibliography requires the 'biblatex' package.}
+      \aftergroup\endinput}
+  {}
+\endgroup
+
+\datalist[entry]{nyt/global//global/global}
+  \entry{tensorflow}{misc}{}
+    \name{author}{40}{}{%
+      {{hash=AM}{%
+         family={Abadi},
+         familyi={A\bibinitperiod},
+         given={Mart\'{\i}n},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=AA}{%
+         family={Agarwal},
+         familyi={A\bibinitperiod},
+         given={Ashish},
+         giveni={A\bibinitperiod},
+      }}%
+      {{hash=BP}{%
+         family={Barham},
+         familyi={B\bibinitperiod},
+         given={Paul},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=BE}{%
+         family={Brevdo},
+         familyi={B\bibinitperiod},
+         given={Eugene},
+         giveni={E\bibinitperiod},
+      }}%
+      {{hash=CZ}{%
+         family={Chen},
+         familyi={C\bibinitperiod},
+         given={Zhifeng},
+         giveni={Z\bibinitperiod},
+      }}%
+      {{hash=CC}{%
+         family={Citro},
+         familyi={C\bibinitperiod},
+         given={Craig},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=CGS}{%
+         family={Corrado},
+         familyi={C\bibinitperiod},
+         given={Greg\bibnamedelima S.},
+         giveni={G\bibinitperiod\bibinitdelim S\bibinitperiod},
+      }}%
+      {{hash=DA}{%
+         family={Davis},
+         familyi={D\bibinitperiod},
+         given={Andy},
+         giveni={A\bibinitperiod},
+      }}%
+      {{hash=DJ}{%
+         family={Dean},
+         familyi={D\bibinitperiod},
+         given={Jeffrey},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=DM}{%
+         family={Devin},
+         familyi={D\bibinitperiod},
+         given={Matthieu},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=GS}{%
+         family={Ghemawat},
+         familyi={G\bibinitperiod},
+         given={Sanjay},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=GI}{%
+         family={Goodfellow},
+         familyi={G\bibinitperiod},
+         given={Ian},
+         giveni={I\bibinitperiod},
+      }}%
+      {{hash=HA}{%
+         family={Harp},
+         familyi={H\bibinitperiod},
+         given={Andrew},
+         giveni={A\bibinitperiod},
+      }}%
+      {{hash=IG}{%
+         family={Irving},
+         familyi={I\bibinitperiod},
+         given={Geoffrey},
+         giveni={G\bibinitperiod},
+      }}%
+      {{hash=IM}{%
+         family={Isard},
+         familyi={I\bibinitperiod},
+         given={Michael},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=JY}{%
+         family={Jia},
+         familyi={J\bibinitperiod},
+         given={Yangqing},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=JR}{%
+         family={Jozefowicz},
+         familyi={J\bibinitperiod},
+         given={Rafal},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=KL}{%
+         family={Kaiser},
+         familyi={K\bibinitperiod},
+         given={Lukasz},
+         giveni={L\bibinitperiod},
+      }}%
+      {{hash=KM}{%
+         family={Kudlur},
+         familyi={K\bibinitperiod},
+         given={Manjunath},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=LJ}{%
+         family={Levenberg},
+         familyi={L\bibinitperiod},
+         given={Josh},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=MD}{%
+         family={Man\'{e}},
+         familyi={M\bibinitperiod},
+         given={Dandelion},
+         giveni={D\bibinitperiod},
+      }}%
+      {{hash=MR}{%
+         family={Monga},
+         familyi={M\bibinitperiod},
+         given={Rajat},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=MS}{%
+         family={Moore},
+         familyi={M\bibinitperiod},
+         given={Sherry},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=MD}{%
+         family={Murray},
+         familyi={M\bibinitperiod},
+         given={Derek},
+         giveni={D\bibinitperiod},
+      }}%
+      {{hash=OC}{%
+         family={Olah},
+         familyi={O\bibinitperiod},
+         given={Chris},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=SM}{%
+         family={Schuster},
+         familyi={S\bibinitperiod},
+         given={Mike},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=SJ}{%
+         family={Shlens},
+         familyi={S\bibinitperiod},
+         given={Jonathon},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=SB}{%
+         family={Steiner},
+         familyi={S\bibinitperiod},
+         given={Benoit},
+         giveni={B\bibinitperiod},
+      }}%
+      {{hash=SI}{%
+         family={Sutskever},
+         familyi={S\bibinitperiod},
+         given={Ilya},
+         giveni={I\bibinitperiod},
+      }}%
+      {{hash=TK}{%
+         family={Talwar},
+         familyi={T\bibinitperiod},
+         given={Kunal},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=TP}{%
+         family={Tucker},
+         familyi={T\bibinitperiod},
+         given={Paul},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=VV}{%
+         family={Vanhoucke},
+         familyi={V\bibinitperiod},
+         given={Vincent},
+         giveni={V\bibinitperiod},
+      }}%
+      {{hash=VV}{%
+         family={Vasudevan},
+         familyi={V\bibinitperiod},
+         given={Vijay},
+         giveni={V\bibinitperiod},
+      }}%
+      {{hash=VF}{%
+         family={Vi\'{e}gas},
+         familyi={V\bibinitperiod},
+         given={Fernanda},
+         giveni={F\bibinitperiod},
+      }}%
+      {{hash=VO}{%
+         family={Vinyals},
+         familyi={V\bibinitperiod},
+         given={Oriol},
+         giveni={O\bibinitperiod},
+      }}%
+      {{hash=WP}{%
+         family={Warden},
+         familyi={W\bibinitperiod},
+         given={Pete},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=WM}{%
+         family={Wattenberg},
+         familyi={W\bibinitperiod},
+         given={Martin},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=WM}{%
+         family={Wicke},
+         familyi={W\bibinitperiod},
+         given={Martin},
+         giveni={M\bibinitperiod},
+      }}%
+      {{hash=YY}{%
+         family={Yu},
+         familyi={Y\bibinitperiod},
+         given={Yuan},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=ZX}{%
+         family={Zheng},
+         familyi={Z\bibinitperiod},
+         given={Xiaoqiang},
+         giveni={X\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{AM+1}
+  \strng{fullhash}{AMAABPBECZCCCGSDADJDMGSGIHAIGIMJYJRKLKMLJMDMRMSMDOCSMSJSBSITKTPVVVVVFVOWPWMWMYYZX1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{A}
+    \field{sortinithash}{A}
+    \field{note}{Software available from tensorflow.org}
+    \field{title}{{TensorFlow}: Large-Scale Machine Learning on Heterogeneous
+  Systems}
+    \verb{url}
+    \verb https://www.tensorflow.org/
+    \endverb
+    \field{year}{2015}
+  \endentry
+
+  \entry{bonaldi2021square}{article}{}
+    \true{moreauthor}
+    \true{morelabelname}
+    \name{author}{10}{}{%
+      {{hash=BA}{%
+         family={Bonaldi},
+         familyi={B\bibinitperiod},
+         given={A},
+         giveni={A},
+      }}%
+      {{hash=AT}{%
+         family={An},
+         familyi={A\bibinitperiod},
+         given={T},
+         giveni={T},
+      }}%
+      {{hash=BM}{%
+         family={Br{\"u}ggen},
+         familyi={B\bibinitperiod},
+         given={M},
+         giveni={M},
+      }}%
+      {{hash=BS}{%
+         family={Burkutean},
+         familyi={B\bibinitperiod},
+         given={S},
+         giveni={S},
+      }}%
+      {{hash=CB}{%
+         family={Coelho},
+         familyi={C\bibinitperiod},
+         given={B},
+         giveni={B},
+      }}%
+      {{hash=GH}{%
+         family={Goodarzi},
+         familyi={G\bibinitperiod},
+         given={H},
+         giveni={H},
+      }}%
+      {{hash=HP}{%
+         family={Hartley},
+         familyi={H\bibinitperiod},
+         given={P},
+         giveni={P},
+      }}%
+      {{hash=SP}{%
+         family={Sandhu},
+         familyi={S\bibinitperiod},
+         given={PK},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=WC}{%
+         family={Wu},
+         familyi={W\bibinitperiod},
+         given={C},
+         giveni={C},
+      }}%
+      {{hash=YL}{%
+         family={Yu},
+         familyi={Y\bibinitperiod},
+         given={L},
+         giveni={L},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Oxford University Press}%
+    }
+    \strng{namehash}{BA+1}
+    \strng{fullhash}{BAATBMBSCBGHHPSPWCYL+1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{B}
+    \field{sortinithash}{B}
+    \field{number}{3}
+    \field{pages}{3821\bibrangedash 3837}
+    \field{title}{Square Kilometre Array Science Data Challenge 1: analysis and
+  results}
+    \field{volume}{500}
+    \field{journaltitle}{Monthly Notices of the Royal Astronomical Society}
+    \field{year}{2021}
+  \endentry
+
+  \entry{frcnn-small-obj}{article}{}
+    \name{author}{8}{}{%
+      {{hash=CC}{%
+         family={Cao},
+         familyi={C\bibinitperiod},
+         given={Changqing},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=WB}{%
+         family={Wang},
+         familyi={W\bibinitperiod},
+         given={Bo},
+         giveni={B\bibinitperiod},
+      }}%
+      {{hash=ZW}{%
+         family={Zhang},
+         familyi={Z\bibinitperiod},
+         given={Wenrui},
+         giveni={W\bibinitperiod},
+      }}%
+      {{hash=ZX}{%
+         family={Zeng},
+         familyi={Z\bibinitperiod},
+         given={Xiaodong},
+         giveni={X\bibinitperiod},
+      }}%
+      {{hash=YX}{%
+         family={Yan},
+         familyi={Y\bibinitperiod},
+         given={Xu},
+         giveni={X\bibinitperiod},
+      }}%
+      {{hash=FZ}{%
+         family={Feng},
+         familyi={F\bibinitperiod},
+         given={Zhejun},
+         giveni={Z\bibinitperiod},
+      }}%
+      {{hash=LY}{%
+         family={Liu},
+         familyi={L\bibinitperiod},
+         given={Yutao},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=WZ}{%
+         family={Wu},
+         familyi={W\bibinitperiod},
+         given={Zengyan},
+         giveni={Z\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{CC+1}
+    \strng{fullhash}{CCWBZWZXYXFZLYWZ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{C}
+    \field{sortinithash}{C}
+    \verb{doi}
+    \verb 10.1109/ACCESS.2019.2932731
+    \endverb
+    \field{pages}{1\bibrangedash 1}
+    \field{title}{An Improved Faster R-CNN for Small Object Detection}
+    \field{volume}{7}
+    \field{journaltitle}{IEEE Access}
+    \field{month}{08}
+    \field{year}{2019}
+  \endentry
+
+  \entry{keras}{online}{}
+    \true{moreauthor}
+    \true{morelabelname}
+    \name{author}{1}{}{%
+      {{hash=CF}{%
+         family={Chollet},
+         familyi={C\bibinitperiod},
+         given={Francois},
+         giveni={F\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {GitHub}%
+    }
+    \strng{namehash}{CF+1}
+    \strng{fullhash}{CF+1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{C}
+    \field{sortinithash}{C}
+    \field{title}{Keras}
+    \verb{url}
+    \verb https://github.com/fchollet/keras
+    \endverb
+    \field{year}{2015}
+  \endentry
+
+  \entry{fast-rcnn}{misc}{}
+    \name{author}{1}{}{%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{GR1}
+    \strng{fullhash}{GR1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{G}
+    \field{sortinithash}{G}
+    \verb{eprint}
+    \verb 1504.08083
+    \endverb
+    \field{title}{Fast R-CNN}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2015}
+  \endentry
+
+  \entry{rcnn}{misc}{}
+    \name{author}{4}{}{%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=DJ}{%
+         family={Donahue},
+         familyi={D\bibinitperiod},
+         given={Jeff},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=DT}{%
+         family={Darrell},
+         familyi={D\bibinitperiod},
+         given={Trevor},
+         giveni={T\bibinitperiod},
+      }}%
+      {{hash=MJ}{%
+         family={Malik},
+         familyi={M\bibinitperiod},
+         given={Jitendra},
+         giveni={J\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{GR+1}
+    \strng{fullhash}{GRDJDTMJ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{G}
+    \field{sortinithash}{G}
+    \verb{eprint}
+    \verb 1311.2524
+    \endverb
+    \field{title}{Rich feature hierarchies for accurate object detection and
+  semantic segmentation}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2014}
+  \endentry
+
+  \entry{colab}{online}{}
+    \name{author}{1}{}{%
+      {{hash=G}{%
+         family={Google},
+         familyi={G\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{G1}
+    \strng{fullhash}{G1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{G}
+    \field{sortinithash}{G}
+    \field{title}{Colaboratory}
+    \verb{url}
+    \verb https://colab.research.google.com/
+    \endverb
+  \endentry
+
+  \entry{mask-rcnn}{misc}{}
+    \name{author}{4}{}{%
+      {{hash=HK}{%
+         family={He},
+         familyi={H\bibinitperiod},
+         given={Kaiming},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=GG}{%
+         family={Gkioxari},
+         familyi={G\bibinitperiod},
+         given={Georgia},
+         giveni={G\bibinitperiod},
+      }}%
+      {{hash=DP}{%
+         family={Dollár},
+         familyi={D\bibinitperiod},
+         given={Piotr},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{HK+1}
+    \strng{fullhash}{HKGGDPGR1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{H}
+    \field{sortinithash}{H}
+    \verb{eprint}
+    \verb 1703.06870
+    \endverb
+    \field{title}{Mask R-CNN}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2018}
+  \endentry
+
+  \entry{huber-loss}{article}{}
+    \name{author}{1}{}{%
+      {{hash=HPJ}{%
+         family={Huber},
+         familyi={H\bibinitperiod},
+         given={Peter\bibnamedelima J.},
+         giveni={P\bibinitperiod\bibinitdelim J\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Institute of Mathematical Statistics}%
+    }
+    \strng{namehash}{HPJ1}
+    \strng{fullhash}{HPJ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{H}
+    \field{sortinithash}{H}
+    \verb{doi}
+    \verb 10.1214/aoms/1177703732
+    \endverb
+    \field{number}{1}
+    \field{pages}{73 \bibrangedash  101}
+    \field{title}{{Robust Estimation of a Location Parameter}}
+    \verb{url}
+    \verb https://doi.org/10.1214/aoms/1177703732
+    \endverb
+    \field{volume}{35}
+    \field{journaltitle}{The Annals of Mathematical Statistics}
+    \field{year}{1964}
+  \endentry
+
+  \entry{fpn}{misc}{}
+    \name{author}{6}{}{%
+      {{hash=LTY}{%
+         family={Lin},
+         familyi={L\bibinitperiod},
+         given={Tsung-Yi},
+         giveni={T\bibinithyphendelim Y\bibinitperiod},
+      }}%
+      {{hash=DP}{%
+         family={Dollár},
+         familyi={D\bibinitperiod},
+         given={Piotr},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=HK}{%
+         family={He},
+         familyi={H\bibinitperiod},
+         given={Kaiming},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=HB}{%
+         family={Hariharan},
+         familyi={H\bibinitperiod},
+         given={Bharath},
+         giveni={B\bibinitperiod},
+      }}%
+      {{hash=BS}{%
+         family={Belongie},
+         familyi={B\bibinitperiod},
+         given={Serge},
+         giveni={S\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{LTY+1}
+    \strng{fullhash}{LTYDPGRHKHBBS1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{L}
+    \field{sortinithash}{L}
+    \verb{eprint}
+    \verb 1612.03144
+    \endverb
+    \field{title}{Feature Pyramid Networks for Object Detection}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2017}
+  \endentry
+
+  \entry{focal-loss}{misc}{}
+    \name{author}{5}{}{%
+      {{hash=LTY}{%
+         family={Lin},
+         familyi={L\bibinitperiod},
+         given={Tsung-Yi},
+         giveni={T\bibinithyphendelim Y\bibinitperiod},
+      }}%
+      {{hash=GP}{%
+         family={Goyal},
+         familyi={G\bibinitperiod},
+         given={Priya},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=HK}{%
+         family={He},
+         familyi={H\bibinitperiod},
+         given={Kaiming},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=DP}{%
+         family={Dollár},
+         familyi={D\bibinitperiod},
+         given={Piotr},
+         giveni={P\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{LTY+1}
+    \strng{fullhash}{LTYGPGRHKDP1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{L}
+    \field{sortinithash}{L}
+    \verb{eprint}
+    \verb 1708.02002
+    \endverb
+    \field{title}{Focal Loss for Dense Object Detection}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2018}
+  \endentry
+
+  \entry{ssd}{article}{}
+    \name{author}{7}{}{%
+      {{hash=LW}{%
+         family={Liu},
+         familyi={L\bibinitperiod},
+         given={Wei},
+         giveni={W\bibinitperiod},
+      }}%
+      {{hash=AD}{%
+         family={Anguelov},
+         familyi={A\bibinitperiod},
+         given={Dragomir},
+         giveni={D\bibinitperiod},
+      }}%
+      {{hash=ED}{%
+         family={Erhan},
+         familyi={E\bibinitperiod},
+         given={Dumitru},
+         giveni={D\bibinitperiod},
+      }}%
+      {{hash=SC}{%
+         family={Szegedy},
+         familyi={S\bibinitperiod},
+         given={Christian},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=RS}{%
+         family={Reed},
+         familyi={R\bibinitperiod},
+         given={Scott},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=FCY}{%
+         family={Fu},
+         familyi={F\bibinitperiod},
+         given={Cheng-Yang},
+         giveni={C\bibinithyphendelim Y\bibinitperiod},
+      }}%
+      {{hash=BAC}{%
+         family={Berg},
+         familyi={B\bibinitperiod},
+         given={Alexander\bibnamedelima C.},
+         giveni={A\bibinitperiod\bibinitdelim C\bibinitperiod},
+      }}%
+    }
+    \list{publisher}{1}{%
+      {Springer International Publishing}%
+    }
+    \strng{namehash}{LW+1}
+    \strng{fullhash}{LWADEDSCRSFCYBAC1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{L}
+    \field{sortinithash}{L}
+    \verb{doi}
+    \verb 10.1007/978-3-319-46448-0_2
+    \endverb
+    \field{isbn}{9783319464480}
+    \field{issn}{1611-3349}
+    \field{pages}{21–37}
+    \field{title}{SSD: Single Shot MultiBox Detector}
+    \verb{url}
+    \verb http://dx.doi.org/10.1007/978-3-319-46448-0_2
+    \endverb
+    \field{journaltitle}{Lecture Notes in Computer Science}
+    \field{year}{2016}
+  \endentry
+
+  \entry{effective-rf}{misc}{}
+    \name{author}{4}{}{%
+      {{hash=LW}{%
+         family={Luo},
+         familyi={L\bibinitperiod},
+         given={Wenjie},
+         giveni={W\bibinitperiod},
+      }}%
+      {{hash=LY}{%
+         family={Li},
+         familyi={L\bibinitperiod},
+         given={Yujia},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=UR}{%
+         family={Urtasun},
+         familyi={U\bibinitperiod},
+         given={Raquel},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=ZR}{%
+         family={Zemel},
+         familyi={Z\bibinitperiod},
+         given={Richard},
+         giveni={R\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{LW+2}
+    \strng{fullhash}{LWLYURZR1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{L}
+    \field{sortinithash}{L}
+    \verb{eprint}
+    \verb 1701.04128
+    \endverb
+    \field{title}{Understanding the Effective Receptive Field in Deep
+  Convolutional Neural Networks}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2017}
+  \endentry
+
+  \entry{roi-pooling}{online}{}
+    \name{author}{1}{}{%
+      {{hash=PK}{%
+         family={Patnaik},
+         familyi={P\bibinitperiod},
+         given={Kaushik},
+         giveni={K\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{PK1}
+    \strng{fullhash}{PK1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{P}
+    \field{sortinithash}{P}
+    \field{title}{Annotated RPN, ROI Pooling and ROI Align}
+    \verb{url}
+    \verb https://kaushikpatnaik.github.io/annotated/papers/2020/07/04/ROI-Pool
+    \verb -and-Align-Pytorch-Implementation.html
+    \endverb
+  \endentry
+
+  \entry{nms}{online}{}
+    \name{author}{1}{}{%
+      {{hash=PK}{%
+         family={Patnaik},
+         familyi={P\bibinitperiod},
+         given={Kaushik},
+         giveni={K\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{PK1}
+    \strng{fullhash}{PK1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{P}
+    \field{sortinithash}{P}
+    \field{title}{Non Maximum Suppression}
+    \verb{url}
+    \verb https://paperswithcode.com/method/non-maximum-suppression
+    \endverb
+  \endentry
+
+  \entry{yolo}{misc}{}
+    \name{author}{4}{}{%
+      {{hash=RJ}{%
+         family={Redmon},
+         familyi={R\bibinitperiod},
+         given={Joseph},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=DS}{%
+         family={Divvala},
+         familyi={D\bibinitperiod},
+         given={Santosh},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=FA}{%
+         family={Farhadi},
+         familyi={F\bibinitperiod},
+         given={Ali},
+         giveni={A\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{RJ+1}
+    \strng{fullhash}{RJDSGRFA1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{R}
+    \field{sortinithash}{R}
+    \verb{eprint}
+    \verb 1506.02640
+    \endverb
+    \field{title}{You Only Look Once: Unified, Real-Time Object Detection}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2016}
+  \endentry
+
+  \entry{faster-rcnn}{misc}{}
+    \name{author}{4}{}{%
+      {{hash=RS}{%
+         family={Ren},
+         familyi={R\bibinitperiod},
+         given={Shaoqing},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=HK}{%
+         family={He},
+         familyi={H\bibinitperiod},
+         given={Kaiming},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=GR}{%
+         family={Girshick},
+         familyi={G\bibinitperiod},
+         given={Ross},
+         giveni={R\bibinitperiod},
+      }}%
+      {{hash=SJ}{%
+         family={Sun},
+         familyi={S\bibinitperiod},
+         given={Jian},
+         giveni={J\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{RS+1}
+    \strng{fullhash}{RSHKGRSJ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{R}
+    \field{sortinithash}{R}
+    \verb{eprint}
+    \verb 1506.01497
+    \endverb
+    \field{title}{Faster R-CNN: Towards Real-Time Object Detection with Region
+  Proposal Networks}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2016}
+  \endentry
+
+  \entry{iou}{misc}{}
+    \name{author}{6}{}{%
+      {{hash=RH}{%
+         family={Rezatofighi},
+         familyi={R\bibinitperiod},
+         given={Hamid},
+         giveni={H\bibinitperiod},
+      }}%
+      {{hash=TN}{%
+         family={Tsoi},
+         familyi={T\bibinitperiod},
+         given={Nathan},
+         giveni={N\bibinitperiod},
+      }}%
+      {{hash=GJ}{%
+         family={Gwak},
+         familyi={G\bibinitperiod},
+         given={JunYoung},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=SA}{%
+         family={Sadeghian},
+         familyi={S\bibinitperiod},
+         given={Amir},
+         giveni={A\bibinitperiod},
+      }}%
+      {{hash=RI}{%
+         family={Reid},
+         familyi={R\bibinitperiod},
+         given={Ian},
+         giveni={I\bibinitperiod},
+      }}%
+      {{hash=SS}{%
+         family={Savarese},
+         familyi={S\bibinitperiod},
+         given={Silvio},
+         giveni={S\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{RH+1}
+    \strng{fullhash}{RHTNGJSARISS1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{R}
+    \field{sortinithash}{R}
+    \verb{eprint}
+    \verb 1902.09630
+    \endverb
+    \field{title}{Generalized Intersection over Union: A Metric and A Loss for
+  Bounding Box Regression}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2019}
+  \endentry
+
+  \entry{vgg}{misc}{}
+    \name{author}{2}{}{%
+      {{hash=SK}{%
+         family={Simonyan},
+         familyi={S\bibinitperiod},
+         given={Karen},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=ZA}{%
+         family={Zisserman},
+         familyi={Z\bibinitperiod},
+         given={Andrew},
+         giveni={A\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{SKZA1}
+    \strng{fullhash}{SKZA1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{S}
+    \field{sortinithash}{S}
+    \verb{eprint}
+    \verb 1409.1556
+    \endverb
+    \field{title}{Very Deep Convolutional Networks for Large-Scale Image
+  Recognition}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2015}
+  \endentry
+
+  \entry{ska-site}{online}{}
+    \name{author}{1}{}{%
+      {{hash=S}{%
+         family={SKA},
+         familyi={S\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{S1}
+    \strng{fullhash}{S1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{S}
+    \field{sortinithash}{S}
+    \field{title}{SKA web site}
+    \verb{url}
+    \verb https://www.skatelescope.org/news/ska-launches-science-data-challenge
+    \verb /
+    \endverb
+  \endentry
+
+  \entry{transfer-learning-1}{inproceedings}{}
+    \name{author}{4}{}{%
+      {{hash=TJ}{%
+         family={Talukdar},
+         familyi={T\bibinitperiod},
+         given={Jonti},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=GS}{%
+         family={Gupta},
+         familyi={G\bibinitperiod},
+         given={S.},
+         giveni={S\bibinitperiod},
+      }}%
+      {{hash=RP}{%
+         family={Rajpura},
+         familyi={R\bibinitperiod},
+         given={P.},
+         giveni={P\bibinitperiod},
+      }}%
+      {{hash=HR}{%
+         family={Hegde},
+         familyi={H\bibinitperiod},
+         given={Ravi},
+         giveni={R\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{TJ+1}
+    \strng{fullhash}{TJGSRPHR1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{T}
+    \field{sortinithash}{T}
+    \verb{doi}
+    \verb 10.1109/SPIN.2018.8474198
+    \endverb
+    \field{pages}{78\bibrangedash 83}
+    \field{title}{Transfer Learning for Object Detection using State-of-the-Art
+  Deep Neural Networks}
+    \field{month}{02}
+    \field{year}{2018}
+  \endentry
+
+  \entry{transfer-learning-2}{inproceedings}{}
+    \name{author}{6}{}{%
+      {{hash=WK}{%
+         family={Wang},
+         familyi={W\bibinitperiod},
+         given={Kafeng},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=GX}{%
+         family={Gao},
+         familyi={G\bibinitperiod},
+         given={Xitong},
+         giveni={X\bibinitperiod},
+      }}%
+      {{hash=ZY}{%
+         family={Zhao},
+         familyi={Z\bibinitperiod},
+         given={Yiren},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=LX}{%
+         family={Li},
+         familyi={L\bibinitperiod},
+         given={Xingjian},
+         giveni={X\bibinitperiod},
+      }}%
+      {{hash=DD}{%
+         family={Dou},
+         familyi={D\bibinitperiod},
+         given={Dejing},
+         giveni={D\bibinitperiod},
+      }}%
+      {{hash=XCZ}{%
+         family={Xu},
+         familyi={X\bibinitperiod},
+         given={Cheng-Zhong},
+         giveni={C\bibinithyphendelim Z\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{WK+1}
+    \strng{fullhash}{WKGXZYLXDDXCZ1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{W}
+    \field{sortinithash}{W}
+    \field{booktitle}{International Conference on Learning Representations}
+    \field{title}{Pay Attention to Features, Transfer Learn Faster CNNs}
+    \verb{url}
+    \verb https://openreview.net/forum?id=ryxyCeHtPB
+    \endverb
+    \field{year}{2020}
+  \endentry
+
+  \entry{claran}{article}{}
+    \name{author}{16}{}{%
+      {{hash=WC}{%
+         family={Wu},
+         familyi={W\bibinitperiod},
+         given={Chen},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=WOI}{%
+         family={Wong},
+         familyi={W\bibinitperiod},
+         given={Oiwei\bibnamedelima Ivy},
+         giveni={O\bibinitperiod\bibinitdelim I\bibinitperiod},
+      }}%
+      {{hash=RL}{%
+         family={Rudnick},
+         familyi={R\bibinitperiod},
+         given={Lawrence},
+         giveni={L\bibinitperiod},
+      }}%
+      {{hash=SSS}{%
+         family={Shabala},
+         familyi={S\bibinitperiod},
+         given={Stanislav\bibnamedelima S},
+         giveni={S\bibinitperiod\bibinitdelim S\bibinitperiod},
+      }}%
+      {{hash=AMJ}{%
+         family={Alger},
+         familyi={A\bibinitperiod},
+         given={Matthew\bibnamedelima J},
+         giveni={M\bibinitperiod\bibinitdelim J\bibinitperiod},
+      }}%
+      {{hash=BJK}{%
+         family={Banfield},
+         familyi={B\bibinitperiod},
+         given={Julie\bibnamedelima K},
+         giveni={J\bibinitperiod\bibinitdelim K\bibinitperiod},
+      }}%
+      {{hash=OCS}{%
+         family={Ong},
+         familyi={O\bibinitperiod},
+         given={Cheng\bibnamedelima Soon},
+         giveni={C\bibinitperiod\bibinitdelim S\bibinitperiod},
+      }}%
+      {{hash=WSV}{%
+         family={White},
+         familyi={W\bibinitperiod},
+         given={Sarah\bibnamedelima V},
+         giveni={S\bibinitperiod\bibinitdelim V\bibinitperiod},
+      }}%
+      {{hash=GAF}{%
+         family={Garon},
+         familyi={G\bibinitperiod},
+         given={Avery\bibnamedelima F},
+         giveni={A\bibinitperiod\bibinitdelim F\bibinitperiod},
+      }}%
+      {{hash=NRP}{%
+         family={Norris},
+         familyi={N\bibinitperiod},
+         given={Ray\bibnamedelima P},
+         giveni={R\bibinitperiod\bibinitdelim P\bibinitperiod},
+      }}%
+      {{hash=AH}{%
+         family={Andernach},
+         familyi={A\bibinitperiod},
+         given={Heinz},
+         giveni={H\bibinitperiod},
+      }}%
+      {{hash=TJ}{%
+         family={Tate},
+         familyi={T\bibinitperiod},
+         given={Jean},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=LV}{%
+         family={Lukic},
+         familyi={L\bibinitperiod},
+         given={Vesna},
+         giveni={V\bibinitperiod},
+      }}%
+      {{hash=TH}{%
+         family={Tang},
+         familyi={T\bibinitperiod},
+         given={Hongming},
+         giveni={H\bibinitperiod},
+      }}%
+      {{hash=SK}{%
+         family={Schawinski},
+         familyi={S\bibinitperiod},
+         given={Kevin},
+         giveni={K\bibinitperiod},
+      }}%
+      {{hash=DFI}{%
+         family={Diakogiannis},
+         familyi={D\bibinitperiod},
+         given={Foivos\bibnamedelima I},
+         giveni={F\bibinitperiod\bibinitdelim I\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{WC+1}
+    \strng{fullhash}{WCWOIRLSSSAMJBJKOCSWSVGAFNRPAHTJLVTHSKDFI1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{W}
+    \field{sortinithash}{W}
+    \field{abstract}{%
+    {The upcoming next-generation large area radio continuum surveys can expect
+  tens of millions of radio sources, rendering the traditional method for radio
+  morphology classification through visual inspection unfeasible. We present
+  Claran — Classifying Radio sources Automatically with Neural networks — a
+  proof-of-concept radio source morphology classifier based upon the Faster
+  Region-based Convolutional Neutral Networks method. Specifically, we train
+  and test Claran on the FIRST and WISE (Wide-field Infrared Survey Explorer)
+  images from the Radio Galaxy Zoo Data Release 1 catalogue. Claran provides
+  end users with automated identification of radio source morphology
+  classifications from a simple input of a radio image and a counterpart
+  infrared image of the same region. Claran is the first open-source,
+  end-to-end radio source morphology classifier that is capable of locating and
+  associating discrete and extended components of radio sources in a fast
+  (\\&lt;200 ms per image) and accurate (≥90 per cent) fashion. Future
+  work will improve Claran’s relatively lower success rates in dealing with
+  multisource fields and will enable Claran to identify sources on much larger
+  fields without loss in classification accuracy.}%
+    }
+    \verb{doi}
+    \verb 10.1093/mnras/sty2646
+    \endverb
+    \verb{eprint}
+    \verb https://academic.oup.com/mnras/article-pdf/482/1/1211/26205089/sty264
+    \verb 6.pdf
+    \endverb
+    \field{issn}{0035-8711}
+    \field{number}{1}
+    \field{pages}{1211\bibrangedash 1230}
+    \field{title}{{Radio Galaxy Zoo: Claran – a deep learning classifier for
+  radio morphologies}}
+    \verb{url}
+    \verb https://doi.org/10.1093/mnras/sty2646
+    \endverb
+    \field{volume}{482}
+    \field{journaltitle}{Monthly Notices of the Royal Astronomical Society}
+    \field{month}{10}
+    \field{year}{2018}
+  \endentry
+
+  \entry{cnn-features}{misc}{}
+    \name{author}{2}{}{%
+      {{hash=ZMD}{%
+         family={Zeiler},
+         familyi={Z\bibinitperiod},
+         given={Matthew\bibnamedelima D},
+         giveni={M\bibinitperiod\bibinitdelim D\bibinitperiod},
+      }}%
+      {{hash=FR}{%
+         family={Fergus},
+         familyi={F\bibinitperiod},
+         given={Rob},
+         giveni={R\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{ZMDFR1}
+    \strng{fullhash}{ZMDFR1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{Z}
+    \field{sortinithash}{Z}
+    \verb{eprint}
+    \verb 1311.2901
+    \endverb
+    \field{title}{Visualizing and Understanding Convolutional Networks}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2013}
+  \endentry
+\enddatalist
+\endinput

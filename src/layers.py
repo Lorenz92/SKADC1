@@ -1,9 +1,6 @@
-# First net version
-import sys
-
 import keras.backend as K
 import tensorflow as tf
-from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout, ZeroPadding2D, Convolution2D, BatchNormalization, Activation, Add
+from keras.layers import Conv2D, MaxPooling2D, Layer, Flatten, TimeDistributed, Dense, Dropout
 from tensorflow.keras import initializers
 
 """
@@ -21,16 +18,6 @@ class Expander(Layer):
     def call(self, inputs):
         x = self.conv2d(inputs)
         return x
-
-def baseline_8(input_image):
-
-    # Block 1
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv1', trainable=False)(input_image) # RF = 3
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv2', trainable=False)(x) # RF = 5
-    x = Conv2D(64, (3, 3), activation='relu', padding='same', name='block1_conv3', trainable=True)(x) # RF = 7
-    x = MaxPooling2D((2, 2), strides=(2, 2), name='block1_pool')(x) # RF = 8
-
-    return x
 
 def baseline_16(input_image):
 
@@ -99,83 +86,6 @@ def vgg16(input_image):
 
     return x
 
-def resnet50(input_image, train_stage2 = False, train_stage3 = False, train_stage4 = False):
-
-    # Stage 1
-    x = ZeroPadding2D((3, 3))(input_image)
-    x = Convolution2D(64, (7, 7), strides=(2, 2), name='conv1', trainable = False)(x)
-    x = BatchNormalization(axis=3, name='bn_conv1')(x)
-    x = Activation('relu')(x)
-    x = MaxPooling2D((3, 3), strides=(2, 2))(x)
-
-    # Stage 2
-    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), trainable = train_stage2)
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b', trainable = train_stage2)
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', trainable = train_stage2)
-
-    # Stage 3
-    x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', trainable = train_stage3)
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='b', trainable = train_stage3)
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='c', trainable = train_stage3)
-    x = identity_block(x, 3, [128, 128, 512], stage=3, block='d', trainable = train_stage3)
-
-    # Stage 4
-    x = conv_block(x, 3, [256, 256, 1024], stage=4, block='a', trainable = train_stage4)
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='b', trainable = train_stage4)
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='c', trainable = train_stage4)
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='d', trainable = train_stage4)
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='e', trainable = train_stage4)
-    x = identity_block(x, 3, [256, 256, 1024], stage=4, block='f', trainable = train_stage4)
-
-    return x
-
-def identity_block(input_tensor, kernel_size, filters, stage, block, trainable=True):
-
-    nb_filter1, nb_filter2, nb_filter3 = filters
-
-    conv_name_base = 'res' + str(stage) + block + '_branch'
-    bn_name_base = 'bn' + str(stage) + block + '_branch'
-
-    x = Convolution2D(nb_filter1, (1, 1), name=conv_name_base + '2a', trainable=trainable)(input_tensor)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2a')(x)
-    x = Activation('relu')(x)
-
-    x = Convolution2D(nb_filter2, (kernel_size, kernel_size), padding='same', name=conv_name_base + '2b', trainable=trainable)(x)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2b')(x)
-    x = Activation('relu')(x)
-
-    x = Convolution2D(nb_filter3, (1, 1), name=conv_name_base + '2c', trainable=trainable)(x)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2c')(x)
-
-    x = Add()([x, input_tensor])
-    x = Activation('relu')(x)
-    return x
-
-def conv_block(input_tensor, kernel_size, filters, stage, block, strides=(2, 2), trainable=True):
-
-    nb_filter1, nb_filter2, nb_filter3 = filters
-    
-    conv_name_base = 'res' + str(stage) + block + '_branch'
-    bn_name_base = 'bn' + str(stage) + block + '_branch'
-
-    x = Convolution2D(nb_filter1, (1, 1), strides=strides, name=conv_name_base + '2a', trainable=trainable)(input_tensor)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2a')(x)
-    x = Activation('relu')(x)
-
-    x = Convolution2D(nb_filter2, (kernel_size, kernel_size), padding='same', name=conv_name_base + '2b', trainable=trainable)(x)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2b')(x)
-    x = Activation('relu')(x)
-
-    x = Convolution2D(nb_filter3, (1, 1), name=conv_name_base + '2c', trainable=trainable)(x)
-    x = BatchNormalization(axis=3, name=bn_name_base + '2c')(x)
-
-    shortcut = Convolution2D(nb_filter3, (1, 1), strides=strides, name=conv_name_base + '1', trainable=trainable)(input_tensor)
-    shortcut = BatchNormalization(axis=3, name=bn_name_base + '1')(shortcut)
-
-    x = Add()([x, shortcut])
-    x = Activation('relu')(x)
-    return x
-
 class RpnNet(Layer):
 
     def __init__(self, anchor_num):
@@ -237,9 +147,6 @@ class RoiPoolingConv(Layer):
 
         outputs = []
 
-        # tf.print('img shape = ', img.shape, output_stream=sys.stderr, sep=',')
-        # tf.print('img = ', img[0,...,0], output_stream=sys.stderr, sep=',')
-
         for roi_idx in range(self.num_rois):
 
             x = rois[0, roi_idx, 0]
@@ -251,21 +158,6 @@ class RoiPoolingConv(Layer):
             y = K.cast(y, 'int32')
             w = K.cast(w, 'int32')
             h = K.cast(h, 'int32')
-
-            # Resized roi of the image to pooling size (7x7)
-            # max_dim = K.maximum(w, h)
-            # # tf.print('roi shape = ', rois[0, roi_idx, :], output_stream=sys.stderr, sep=',')
-            # # tf.print('img = ', img[0, ..., 0], output_stream=sys.stderr, sep=',')
-
-            # if max_dim > self.pool_size:
-
-            #     rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size), method='bilinear', antialias=False)
-            # else:
-            
-            #     offset = (self.pool_size - max_dim)//2
-            #     rs = tf.image.pad_to_bounding_box(img[:, y:y+h, x:x+w, :], offset, offset, self.pool_size, self.pool_size)
-            # #     # tf.print('rs shape = ', rs.shape, output_stream=sys.stderr, sep=',')
-            # #     # tf.print('rs = ', rs[0,...,0], output_stream=sys.stderr, sep=',')
 
             rs = tf.image.resize(img[:, y:y+h, x:x+w, :], (self.pool_size, self.pool_size), method='bilinear', antialias=False)
             
@@ -306,7 +198,6 @@ class Detector(Layer):
 
         self.td_fc_cls = TimeDistributed(Dense(self.num_classes, activation='softmax', kernel_initializer='zero'), name='dense_class_{}'.format(self.num_classes))
         self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
-        # self.td_fc_reg = TimeDistributed(Dense(4 * (self.num_classes-1), activation='linear', kernel_initializer='zero'), name='dense_regress_{}'.format(self.num_classes))
 
     def call(self, inputs):
 
