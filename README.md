@@ -31,7 +31,14 @@ In order to install all the dependencies required by the project, you can use `p
 python3 -m venv skadc1
 source skadc1/bin/activate
 pip3 install -r init/requirements.txt
+
 ```
+
+### Important!
+
+In order to have a fully working code you should manually implement the following fix to your scikit-learn package: please refer to [this](https://github.com/scikit-learn/scikit-learn/issues/8245#issuecomment-276682354) GitHub issue.
+
+
 
 ## Execution
 

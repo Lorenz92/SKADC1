@@ -2,7 +2,7 @@
 \BOOKMARK [0][-]{chapter.2}{Background}{}% 2
 \BOOKMARK [0][-]{chapter.3}{Dataset description}{}% 3
 \BOOKMARK [1][-]{section.3.1}{Ground truth data}{chapter.3}% 4
-\BOOKMARK [1][-]{section.3.2}{Image analysis}{chapter.3}% 5
+\BOOKMARK [1][-]{section.3.2}{Image analysis and preprocessing}{chapter.3}% 5
 \BOOKMARK [0][-]{chapter.4}{System description}{}% 6
 \BOOKMARK [1][-]{section.4.1}{Feature Extraction Backbone}{chapter.4}% 7
 \BOOKMARK [1][-]{section.4.2}{Output Architecture}{chapter.4}% 8

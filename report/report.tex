@@ -196,7 +196,7 @@ Balancing this dataset is a tricky task because patches contain several sources 
   \label{fig:scatter_class}
 \end{figure}
 
-\section{Image analysis}
+\section{Image analysis and preprocessing}
 The image size is 32768x32768 pixels while the portion of the image that contains the ground truth boxes is around 4000x4000 pixels.
 Images were given in FITS format. Since they are a simulation of a radiotelescope acquisition the range of each pixel should be between 0 and 1.
 The brightest source in the fits image has value of 0.006586 while the minimum gray level is  $-1.9 \times 10^{-6}$ due to noise simulation.
@@ -326,7 +326,7 @@ The RPN loss function is:
 where the first term is the binary cross entropy and represents the loss related to the "objectness" score; the second term is the smooth $L_1$ score as in \cite{huber-loss}. The $p_i^*$ multiplier acts as a kind of mask, activating the regression loss only for positive proposals.
 
 \subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
-ROI max pooling works by dividing the $h \times w$ RoI window into an $H \times W$ grid of approximately size $\frac{h}{H} x \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
+ROI max pooling works by dividing the $h \times w$ RoI window into an $H \times W$ grid of approximately size $\frac{h}{H} \times \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
 
 ROI pooling layer is needed because the last Faster R-CNN module is a fully connected network that needs fixed-length feature vector as input, but proposals from RPN can have different height and width. So, ROI pooling layer scales down and resizes proposals to a $n \times m$ map, where $n$ and $m$ are model hyper-parameters. We chose $n=m=7$ as in \cite{faster-rcnn}.
 \begin{figure}[h]
@@ -369,7 +369,7 @@ where $CE(q_i, q_i^*)$ is the categorical cross entropy.
 We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \cite{focal-loss}.
 
 \chapter{Experimental setup and results}\label{chap:experiments}
- We defined 8 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
+ We defined 9 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
 
 \begin{itemize}
     \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: 100x100px for B16 and B44, 600x600px for VGG16.
@@ -388,11 +388,11 @@ In table \ref{table:experimental_setup} and following chapters we adopt the nome
       \hline
       \textbf{Test name}&  \textbf{Rec. field}& \textbf{Patch(px)}& \textbf{Input(px)} & \textbf{Anchors} & \textbf{Norm.} & \textbf{Focal loss} & \textbf{Balancing} \\ 
       \hline
-      \textbf{B16_50_100} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & No & No \\
+      \textbf{B16_50_100} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
       \hline
-      \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & Yes & No \\
+      \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[4,8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & Yes & No \\
       \hline
-      \textbf{B16_50_100+BD} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1]}} & Yes  & No & Yes \\
+      \textbf{B16_50_100+BD} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & Yes \\
       \hline
       \textbf{B16_20_100} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
       \hline
@@ -414,9 +414,15 @@ The hyperparameters listed in table \ref{table:hyperparameters} were mainly take
 In each test, 1 epoch consisted in 250 iterations.
 
 \section{Receptive Field}\label{sec:receptive-field}
+\begin{figure}[h]
+  \center
+  \includegraphics[width=0.65\linewidth]{objects_dist.png}
+  \caption{Objects size distribution.}
+  \label{fig:objects_dist}
+\end{figure}
 In this section we want to remark one of the central aspects of this project: we experimented on how the network receptive field interacts with the size of objects to be detected. Indeed we developed 3 different feature extraction backbones with different receptive field size.
 
-As we've seen before, the ground truth shapes distribution shows that the 99\% of the objects is smaller than $18 \times 18$ pixels and the 90\% is smaller then $8 \times 8$ pixels, before patch resizing.
+As depicted in \ref{fig:objects_dist}, the ground truth shapes distribution shows that the 99\% of the objects is smaller than $18 \times 18$ pixels and the 90\% is smaller then $8 \times 8$ pixels, before patch resizing.
 
 In the \emph{20\_100} set, after resizing the distribution becomes: 99\% smaller than $90 \times 90$ pixels and 90\% smaller then $40 \time 40$ pixels.
 We used this set to feed B16 and B44 models that have respectively a receptive field size smaller then the 100\% of objects to detect (B16) and bigger then the 90\% of objects (B44).
@@ -435,8 +441,8 @@ We will discuss in \ref{chap:discussion} how the receptive field influenced the 
       \hline
                           & \textbf{Epochs} & \textbf{RPN regions} & \textbf{Detector ROI} & \textbf{NMS neg-pos} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
       \textbf{B16}   & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
-      \textbf{B44}      & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
-      \textbf{VGG16}       & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+      \textbf{B44}      & $400$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+      \textbf{VGG16}       & $30$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
     \end{tabular}}
     \caption{Hyperparameters}
     \label{table:hyperparameters}
@@ -456,7 +462,7 @@ At training time we normalized patches values by dividing for their maximum valu
 
 Before feeding the network we replicated the same input image 3 times, one for each channel. Our code supports also an "Expander" layer, a 1x1x3 convolutional layer that converts a 1-channel image into a 3-channel one. At the end we decided to not use this layer based on experimental evidences.
 
-Our code supports also augmentation on the fly, and in particular we implemented horizontal and vertical flipping, and the four 90° rotations. However we think this is not strictly necessary in this specific projects because shapes to predicts are very isomorphic with no intrinsic orientation, and so we did not use it in our experiments.
+Our code supports also augmentation on the fly, and in particular we implemented horizontal and vertical flipping, and the four 90° rotations. However we think this is not strictly necessary in this specific problem because shapes to be predicted are isomorphic with no intrinsic orientation. So we used it only when we balanced the dataset in order to add some training noise.
 
 Regarding the splitting strategy for the dataset, we went for a simple holdout, thus setting aside $20\%$ of the whole dataset for validation purposes. 
 During splitting we can also decide whether to balance the dataset: we ran different experiments in order to compare this strategy with the focal loss mentioned in \ref{subsec:focal-loss}.
@@ -493,12 +499,13 @@ On the training set we track the four losses and classification accuracy of Dete
 \section{Environment}
 The main third-party libraries on which the project is based on are Tensorflow \cite{tensorflow} and Keras \cite{keras}, being the first a machine learning system that operates at large scale and in heterogeneous environments and the latter an API that speeds deep learning model implementation up.
 
-All of the training and validation processes were executed on a MacBook Pro with 2GHz Intel Core i5 quad-core, 16 GB RAM and an Intel Iris Plus Graphics 1536 MB; and on [Inserisci pc Alice].
+All of the training and validation processes were executed on a MacBook Pro with 2GHz Intel Core i5 quad-core, 16 GB RAM and an Intel Iris Plus Graphics 1536 MB, and on a Dell Precision 5540, 2.60 GHz Intel core i7, 16 Gb RAM.
 
 We tried also to use Google Colaboratory \cite{colab}, a platform that gives the possibility to exploit some computational resources for free, but because of its commercial limits, after few hours of batch computation they cut down our resources and training of models became 30x slower than on the MacBook.
 
 \section{Results}\label{sec:results}
 Table \ref{table:results} shows the results obtained on the test set for each model, with the hyperparameters listed in table \ref{table:hyperparameters}.
+Unfortunately, VGG16 required a lot of computational resources and we couldn't manage to train it for more than 30 epochs. Anyway, the first 2000 iterations of a Faster R-CNN are usually considered as warm-up \cite{warm-up} and in our case VGG16 ran for a total of 7500 iterations.
 
 \begin{table}[h]
     \center
@@ -507,14 +514,14 @@ Table \ref{table:results} shows the results obtained on the test set for each mo
       \hline
       \multirow{2}{*}{}   & \multicolumn{3}{c|}{\textbf{Training}} & \multicolumn{3}{c|}{\textbf{Test}}                                                          \\ \cline{2-7}
                           & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%) & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%)  \\ \hline
-      \textbf{B16_50_100}   & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
-      \textbf{B16_50_100 + FL}      & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
-      \textbf{B16_50_100 + BD}       & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
-      \textbf{B16_20_100} & $30.51$ & $15.41$ & $36.82$ & $29.29$ & $17.47$ & $43.21$ \\ \hline
-      \textbf{B16_20_100 + FL}    & $22.69$ & $0.85$ & $3.93$ & $24.21$ & $2.67$ & $6.67$ \\ \hline
+      \textbf{B16_50_100}           & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
+      \textbf{B16_50_100 + FL}      & $41.72$ & $3.13$ & $3.73$ & $\textbf{42.17}$ & $1.77$ & $1.63$ \\ \hline
+      \textbf{B16_50_100 + BD}      & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
+      \textbf{B16_20_100}         & $\textbf{41.74}$ & $\textbf{23.29}$ & $\textbf{38.27}$ & $\textbf{39.50}$ & $\textbf{23.64}$ & $\textbf{43.45}$ \\ \hline
+      \textbf{B16_20_100 + FL}    & $28.61$ & $1.25$ & $3.21$ & $30.48$ & $2.67$ & $5.48$ \\ \hline
       \textbf{B16_20_100 + BD + Aug}    & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
-      \textbf{B44_20_100}    & $12.28$ & $2.12$ & $13.87$ & $12.46$ & $2.54$ & $14.76$ \\ \hline
-      \textbf{B44_20_100 + FL}    & $11.22$ & $1.66$ & $12.62$ & $11.62$ & $1.86$ & $14.76$ \\ \hline
+      \textbf{B44_20_100}         & $15.18$ & $2.65$ & $13.36$ & $15.46$ & $3.27$ & $14.52$ \\ \hline
+      \textbf{B44_20_100 + FL}    & $17.32$ & $2.47$ & $10.08$ & $17.83$ & $4.05$ & $16.67$ \\ \hline
       \textbf{VGG16_100_600}    &  &  &  &  &  &  \\ \hline
     \end{tabular}}
     \caption{Best results}
@@ -522,63 +529,70 @@ Table \ref{table:results} shows the results obtained on the test set for each mo
   \end{table}
 
 \chapter{Analysis of results}\label{chap:analysis-results}
-For the results analysis we report here some examples of prediction for each best model for different patches. We chose patches with different characteristics, like number, dimension and brightness of objects.
+For the results analysis we report here some examples of predictions for the best baseline model and for VGG16. Patches reported are among the ones with the highest $mAP_{.5}$ score.
 
-% \begin{figure}[h]
-%   \center
-%   \includegraphics[width=0.85\linewidth]{b16-20-pred}
-%   \caption{Example of predictions from B16 model on the 20_100 set.}
-%   \label{fig:b16-20-pred}
-% \end{figure}
-% \begin{figure}[h]
-%   \center
-%   \includegraphics[width=0.85\linewidth]{b16-50-pred}
-%   \caption{Example of predictions from B16 model on the 50_100 set.}
-%   \label{fig:b16-50-pred}
-% \end{figure}
-% \begin{figure}[h]
-%   \center
-%   \includegraphics[width=0.85\linewidth]{b44-20-pred}
-%   \caption{Example of predictions from B44 model.}
-%   \label{fig:b44-20-pred}
-% \end{figure}
-% \begin{figure}[h]
-%   \center
-%   \includegraphics[width=0.85\linewidth]{vgg16-100-pred}
-%   \caption{Example of predictions from VGG16 model.}
-%   \label{fig:vgg16-100-pred}
-% \end{figure}
+\begin{figure}[!htb]
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{b16_8769_16616_17279_20.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{b16_14003_16486_17609_20.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{b16_14365_16926_17629_20.png}
+  \endminipage\hfill
+  \caption{Examples of predictions for B16 model.}
+  \label{fig:b16-pred}
+\end{figure}
+
+\begin{figure}[!htb]
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{b44_8769_16616_17279_20.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{b44_14003_16486_17609_20.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{b44_14365_16926_17629_20.png}
+  \endminipage\hfill
+  \caption{Examples of predictions for B44 model on the same images.}
+  \label{fig:b44-pred}
+\end{figure}
 
 
-As we can see...
+
+As we can see in \ref{fig:b16-pred} a very shallow model as B16 is quite good in locating the objects: indeed, mAP score is mainly affected by the misclassification of objects of class different from "2\_3".
+We will talk about this in the next chapter.
 
 \chapter{Discussion}\label{chap:discussion}
 
-In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch. In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones, for feature extraction, based on the following ideas:
+In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch.
+In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones, for feature extraction, based on the following ideas:
 \begin{itemize}
 \item objects are very small, so the receptive field of the network has to be chosen accurately \cite{effective-rf};
 \item objects have very simple shapes, so there is no need for a very deep convolutional pipeline;
 \item objects are very similar, so there is no need for a large dataset;
-\item the vast majority of objects are isomorphic, so there is no need for image flipping and rotation during training;
+\item the vast majority of objects are isomorphic, so there is no need for image flipping and rotation during training, although we adopted augmentation when balancing the dataset;
 \item the overlapping of objects is very rare, so no complex shapes are created;
 \item the background is approximately uniform.
 \end{itemize}
 
 As described in \ref{chap:analysis-results} the best performing model is ...
-although its mAP score is not comparable to SoTA models.
+although its mAP score is not comparable to SoTA models, trained on PASCAL-VOC dataset or COCO annotation \cite{faster-rcnn}.
 
--- FARE RIASSUNTO DELLE DIFFERENZE TRA GLI ERRORI 
+The principal source of error, the one that makes mAP scores to be low, is the unbalancedness of the dataset: all the baseline networks overfitted on the most common class and this makes mAP to be low also when the object is detected.
 
-The interesting this is that a simple model as B16 outperforms a complex one like VGG16. [CONTROLLARE QUI]
+The interesting thing is that a simple model as B16 outperforms a complex one like VGG16. [CONTROLLARE QUI]
 
-Another interesting point is that when balancing the dataset, as in B16\_20\_100+BD test, the model is not anymore able to learn in the time frame of 200 epochs. We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. We believe this could be a valid point because we are talking about astronomical objects which could have different emission spectrum.
+Another interesting point is that, when balancing the dataset, as in B16\_20\_100+BD experiment, the model is not anymore able to learn in the time frame of 200 epochs. We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. We believe this could be a valid point because we are talking about astronomical objects which could have different emission spectrum.
 
-We don't took for granted the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
+We didn't take for granted the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
 
 Future improvements could be using Feature Pyramid Network as in \cite{fpn} in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
 
 We think also that combining the different sky image provided in the challenge, as they were different channel in an RGB image, could bring more information to the network and could lead to a performance improvements.
 
+Another hypothesis, that we would like to test with more time, is that the Faster R-CNN network is not well suited for this specific problem: we think that it would be worth to try a system where the dection is carried out through a \textbf{segmentation} approach and, as a second step, a classifier that classifies detected objects.
 
 \printbibliography
 \end{document}

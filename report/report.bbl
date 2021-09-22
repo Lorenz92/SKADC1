@@ -1330,5 +1330,60 @@
     \field{eprintclass}{cs.CV}
     \field{year}{2013}
   \endentry
+
+  \entry{warm-up}{misc}{}
+    \name{author}{6}{}{%
+      {{hash=ZZ}{%
+         family={Zhang},
+         familyi={Z\bibinitperiod},
+         given={Zhi},
+         giveni={Z\bibinitperiod},
+      }}%
+      {{hash=HT}{%
+         family={He},
+         familyi={H\bibinitperiod},
+         given={Tong},
+         giveni={T\bibinitperiod},
+      }}%
+      {{hash=ZH}{%
+         family={Zhang},
+         familyi={Z\bibinitperiod},
+         given={Hang},
+         giveni={H\bibinitperiod},
+      }}%
+      {{hash=ZZ}{%
+         family={Zhang},
+         familyi={Z\bibinitperiod},
+         given={Zhongyue},
+         giveni={Z\bibinitperiod},
+      }}%
+      {{hash=XJ}{%
+         family={Xie},
+         familyi={X\bibinitperiod},
+         given={Junyuan},
+         giveni={J\bibinitperiod},
+      }}%
+      {{hash=LM}{%
+         family={Li},
+         familyi={L\bibinitperiod},
+         given={Mu},
+         giveni={M\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{ZZ+1}
+    \strng{fullhash}{ZZHTZHZZXJLM1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{Z}
+    \field{sortinithash}{Z}
+    \verb{eprint}
+    \verb 1902.04103
+    \endverb
+    \field{title}{Bag of Freebies for Training Object Detection Neural
+  Networks}
+    \field{eprinttype}{arXiv}
+    \field{eprintclass}{cs.CV}
+    \field{year}{2019}
+  \endentry
 \enddatalist
 \endinput

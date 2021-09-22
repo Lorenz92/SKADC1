@@ -24,45 +24,45 @@ Warning--string name "https://arxiv.org/abs/1708.02002" is undefined
 Biblatex version: 3.13
 Reallocated wiz_functions (elt_size=4) to 9000 items from 6000.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
-You've used 25 entries,
+You've used 26 entries,
             6365 wiz_defined-function locations,
-            1326 strings with 15097 characters,
-and the built_in function-call counts, 241097 in all, are:
-= -- 18673
-> -- 3782
-< -- 933
-+ -- 7450
-- -- 1789
-* -- 18869
-:= -- 29823
+            1330 strings with 15256 characters,
+and the built_in function-call counts, 250496 in all, are:
+= -- 19348
+> -- 3960
+< -- 977
++ -- 7774
+- -- 1880
+* -- 19640
+:= -- 30994
 add.period$ -- 0
-call.type$ -- 25
-change.case$ -- 318
+call.type$ -- 26
+change.case$ -- 327
 chr.to.int$ -- 62
-cite$ -- 48
-duplicate$ -- 26383
-empty$ -- 19577
-format.name$ -- 2661
-if$ -- 47065
+cite$ -- 50
+duplicate$ -- 27508
+empty$ -- 20286
+format.name$ -- 2783
+if$ -- 48883
 int.to.chr$ -- 0
-int.to.str$ -- 56
+int.to.str$ -- 58
 missing$ -- 0
-newline$ -- 1309
-num.names$ -- 1106
-pop$ -- 9745
+newline$ -- 1363
+num.names$ -- 1147
+pop$ -- 10153
 preamble$ -- 1
-purify$ -- 598
+purify$ -- 619
 quote$ -- 0
-skip$ -- 5088
+skip$ -- 5304
 stack$ -- 0
-substring$ -- 33293
-swap$ -- 4940
-text.length$ -- 972
-text.prefix$ -- 33
+substring$ -- 34375
+swap$ -- 5153
+text.length$ -- 1021
+text.prefix$ -- 34
 top$ -- 1
-type$ -- 838
+type$ -- 872
 warning$ -- 0
-while$ -- 4374
+while$ -- 4559
 width$ -- 0
-write$ -- 1285
+write$ -- 1338
 (There was 1 warning)

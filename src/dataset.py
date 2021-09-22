@@ -195,15 +195,15 @@ class SKADataset:
                 return pd.concat([df, df_from_dict], axis=1)
 
             def _dataset_plot(df):
-                fig1, ax1 = plt.subplots()
-                ax1.set_title(' Log 10 sizes boxplot')
+                _, ax1 = plt.subplots()
+                ax1.set_title('Log 10 sizes boxplot')
                 ax1.boxplot([df['width'],df['height']])
                 plt.xticks([1, 2], ['width', 'height'])
                 plt.ylim((0, 100))
                 
                 fig, ax = plt.subplots(figsize = (8,6))
                 sizes =pd.concat([df['width'], df['height']])
-                sizes.plot(kind = "hist", density = True, alpha = 0.65, bins = 600) # change density to true, because KDE uses density
+                sizes.plot(kind = "hist", density = False, alpha = 0.65, bins = 600) # change density to true, because KDE uses density
 
                  # Quantile lines
                 quant_50, quant_75, quant_90,quant_99 =  sizes.quantile(0.5), sizes.quantile(0.75), sizes.quantile(0.90), sizes.quantile(0.99)
@@ -212,19 +212,20 @@ class SKADataset:
                     ax.axvline(i[0], alpha = i[1], ymax = i[2], color='r', linestyle = ":")
 
                 # Annotations
-                ax.text(quant_50-.13, 0.40, "50th", size = 12, alpha = 1)
-                ax.text(quant_75-.13, 0.50, "75th", size = 12, alpha = 0.85)
-                ax.text(quant_90-.13, 0.60, "90th", size = 12, alpha = 0.85)
-                ax.text(quant_99-.25, 0.70, "99th Percentile",size = 12, alpha = 1)
-
+                ax.text(quant_50-.13, 7000, "50th", size = 12, alpha = 1)
+                ax.text(quant_75-.13, 6000, "75th", size = 12, alpha = 0.85)
+                ax.text(quant_90-.13, 5000, "90th", size = 12, alpha = 0.85)
+                ax.text(quant_99-.25, 4000, "99th Percentile",size = 12, alpha = 1)
+                
+                ax.set_ylabel("Count", labelpad=14)
                 plt.xlim((0, 25))
-                plt.suptitle('sizes distribution', fontsize=16)
+                plt.suptitle('Objects sizes distribution', fontsize=16)
                 
                 #scatter plot of class 
                 patch_class_list = df['class_label'].unique() 
 
                 colors = cm.rainbow(np.linspace(0, 1, len(patch_class_list)))
-                fig, axs = plt.subplots(1, len(patch_class_list), figsize=(4*len(patch_class_list), 4))
+                _, axs = plt.subplots(1, len(patch_class_list), figsize=(4*len(patch_class_list), 4))
                 
                 fig = plt.figure(figsize=(8,8))
                 ax1 = fig.add_subplot(111)
@@ -407,9 +408,7 @@ class SKADataset:
         return
 
     def preprocess_train_image(self, patch=None, plot_noise=False):
-        """
-        TODO: write desc
-        """
+       
         def _convert_to_RGB(image, data, max_val, patch_processing):
             print('Removing positive noise and rescaling to 0-255 interval...')
             if not patch_processing:

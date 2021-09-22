@@ -580,7 +580,7 @@ def get_detections(patch_id, bboxes, probs, save_eval_results):
         # print(bbox)
         if len(bbox)==0:
             continue
-        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.2) #TODO: sposta soglia in config
+        new_boxes, new_probs = non_max_suppression_fast(bbox, np.array(probs[key]), overlap_thresh=0.1)
     
         for jk in range(new_boxes.shape[0]):
             (x1, y1, x2, y2) = new_boxes[jk,:]
@@ -602,22 +602,13 @@ def get_detections(patch_id, bboxes, probs, save_eval_results):
     return boxes_coords
 
 def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_model):
-    start = time.time()
+    # start = time.time()
     class_mapping = {key:value for key, value in enumerate(class_list)}
     class_mapping[len(class_mapping)] = 'bg'
 
-    # print(class_mapping)
-
-    # print('Predict')
-
     # get the feature maps and output from the RPN
     [Y1, Y2, F] = rpn_model.predict_on_batch(image)
-    # [Y1, Y2] = rpn_model.predict_on_batch(image)
-
-    # print('rpn_to_roi')
-
-    # print(Y1.shape, Y2.shape)
-
+    
     R = rpn_to_roi(Y1, Y2, overlap_thresh=0.9, max_boxes=64)
 
     # convert from (x1,y1,x2,y2) to (x,y,w,h)
@@ -641,16 +632,12 @@ def get_predictions(image, class_list, acceptance_treshold, rpn_model, detector_
             ROIs_padded[0, curr_shape[1]:, :] = ROIs[0, 0, :]
             ROIs = ROIs_padded
 
-        # print(ROIs)
-
         [P_cls, P_regr] = detector_model.predict([F, ROIs])
-        
-        # print(P_cls)
-        # print(P_regr)
+
         for ii in range(P_cls.shape[1]):
             # if classification perc is too low OR it is. a 'bg' image THEN discard
-            # if np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
-            if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
+            if np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
+            # if np.max(P_cls[0,ii,:]) < acceptance_treshold or np.argmax(P_cls[0,ii,:]) == (P_cls.shape[2] - 1):
                 continue
 
             cls_num = np.argmax(P_cls[0, ii, :])
@@ -709,12 +696,12 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
         bboxes, probs = get_predictions(image, class_list, acceptance_treshold=acceptance_treshold, rpn_model=rpn_model, detector_model=detector_model)        
         detections = get_detections(patch_id, bboxes, probs, save_eval_results)
         macro_AP, macro_prec, macro_rec= get_img_scores(detections, patch_id, map_threshold)
-        preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec}#, 'macro_recall':macro_recall}
+        preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_rec}
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
         mRec.append(macro_rec)
         
-
+    # print(mAP)
     total_mAP = np.array(mAP).mean()
     total_mPrec = np.array(mPrec).mean()
     total_mRec = np.array(mRec).mean()
@@ -728,20 +715,14 @@ def compute_map(y_pred, gt_patch_id, data_folder, map_threshold):
     f = config.patch_dim / float(config.resizeFinalDim) if config.resizePatch else 1.
 
     gt = pd.read_pickle(f'{data_folder}/{gt_patch_id}/{gt_patch_id}.pkl')
-    # display(gt)
-
+    # display(gt.iloc[:,20:].head(30))
     gt['bbox_matched'] = False
     pred_probs = np.array(y_pred['prob'])
-    # print('714')
     # print(pred_probs)
-
     box_idx_sorted_by_prob = np.argsort(pred_probs)[::-1]
 
-    # print('708')
-    # print(y_pred)
-
     for box_idx in box_idx_sorted_by_prob:
-        # pred_box = y_pred.iloc[box_idx,:]
+        
         pred_class = y_pred['class'][box_idx]
         pred_x1 = y_pred['x1s'][box_idx]
         pred_x2 = y_pred['x2s'][box_idx]
@@ -765,20 +746,19 @@ def compute_map(y_pred, gt_patch_id, data_folder, map_threshold):
             gt_x2 = round(gt_box['x2s'])#/f
             gt_y1 = round(gt_box['y1s'])#/f
             gt_y2 = round(gt_box['y2s'])#/f
-            # print('737')
             # print((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
             iou = prep.iou((pred_x1, pred_y1, pred_x2, pred_y2), (gt_x1, gt_y1, gt_x2, gt_y2))
-            # print('738')
             # print(iou)
-            if iou >= map_threshold:
+            if round(iou,1) >= map_threshold:
                 found_match = True
+                # print('true')
                 gt.at[idx,'bbox_matched'] = True
                 break
             else:
                 continue
-        # display(gt)
+        
         T[pred_class].append(int(found_match))
-
+    # display(gt.iloc[:,20:].head(30))
     for idx, gt_box in gt.iterrows():
         if not gt_box['bbox_matched']:
             if gt_box['class_label'] not in P:
@@ -811,6 +791,7 @@ def get_img_scores(detections, patch_id, map_threshold):
 
 
     for key in T.keys():
+        # print(T[key], P[key])
         ap = average_precision_score(T[key], P[key])
         # print('773')
         # print(T[key], P[key])
@@ -818,14 +799,14 @@ def get_img_scores(detections, patch_id, map_threshold):
 
         prec = precision_score(T[key], P_tresh[key], zero_division=0)
         rec = recall_score(T[key], P_tresh[key], zero_division=0)
-        
+        # print(ap)
         if (ap==1. and prec==0.):
             ap=0
         
         all_aps.append(ap)
         all_prec.append(prec)
         all_rec.append(rec)
-        
+    
     mAP=np.mean(np.array(all_aps))
     macro_prec = np.mean(np.array(all_prec))
     macro_rec = np.mean(np.array(all_rec))
