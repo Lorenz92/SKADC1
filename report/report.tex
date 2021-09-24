@@ -97,7 +97,7 @@
 
 The tasks of object detection and classification have gained significant popularity over the past years within the deep learning and computer vision communities. Systems trained end-to-end now achieve great results on a variety of tasks in the video and image domains.
 
-In this work, we address an object detection and classification problem on the Square Kilometer Array Dataset (SKADC1) \cite{ska-site}: given a large image, of about $32000$ pixels on each side and 4GB in size, the goal is to detect astronomycal sources and classify them among three possible classes.
+In this work, we address an object detection and classification problem on the Square Kilometer Array Dataset (SKADC1) \cite{ska-site}: given a large image, of about 32000x32000 pixels and 4GB in size, the goal is to detect astronomycal sources and classify them among five possible classes.
 
 This project focuses on the SKADC1 dataset, in particular on the 560MHz-1000h high S/N sky image, that contains more than \num{19000} radio sources.
 
@@ -109,20 +109,20 @@ In this work we implemented and compared three different models:
   \item B44: a Faster R-CNN with a feature extraction backbone with 7 convolutional layers and a receptive field of 44 on the last convolutional layer;
   \item A Faster R-CNN with a larger backbone, specifically we implemented a VGG16 backbone without the last max pooling layer, with a receptive filed of 196 \cite{vgg}.
 \end{enumerate}
-Each model consists of the same input and output (Region Proposal Network + Detector) structure, and what changes is the deepness of the feature extraction network (usually called backbone).
+Each model consists of the same input and output structures (Region Proposal Network + Detector), and what changes is the deepness of the feature extraction network (usually called backbone).
 
 In training the listed models, we adopted a transfer learning technique, because it has been proven to be effective in speeding up the training phase \cite{claran},\cite{transfer-learning-1}, \cite{transfer-learning-2}.
-More specifically, we applied transfer learning only on the very first layers in order to inherit and retain the more basic features, while letting the model learn deeper representation of them.
+More specifically, we applied transfer learning and freezed the very first layers in order to inherit and retain the more basic features, while letting the model learn deeper representation of them.
 
-While this could seems an easy object detecion and classification problem, it turns out that it is an hard task on both the goals:
+While this could seem an easy object detecion and classification problem, it turns out that it is an hard task on both the goals, because:
 \begin{itemize}
-  \item the objects to be located are very small, as we will show later, and
-  \item the dataset is extremely unbalanced with respect to class distribution.
+  \item the objects to be located are very small, and
+  \item the dataset is extremely unbalanced with respect to the class distribution.
 \end{itemize}
 
 For this two reasons we developed more than one model and we made some choices that will be discussed later.
 
-Our experimental evaluations show that the best model is  ...
+Our experimental evaluations show that the best model is B16, the shallowest one.
 
 \chapter{Background}\label{chap:background}
 Our project is an object recognition tasks, which is a general term to describe the identification of objects
@@ -133,14 +133,14 @@ of objects.
 
 Among the state of the art top-performing deep learning models for object detection there are:
 \begin{itemize}
-\item R-CNN (Region-Based Convolutional Neural Network ) Model Family: it was firstly introduced by Girshick et al. in 2014 \cite{rcnn}, then it was improved with the Fast \cite{fast-rcnn} and Faster R-CNN in 2015 \cite{faster-rcnn}, and finally with the Mask R-CNN in 2017 \cite{mask-rcnn}.
-In the first version of R-CNN the network involved had the duty to classify and find coordinates of objects on the regions proposed by a Selective Search algorithm that previously ran on the image.The computation of the feature map for each proposed region was carried out separately and this makes the R-CNN very slow. Fast R-CNN improved the execution speed of the first part of the network by computing the feature maps for the whole image and then using the SS proposals to cut feature map regions. The Faster R-CNN \cite{faster-rcnn} substitutes the Selective 
+\item R-CNN (Region-Based Convolutional Neural Network): it was firstly introduced by Girshick et al. in 2014 \cite{rcnn}, then it was improved with the Fast \cite{fast-rcnn} and Faster R-CNN in 2015 \cite{faster-rcnn}, and finally with the Mask R-CNN in 2017 \cite{mask-rcnn}.
+In the first version of R-CNN the network had the duty to classify and find coordinates of objects on the regions proposed by a Selective Search algorithm that previously ran on the image. The computation of the feature map for each proposed region was carried out separately and this makes the R-CNN very slow. Fast R-CNN improved the execution speed of the first part of the network by computing the feature maps for the whole image and then using the SS proposals to cut feature map regions. The Faster R-CNN \cite{faster-rcnn} substitutes the Selective 
 Search of the Fast R-CNN with a Region Proposal Network without loosing accuracy. The Mask R-CNN is similar to the Faster R-CNN, but it uses the feature map to predict not only the class and bounding box for each region of interest, but also the pixel-level position of the object through an additional convolutional network. 
-\item YOLO (You Only Look Ones) Model Family: was proposed in 2015 by Joseph Redmon, et al \cite{yolo}.
+\item YOLO (You Only Look Ones): was proposed in 2015 by Joseph Redmon, et al \cite{yolo}.
  The approach consists in a single neural network trained end to end that takes an image as input and directly predicts bounding boxes and their class labels.
  The network divides the input image into a SxS grid, where SxS is equal to the width and height of the tensor which presents the final prediction. 
  In case the center of an object is in a grid cell, the grid cell takes responsibility for detecting that object. Moreover, each grid cell is simultaneously 
- responsible for predicting bounding boxes and confidence scores which represent how confident is the model about bounding box containing an object. YOLOv2 uses anchor boxes as Faster R-CNN
+ responsible for predicting bounding boxes and confidence scores which represent how confident is the model about bounding box containing an object. YOLOv2 uses anchor boxes as Faster R-CNN.
 \item SSD (Single Shot Detector) was proposed by Wei Liu et al. \cite{ssd} in 2016, with the aim of having the high computational speed of YOLO, while maintaining the accuracy of Faster R-CNN. 
 SSD enhances the speed of running time with respect to Faster R-CNN by eliminating the need of the Region Proposal Network. Therefore, it causes a few drop in mAP, and SSD compensates this by applying some improvements including multiscale features and default boxes.
  These improvements allow SSD to gain the same of Faster R-CNN using lower resolution images, which then further speeds up the processing of SSD.
@@ -172,8 +172,8 @@ We used declination, right ascension, minor and major axis to obtain the pixel c
  At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order
   to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results.
 
-We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS, \textcolor{red}{As done by the ICRAR team}.
- In total there are 5 classes, \textcolor{red}{ in figure \ref{fig:class_examples} an example of a source of each class is displayed}. 
+We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS.
+ In total there are 5 classes. Figure \ref{fig:class_examples} shows an example of sources from each different class. 
  \begin{figure}[h]
   \center
   \includegraphics[width=0.90\linewidth]{diff_classes_examples.png}
@@ -181,7 +181,10 @@ We discarded all sources with SELECTION equal to 0 and assigned to each source a
   \label{fig:class_examples}
 \end{figure}
 
-An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots \ref{fig:scatter_class} in table \ref{table:class_analysis}. In particular class $2\_3$ is highly represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
+It is worth to notice that the differences in class are apparently not reflected in differences in shape or dimension. This is a crucial aspect that we will discuss later on.
+
+An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots \ref{fig:scatter_class} in table \ref{table:class_analysis}. In particular class $2\_3$ is highly over represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
+
 Balancing this dataset is a tricky task because patches contain several sources of different classes, depending on patch dimension. Indeed we tried two different approaches to overcome this problem: find and re-sample patches that contain only the rare classes and use focal loss for the classification task.
 \begin{table}[h]
   \center
@@ -213,20 +216,22 @@ Balancing this dataset is a tricky task because patches contain several sources 
 
 \section{Image analysis and preprocessing}
 The image size is 32768x32768 pixels while the portion of the image that contains the ground truth boxes is around 4000x4000 pixels.
-Images were given in FITS format. Since they are a simulation of a radiotelescope acquisition the range of each pixel should be between 0 and 1.
+Images were given in FITS format. Since they are a simulation of a radiotelescope acquisition, the range of each pixel is between 0 and 1.
 The brightest source in the fits image has value of 0.006586 while the minimum gray level is  $-1.9 \times 10^{-6}$ due to noise simulation.
 
-We converted the pixel value range from [0,1] to [0,255] experimenting with different approaches: firstly we applied a linear transformation considering the maximum gray level value as 255 and set the lower value equal to 0. In this way we removed the negative noise signal. Unfortunately, because the sources intensity was not linearly distributed in the range [0,1], but the majority of them had a very low intensity, the resulting image was almost completely black with the exception of very few sources and most of the ground truth boxes were undetectable, \ref{fig:image_transf} (on the left).
+We converted the pixel value range from [0,1] to [0,255] experimenting with different approaches: firstly we applied a linear transformation considering the maximum gray level value as 255 and set the lower value equal to 0. 
+In this way we removed the negative noise signal. 
+Unfortunately, because the sources intensity was not linearly distributed in the range [0,1], but the majority of them had a very low intensity, the resulting image was almost completely black with the exception of very few sources and almost all of the ground truth boxes were undetectable, \ref{fig:image_transf} (on the left).
 
 The second attempt was using a $\gamma$ function in order to enhance the signal of low intensity sources. We tried several $\gamma$ values between 0.2 and 1, but again many sources were too dark.
 
 Finally, the chosen method was to scale the image intensity range using a base 10 logarithm scale: the magnitude range was defined by the magnitude of the noise standard deviation and of the maximum gray value, \ref{fig:image_transf} (on the rigth). Indeed, the image noise is caused by electronic noise and is well fitted by a Gaussian distribution centered in zero. We obtained the standard deviation looking at the negative values of the gray level distribution, which are necessary caused by noise, and we use it to scale pixel values up.
 
 \begin{figure}[!htb]
-  \minipage{0.5\textwidth}
+  \minipage{0.4\textwidth}
     \includegraphics[width=\linewidth]{RGB_linear.png}
   \endminipage\hfill
-  \minipage{0.5\textwidth}
+  \minipage{0.4\textwidth}
     \includegraphics[width=\linewidth]{RGB_log.png}
   \endminipage\hfill
   \caption{Linear transformation on the left and logarithmic transformation on the right, of the given image.}
@@ -245,7 +250,7 @@ The following is a detailed description of the models. Beware that in each model
 \section{Feature Extraction Backbone}\label{sec:feature-extraction-backbone}
 Basically, in this work we tested:
 \begin{enumerate}
-\item wether a simple model, meaning "not very deep", is enough for the small and simple-shape object detection task, and;
+\item wether a shallow model is enough for the small and simple-shape object detection task, and;
 \item how detection performance varies when changing the receptive field size of the model with respect to objects size.
 \end{enumerate}
 
@@ -307,14 +312,14 @@ With this architecture, the final feature map size is $\frac{1}{16}$ of the inpu
 \section{Output Architecture}\label{sec:output-architecture}
 The output architecture is the same as of a standard Faster R-CNN module and consists of a Region Proposal Network (RPN) and a Roi Pooling Layer coupled with a fully connected network that we called "Detector".
 
-This kind of network is called "two-stage" network because the training phase is carried on in two step:
+This kind of network is called "two-stage" network because the training phase is carried out in two steps:
 \begin{enumerate}
     \item The feature maps generated by the backbone are feed into the RPN network. It generates a batch of proposals and pass them down to the Detector;
     \item the Detector takes the feature maps and the proposals, uses the latter to cut the corresponding regions on the feature maps and classifies the cuts.
 \end{enumerate}
 RPN and Detector share the same backbone weights and have distinct loss functions.
 
-Depending on how the network works, the training phase is carried out in a stochastic gradient descent fashion: the network is feed with one single image at a time, but besides the feature extraction backbone there are some specific functions that generate the actual ground truth batch that RPN uses in order to compute its loss. The output of the RPN is then filtered through a non-maximum-suppression algorithm (NMS \cite{nms}) based on the intersection-over-union score (IoU \cite{iou}). From the result, an equal number of positive (foreground) and negative (background) samples are drawn and passed to the Detector. This number is one of the hyper-parameters of the model.
+Depending on how the network works, the training phase is carried out in a stochastic gradient descent fashion: the network is fed with one single image at a time, but besides the feature extraction backbone there are some specific functions that generate the actual ground truth batch that RPN uses in order to compute its loss. The output of the RPN is then filtered through a non-maximum-suppression algorithm (NMS \cite{nms}) based on the intersection-over-union score (IoU \cite{iou}). From the result, an equal number of positive (foreground) and negative (background) samples are drawn and passed to the Detector. This number is one of the hyper-parameters of the model.
 
 \subsection{Region Proposal Network}\label{subsec:rpn-net}
 "A Region Proposal Network (RPN) takes an image (of any size) as input and outputs a set of rectangular object proposals, each with an objectness score." \cite{faster-rcnn}
@@ -338,7 +343,9 @@ Hyper-parameters of RPN module are:
 
 The RPN loss function is:
 \[L({p_i}, {t_i}) = \dfrac{1}{N_{cls}^{rpn}} \sum_{i} L_{cls}^{rpn}(p_i, p_i^*) + \lambda \dfrac{1}{N_{reg}^{rpn}} \sum_{i} p_i^* L_{reg}^{rpn}(t_i, t_i^*) \]	
-where the first term is the binary cross entropy and represents the loss related to the "objectness" score; the second term is the smooth $L_1$ score as in \cite{huber-loss}. The $p_i^*$ multiplier acts as a kind of mask, activating the regression loss only for positive proposals.
+where the first term is the binary cross entropy and represents the loss related to the "objectness" score; the second term is the smooth $L_1$ score as in \cite{huber-loss}. 
+The $p_i^*$ multiplier acts as a kind of mask, activating the regression loss only for positive proposals.
+$\lambda$ is the weight of the regression term and in our experiments was set equal to 1 because in \cite{faster-rcnn} has been proven that it doesn't make a great difference in performance.
 
 \subsection{Roi Pooling Layer}\label{subsec:roi-pooling}
 ROI max pooling works by dividing the $h \times w$ RoI window into an $H \times W$ grid of approximately size $\frac{h}{H} \times \frac{w}{W}$ and then max-pooling the values in each sub-window. Pooling is applied independently to each feature map channel.
@@ -346,7 +353,7 @@ ROI max pooling works by dividing the $h \times w$ RoI window into an $H \times 
 ROI pooling layer is needed because the last Faster R-CNN module is a fully connected network that needs fixed-length feature vector as input, but proposals from RPN can have different height and width. So, ROI pooling layer scales down and resizes proposals to a $n \times m$ map, where $n$ and $m$ are model hyper-parameters. We chose $n=m=7$ as in \cite{faster-rcnn}.
 \begin{figure}[h]
   \center
-  \includegraphics[width=0.5\linewidth]{roi-pooling}
+  \includegraphics[width=0.7\linewidth]{roi-pooling}
   \caption{ROI Pooling Layer (image courtesy of \cite{roi-pooling})}
   \label{fig:roi-pooling}
 \end{figure}
@@ -387,9 +394,9 @@ We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \ci
  We defined 8 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
 
 \begin{itemize}
-    \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: $100 \times 100 $ px for B16 and B44, $ 600 \times 600$ px for VGG16.
-    \item size and aspect ratio of anchors: for each model we defined a set of anchors given by the combination of their possible sizes and ratios. Anchors are drawn on the input image and the distance between the centers of two anchors sets is given by the stride of the network, being the latter the re-sizing factor between the input image and the last feature map. In this work strides were: 4 for B16, 8 for B44 and 16 for VGG16. Thus, for each model, the number of anchors is $anchor\_sizes \times anchor\_ratios \times feature\_map\_size$, where $feature\_map\_size$ is in the $r \times r$ format.
-    \item focal loss and dataset balancing: as shown in section \ref{sec:ground_truth_data} the dataset is strongly unbalanced, so we tried to overcome this by using focal loss (cap \ref{subsec:focal-loss}) or by balancing the training dataset (section \ref{sec:data-handling}). These two approaches have been applied separately in different training configurations in order to make a meaningful comparison.  
+    \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: $100 \times 100 $ px for B16 and B44, $ 600 \times 600$ px for VGG16;
+    \item size and aspect ratio of anchors: for each model we defined a set of anchors given by the combination of their possible sizes and ratios. Anchors are drawn on the input image and the distance between the centers of two anchors sets is given by the stride of the network, being the latter the re-sizing factor between the input image and the last feature map. In this work strides were: 4 for B16, 8 for B44 and 16 for VGG16. Thus, for each model, the number of anchors is $anchor\_sizes \times anchor\_ratios \times feature\_map\_size$, where $feature\_map\_size$ is in the $r \times r$ format;
+    \item focal loss and dataset balancing: as shown in section \ref{sec:ground_truth_data} the dataset is strongly unbalanced, so we tried to overcome this by using focal loss (chap \ref{subsec:focal-loss}) or by balancing the training dataset (section \ref{sec:data-handling}). These two approaches have been applied separately in different training configurations in order to make a meaningful comparison;
     \item normalization of the values of the input patches: in some of the experiments, patches pixel values have been normalized by dividing for the max patch pixel value. A more detailed explanation is given in the next section.
 \end{itemize}
 
@@ -420,7 +427,7 @@ In table \ref{table:experimental_setup} and following chapters we adopt the nome
       \textbf{VGG16_100_600} & 196 & 100x100 &600x600 & \shortstack{[32,64,128] \\ {[1:1,1:2,2:1]}} & No  & No & No \\
       \hline
     \end{tabular}}
-    \caption{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.}
+    \caption{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, input image size after scaling up, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.}
     \label{table:experimental_setup}
   \end{table}
  
@@ -437,9 +444,9 @@ In each test, 1 epoch consisted in 250 iterations.
 \end{figure}
 In this section we want to remark one of the central aspects of this project: we experimented on how the network receptive field interacts with the size of objects to be detected. Indeed we developed 3 different feature extraction backbones with different receptive field size.
 
-As depicted in \ref{fig:objects_dist}, the ground truth shapes distribution shows that the 99\% of the objects is smaller than $18 \times 18$ pixels and the 90\% is smaller then $8 \times 8$ pixels, before patch resizing.
+As depicted in \ref{fig:objects_dist}, the ground truth shapes distribution shows that the 99\% of the objects is smaller than 18x18 pixels and the 90\% is smaller then 8x8 pixels, before patch resizing.
 
-In the \emph{20\_100} set, after resizing the distribution becomes: 99\% smaller than $90 \times 90$ pixels and 90\% smaller then $40 \time 40$ pixels.
+In the \emph{20\_100} set, after resizing the distribution becomes: 99\% smaller than 90x90 pixels and 90\% smaller then 40x40 pixels.
 We used this set to feed B16 and B44 models that have respectively a receptive field size smaller then the 100\% of objects to detect (B16) and bigger then the 90\% of objects (B44).
 
 In the \emph{50\_100} set, after resizing the distribution becomes: 99\% smaller than 36x36 pixels and 90\% smaller then 16x16 pixels.
@@ -483,7 +490,7 @@ Regarding the splitting strategy for the dataset, we went for a simple holdout, 
 During splitting we can also decide whether to balance the dataset: we ran different experiments in order to compare this strategy with the focal loss mentioned in \ref{subsec:focal-loss}.
 In order to balance the dataset we simply find patches that contains the rare classes alone, we compute the frequencies of rare classes and we sample with repetition from these sets until the final class distribution becomes uniform. As it is this approach is not very robust, but it can be made better coupling the balancing with the augmentation described before.
 
-We decided to run all of our experiments on a total amount of 350 patches, where 280 for the training set and 70 for the evaluation set. Obviously objects contained in a patch varies depending on the $n$, the patch size.
+We decided to run all of our experiments on a total amount of 350 patches, where 280 for the training set and 70 for the evaluation set. Obviously objects contained in a patch varies depending on the patch size.
 
 Figures \ref{fig:20_100}, \ref{fig:50_100} and \ref{fig:100_600} show the class distribution for the three set of input patches.
 
@@ -520,9 +527,9 @@ We tried also to use Google Colaboratory \cite{colab}, a platform that gives the
 
 \section{Results}\label{sec:results}
 Table \ref{table:results} shows the results obtained on the test set for each model, with the hyperparameters listed in table \ref{table:hyperparameters}.
-Unfortunately, VGG16 required a lot of computational resources and we couldn't manage to train it for more than 30 epochs. Anyway, the first 2000 iterations of a Faster R-CNN are usually considered as warm-up \cite{warm-up} and in our case VGG16 ran for a total of 7500 iterations.
+Unfortunately, VGG16 required a lot of computational resources and we couldn't manage to train it for more than 26 epochs. Anyway, the first 2000 iterations of a Faster R-CNN are usually considered as warm-up \cite{warm-up} and in our case VGG16 ran for a total of 6500 iterations.
 
-\begin{table}[h]
+\begin{table}[!htb]
     \center
     \resizebox{\textwidth}{!}{%
     \begin{tabular}{|l|c|c|c|c|c|c|}
@@ -542,7 +549,7 @@ Unfortunately, VGG16 required a lot of computational resources and we couldn't m
     \label{table:results}
   \end{table}
 
-\vspace*{2cm}
+% {\chapter{Analysis of results}\label{chap:analysis-results}}
 {\let\clearpage\relax\chapter{Analysis of results}\label{chap:analysis-results}}
 For the results analysis we report here some examples of predictions for the best baseline model and for VGG16. Patches reported are among the ones with the highest $mAP_{.5}$ score.
 
@@ -592,10 +599,9 @@ For the results analysis we report here some examples of predictions for the bes
 
 As we can see in \ref{fig:b16-pred} a very shallow model as B16 is quite good in locating the objects: indeed, mAP score is mainly affected by the misclassification of objects of class different from "2\_3".
 Instead, in fig \ref{fig:b16-pred} we can see that VGG16 has not reached good performance and the mAP result is due only to predicted boxes occasionally overlapped to ground truth.
-We will talk about this in the next chapter.
 
-\vspace*{2cm}
-{\let\clearpage\relax\chapter{Discussion}\label{chap:discussion}}
+% {\let\clearpage\relax\chapter{Discussion}\label{chap:discussion}}
+{\chapter{Discussion}\label{chap:discussion}}
 
 
 In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch.
@@ -613,8 +619,8 @@ As described in \ref{chap:analysis-results} the best performing model is B16 wit
 although its mAP score is not comparable to SoTA models, trained on PASCAL-VOC dataset or COCO annotation \cite{faster-rcnn}.
 
 We think that Dataset Balancing, as it has been implemented in this work, is not working due to lack of characteristic differences between different objects classes 
-\textcolor{red}{ as can be assessed qualitatively by looking at figure \ref{fig:class_examples}}. 
-So by feeding the model with objects very similar but from different classes, the result is to confuse it and making it not able to classify.
+as can qualitatively assessed by looking at figure \ref{fig:class_examples}. 
+Feeding the model with objects very similar but from different classes, the result is to confuse it and making it not able to classify.
 Indeed, when balancing the dataset, as in B16\_20\_100+BD experiment, the model is not anymore able to learn in the time frame of 200 epochs. 
 We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). 
 It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. 
@@ -636,8 +642,8 @@ Future improvements could be using Feature Pyramid Network as in \cite{fpn} or f
 
 We think also that combining the different sky image provided in the challenge, as they were different channel in an RGB image, could bring more information to the network and could lead to a performance improvements.
 
-A crucial aspect that could make the difference is the presence/absence of context as in \cite{small-obj-detection-in-optical-remote-sensing}. They proved that context around small objects helps models to recognize them: that is why feature fusion works.
-While in our problem, the background around the object is pretty much the same everywhere, so the task is even harder.
+A crucial aspect that could make the difference is the presence/absence of context as in \cite{small-obj-detection-in-optical-remote-sensing}. 
+They proved that context around small objects helps models to recognize them (that is why feature fusion works), while in our problem, the background around the object is pretty much the same everywhere, so the task is even harder.
 
 Another hypothesis, that we would like to test with more time, is that the Faster R-CNN network is not well suited for this specific problem: we think that it would be worth to try a system where the dection is carried out through a \textbf{segmentation} approach and, as a second step, a classifier that classifies detected objects.
 

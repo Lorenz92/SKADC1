@@ -79,14 +79,16 @@
 \newlabel{chap:dataset-description}{{3}{4}{Dataset description}{chapter.3}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {3.1}Ground truth data}{4}{section.3.1}\protected@file@percent }
 \newlabel{sec:ground_truth_data}{{3.1}{4}{Ground truth data}{section.3.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Number of sources, width and height distribution for each class\relax }}{5}{table.caption.3}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Examples of different classes of the ground truth dataset.\relax }}{5}{figure.caption.3}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{table:class_analysis}{{3.1}{5}{Number of sources, width and height distribution for each class\relax }{table.caption.3}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3.1}{\ignorespaces Dataset class distribution\relax }}{5}{figure.caption.4}\protected@file@percent }
-\newlabel{fig:scatter_class}{{3.1}{5}{Dataset class distribution\relax }{figure.caption.4}{}}
+\newlabel{fig:class_examples}{{3.1}{5}{Examples of different classes of the ground truth dataset.\relax }{figure.caption.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3.1}{\ignorespaces Number of sources, width and height distribution for each class\relax }}{5}{table.caption.4}\protected@file@percent }
+\newlabel{table:class_analysis}{{3.1}{5}{Number of sources, width and height distribution for each class\relax }{table.caption.4}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {3.2}Image analysis and preprocessing}{5}{section.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Linear transformation on the left and logarithmic transformation on the right, of the given image.\relax }}{6}{figure.caption.5}\protected@file@percent }
-\newlabel{fig:image_transf}{{3.2}{6}{Linear transformation on the left and logarithmic transformation on the right, of the given image.\relax }{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.2}{\ignorespaces Dataset class distribution\relax }}{6}{figure.caption.5}\protected@file@percent }
+\newlabel{fig:scatter_class}{{3.2}{6}{Dataset class distribution\relax }{figure.caption.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3.3}{\ignorespaces Linear transformation on the left and logarithmic transformation on the right, of the given image.\relax }}{6}{figure.caption.6}\protected@file@percent }
+\newlabel{fig:image_transf}{{3.3}{6}{Linear transformation on the left and logarithmic transformation on the right, of the given image.\relax }{figure.caption.6}{}}
 \citation{cnn-features}
 \abx@aux@cite{cnn-features}
 \abx@aux@segm{0}{0}{cnn-features}
@@ -124,6 +126,9 @@
 \citation{faster-rcnn}
 \abx@aux@cite{faster-rcnn}
 \abx@aux@segm{0}{0}{faster-rcnn}
+\citation{faster-rcnn}
+\abx@aux@cite{faster-rcnn}
+\abx@aux@segm{0}{0}{faster-rcnn}
 \citation{roi-pooling}
 \abx@aux@cite{roi-pooling}
 \abx@aux@segm{0}{0}{roi-pooling}
@@ -132,10 +137,8 @@
 \abx@aux@segm{0}{0}{roi-pooling}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2.2}Roi Pooling Layer}{10}{subsection.4.2.2}\protected@file@percent }
 \newlabel{subsec:roi-pooling}{{4.2.2}{10}{Roi Pooling Layer}{subsection.4.2.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }}{10}{figure.caption.6}\protected@file@percent }
-\newlabel{fig:roi-pooling}{{4.1}{10}{ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }{figure.caption.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Detector}{10}{subsection.4.2.3}\protected@file@percent }
-\newlabel{subsec:detector}{{4.2.3}{10}{Detector}{subsection.4.2.3}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4.1}{\ignorespaces ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }}{10}{figure.caption.7}\protected@file@percent }
+\newlabel{fig:roi-pooling}{{4.1}{10}{ROI Pooling Layer (image courtesy of \cite {roi-pooling})\relax }{figure.caption.7}{}}
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
@@ -148,6 +151,8 @@
 \citation{focal-loss}
 \abx@aux@cite{focal-loss}
 \abx@aux@segm{0}{0}{focal-loss}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2.3}Detector}{11}{subsection.4.2.3}\protected@file@percent }
+\newlabel{subsec:detector}{{4.2.3}{11}{Detector}{subsection.4.2.3}{}}
 \@writefile{toc}{\contentsline {subsection}{\numberline {4.2.4}Focal Loss}{11}{subsection.4.2.4}\protected@file@percent }
 \newlabel{subsec:focal-loss}{{4.2.4}{11}{Focal Loss}{subsection.4.2.4}{}}
 \citation{faster-rcnn}
@@ -159,17 +164,17 @@
 \newlabel{chap:experiments}{{5}{12}{Experimental setup and results}{chapter.5}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5.1}Receptive Field}{12}{section.5.1}\protected@file@percent }
 \newlabel{sec:receptive-field}{{5.1}{12}{Receptive Field}{section.5.1}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }}{13}{table.caption.7}\protected@file@percent }
-\newlabel{table:experimental_setup}{{5.1}{13}{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }{table.caption.7}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Hyperparameters\relax }}{13}{table.caption.9}\protected@file@percent }
-\newlabel{table:hyperparameters}{{5.2}{13}{Hyperparameters\relax }{table.caption.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.1}{\ignorespaces Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, input image size after scaling up, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }}{13}{table.caption.8}\protected@file@percent }
+\newlabel{table:experimental_setup}{{5.1}{13}{Experiments setup, defined by: test name, receptive field of the feature extraction backbone, patch size, input image size after scaling up, anchors size and ratio, normalization of the gray level values, whether focal loss or balancing were used.\relax }{table.caption.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.2}{\ignorespaces Hyperparameters\relax }}{13}{table.caption.10}\protected@file@percent }
+\newlabel{table:hyperparameters}{{5.2}{13}{Hyperparameters\relax }{table.caption.10}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5.2}Data pre-processing}{13}{section.5.2}\protected@file@percent }
 \newlabel{sec:data-handling}{{5.2}{13}{Data pre-processing}{section.5.2}{}}
 \citation{claran}
 \abx@aux@cite{claran}
 \abx@aux@segm{0}{0}{claran}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Objects size distribution.\relax }}{14}{figure.caption.8}\protected@file@percent }
-\newlabel{fig:objects_dist}{{5.1}{14}{Objects size distribution.\relax }{figure.caption.8}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.1}{\ignorespaces Objects size distribution.\relax }}{14}{figure.caption.9}\protected@file@percent }
+\newlabel{fig:objects_dist}{{5.1}{14}{Objects size distribution.\relax }{figure.caption.9}{}}
 \citation{mAP}
 \abx@aux@cite{mAP}
 \abx@aux@segm{0}{0}{mAP}
@@ -179,10 +184,10 @@
 \citation{keras}
 \abx@aux@cite{keras}
 \abx@aux@segm{0}{0}{keras}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Class distribution for 20_100 set\relax }}{15}{figure.caption.10}\protected@file@percent }
-\newlabel{fig:20_100}{{5.2}{15}{Class distribution for 20_100 set\relax }{figure.caption.10}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Class distribution for 50_100 set\relax }}{15}{figure.caption.11}\protected@file@percent }
-\newlabel{fig:50_100}{{5.3}{15}{Class distribution for 50_100 set\relax }{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.2}{\ignorespaces Class distribution for 20_100 set\relax }}{15}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:20_100}{{5.2}{15}{Class distribution for 20_100 set\relax }{figure.caption.11}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.3}{\ignorespaces Class distribution for 50_100 set\relax }}{15}{figure.caption.12}\protected@file@percent }
+\newlabel{fig:50_100}{{5.3}{15}{Class distribution for 50_100 set\relax }{figure.caption.12}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5.3}Metrics}{15}{section.5.3}\protected@file@percent }
 \citation{colab}
 \abx@aux@cite{colab}
@@ -190,23 +195,23 @@
 \citation{warm-up}
 \abx@aux@cite{warm-up}
 \abx@aux@segm{0}{0}{warm-up}
-\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces Class distribution for 100_600 set\relax }}{16}{figure.caption.12}\protected@file@percent }
-\newlabel{fig:100_600}{{5.4}{16}{Class distribution for 100_600 set\relax }{figure.caption.12}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5.4}{\ignorespaces Class distribution for 100_600 set\relax }}{16}{figure.caption.13}\protected@file@percent }
+\newlabel{fig:100_600}{{5.4}{16}{Class distribution for 100_600 set\relax }{figure.caption.13}{}}
 \@writefile{toc}{\contentsline {section}{\numberline {5.4}Environment}{16}{section.5.4}\protected@file@percent }
 \@writefile{toc}{\contentsline {section}{\numberline {5.5}Results}{16}{section.5.5}\protected@file@percent }
 \newlabel{sec:results}{{5.5}{16}{Results}{section.5.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces Best results\relax }}{17}{table.caption.13}\protected@file@percent }
-\newlabel{table:results}{{5.3}{17}{Best results\relax }{table.caption.13}{}}
-\@writefile{toc}{\contentsline {chapter}{\numberline {6}Analysis of results}{18}{chapter.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {6}Analysis of results}{16}{chapter.6}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{chap:analysis-results}{{6}{18}{Analysis of results}{chapter.6}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Examples of predictions for B16 model.\relax }}{18}{figure.caption.14}\protected@file@percent }
-\newlabel{fig:b16-pred}{{6.1}{18}{Examples of predictions for B16 model.\relax }{figure.caption.14}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Examples of predictions for B44 model on the same images.\relax }}{18}{figure.caption.15}\protected@file@percent }
-\newlabel{fig:b44-pred}{{6.2}{18}{Examples of predictions for B44 model on the same images.\relax }{figure.caption.15}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Examples of predictions for VGG16 model on images with the highest mAP.\relax }}{19}{figure.caption.16}\protected@file@percent }
-\newlabel{fig:vgg16-pred}{{6.3}{19}{Examples of predictions for VGG16 model on images with the highest mAP.\relax }{figure.caption.16}{}}
+\newlabel{chap:analysis-results}{{6}{16}{Analysis of results}{chapter.6}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {5.3}{\ignorespaces Best results\relax }}{17}{table.caption.14}\protected@file@percent }
+\newlabel{table:results}{{5.3}{17}{Best results\relax }{table.caption.14}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.1}{\ignorespaces Examples of predictions for B16 model.\relax }}{17}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:b16-pred}{{6.1}{17}{Examples of predictions for B16 model.\relax }{figure.caption.15}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.2}{\ignorespaces Examples of predictions for B44 model on the same images.\relax }}{17}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:b44-pred}{{6.2}{17}{Examples of predictions for B44 model on the same images.\relax }{figure.caption.16}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6.3}{\ignorespaces Examples of predictions for VGG16 model on images with the highest mAP.\relax }}{18}{figure.caption.17}\protected@file@percent }
+\newlabel{fig:vgg16-pred}{{6.3}{18}{Examples of predictions for VGG16 model on images with the highest mAP.\relax }{figure.caption.17}{}}
 \citation{effective-rf}
 \abx@aux@cite{effective-rf}
 \abx@aux@segm{0}{0}{effective-rf}
@@ -222,10 +227,10 @@
 \citation{vgg}
 \abx@aux@cite{vgg}
 \abx@aux@segm{0}{0}{vgg}
-\@writefile{toc}{\contentsline {chapter}{\numberline {7}Discussion}{20}{chapter.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {chapter}{\numberline {7}Discussion}{19}{chapter.7}\protected@file@percent }
 \@writefile{lof}{\addvspace {10\p@ }}
 \@writefile{lot}{\addvspace {10\p@ }}
-\newlabel{chap:discussion}{{7}{20}{Discussion}{chapter.7}{}}
+\newlabel{chap:discussion}{{7}{19}{Discussion}{chapter.7}{}}
 \citation{fpn}
 \abx@aux@cite{fpn}
 \abx@aux@segm{0}{0}{fpn}
