@@ -453,6 +453,28 @@
     \field{year}{2015}
   \endentry
 
+  \entry{mAP}{online}{}
+    \name{author}{1}{}{%
+      {{hash=GAF}{%
+         family={Gad},
+         familyi={G\bibinitperiod},
+         given={Ahmed\bibnamedelima Fawzy},
+         giveni={A\bibinitperiod\bibinitdelim F\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{GAF1}
+    \strng{fullhash}{GAF1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{G}
+    \field{sortinithash}{G}
+    \field{title}{Evaluating Object Detection Models Using Mean Average
+  Precision (mAP)}
+    \verb{url}
+    \verb https://blog.paperspace.com/mean-average-precision/
+    \endverb
+  \endentry
+
   \entry{fast-rcnn}{misc}{}
     \name{author}{1}{}{%
       {{hash=GR}{%
