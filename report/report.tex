@@ -172,7 +172,14 @@ We used declination, right ascension, minor and major axis to obtain the pixel c
  At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order
   to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results.
 
-We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS. In total there are 5 classes. 
+We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS, \textcolor{red}{As done by the ICRAR team}.
+ In total there are 5 classes, \textcolor{red}{ in figure \ref{fig:class_examples} an example of a source of each class is displayed}. 
+ \begin{figure}[h]
+  \center
+  \includegraphics[width=0.90\linewidth]{diff_classes_examples.png}
+  \caption{Examples of different classes of the ground truth dataset.}
+  \label{fig:class_examples}
+\end{figure}
 
 An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots \ref{fig:scatter_class} in table \ref{table:class_analysis}. In particular class $2\_3$ is highly represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
 Balancing this dataset is a tricky task because patches contain several sources of different classes, depending on patch dimension. Indeed we tried two different approaches to overcome this problem: find and re-sample patches that contain only the rare classes and use focal loss for the classification task.
@@ -380,7 +387,7 @@ We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \ci
  We defined 8 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
 
 \begin{itemize}
-    \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: 100x100px for B16 and B44, 600x600px for VGG16.
+    \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: $100 \times 100 $ px for B16 and B44, $ 600 \times 600$ px for VGG16.
     \item size and aspect ratio of anchors: for each model we defined a set of anchors given by the combination of their possible sizes and ratios. Anchors are drawn on the input image and the distance between the centers of two anchors sets is given by the stride of the network, being the latter the re-sizing factor between the input image and the last feature map. In this work strides were: 4 for B16, 8 for B44 and 16 for VGG16. Thus, for each model, the number of anchors is $anchor\_sizes \times anchor\_ratios \times feature\_map\_size$, where $feature\_map\_size$ is in the $r \times r$ format.
     \item focal loss and dataset balancing: as shown in section \ref{sec:ground_truth_data} the dataset is strongly unbalanced, so we tried to overcome this by using focal loss (cap \ref{subsec:focal-loss}) or by balancing the training dataset (section \ref{sec:data-handling}). These two approaches have been applied separately in different training configurations in order to make a meaningful comparison.  
     \item normalization of the values of the input patches: in some of the experiments, patches pixel values have been normalized by dividing for the max patch pixel value. A more detailed explanation is given in the next section.
@@ -535,7 +542,8 @@ Unfortunately, VGG16 required a lot of computational resources and we couldn't m
     \label{table:results}
   \end{table}
 
-\chapter{Analysis of results}\label{chap:analysis-results}
+\vspace*{2cm}
+{\let\clearpage\relax\chapter{Analysis of results}\label{chap:analysis-results}}
 For the results analysis we report here some examples of predictions for the best baseline model and for VGG16. Patches reported are among the ones with the highest $mAP_{.5}$ score.
 
 \begin{figure}[!htb]
@@ -586,7 +594,9 @@ As we can see in \ref{fig:b16-pred} a very shallow model as B16 is quite good in
 Instead, in fig \ref{fig:b16-pred} we can see that VGG16 has not reached good performance and the mAP result is due only to predicted boxes occasionally overlapped to ground truth.
 We will talk about this in the next chapter.
 
-\chapter{Discussion}\label{chap:discussion}
+\vspace*{2cm}
+{\let\clearpage\relax\chapter{Discussion}\label{chap:discussion}}
+
 
 In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch.
 In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones for feature extraction, besides the well known VGG16, based on the following ideas:
@@ -599,17 +609,11 @@ In particular we adopted Faster R-CNN architecture for the detection and recogni
 \item the background is approximately uniform.
 \end{itemize}
 
-\begin{figure}[h]
-  \center
-  \includegraphics[width=0.90\linewidth]{diff_classes_examples.png}
-  \caption{Examples of different classes of the ground truth dataset.}
-  \label{fig:class_examples}
-\end{figure}
-
 As described in \ref{chap:analysis-results} the best performing model is B16 without Focal Loss or Dataset Balancing, 
 although its mAP score is not comparable to SoTA models, trained on PASCAL-VOC dataset or COCO annotation \cite{faster-rcnn}.
 
-We think that Dataset Balancing, as it has been implemented in this work, is not working due to lack of characteristic differences between different objects classes. 
+We think that Dataset Balancing, as it has been implemented in this work, is not working due to lack of characteristic differences between different objects classes 
+\textcolor{red}{ as can be assessed qualitatively by looking at figure \ref{fig:class_examples}}. 
 So by feeding the model with objects very similar but from different classes, the result is to confuse it and making it not able to classify.
 Indeed, when balancing the dataset, as in B16\_20\_100+BD experiment, the model is not anymore able to learn in the time frame of 200 epochs. 
 We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). 
