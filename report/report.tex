@@ -112,9 +112,9 @@ In this work we implemented and compared three different models:
 Each model consists of the same input and output (Region Proposal Network + Detector) structure, and what changes is the deepness of the feature extraction network (usually called backbone).
 
 In training the listed models, we adopted a transfer learning technique, because it has been proven to be effective in speeding up the training phase \cite{claran},\cite{transfer-learning-1}, \cite{transfer-learning-2}.
-More specifically, we applied transfer learning only on the very first layers in order to inherit and retain the more basic feature, while letting the model learn deeper representation of them.
+More specifically, we applied transfer learning only on the very first layers in order to inherit and retain the more basic features, while letting the model learn deeper representation of them.
 
-While this could seem an easy object detecion and classification problem, it turns out that it is an hard task on both the goals:
+While this could seems an easy object detecion and classification problem, it turns out that it is an hard task on both the goals:
 \begin{itemize}
   \item the objects to be located are very small, as we will show later, and
   \item the dataset is extremely unbalanced with respect to class distribution.
@@ -136,8 +136,14 @@ Among the state of the art top-performing deep learning models for object detect
 \item R-CNN (Region-Based Convolutional Neural Network ) Model Family: it was firstly introduced by Girshick et al. in 2014 \cite{rcnn}, then it was improved with the Fast \cite{fast-rcnn} and Faster R-CNN in 2015 \cite{faster-rcnn}, and finally with the Mask R-CNN in 2017 \cite{mask-rcnn}.
 In the first version of R-CNN the network involved had the duty to classify and find coordinates of objects on the regions proposed by a Selective Search algorithm that previously ran on the image.The computation of the feature map for each proposed region was carried out separately and this makes the R-CNN very slow. Fast R-CNN improved the execution speed of the first part of the network by computing the feature maps for the whole image and then using the SS proposals to cut feature map regions. The Faster R-CNN \cite{faster-rcnn} substitutes the Selective 
 Search of the Fast R-CNN with a Region Proposal Network without loosing accuracy. The Mask R-CNN is similar to the Faster R-CNN, but it uses the feature map to predict not only the class and bounding box for each region of interest, but also the pixel-level position of the object through an additional convolutional network. 
-\item YOLO (You Only Look Ones) Model Family: was proposed in 2015 by Joseph Redmon, et al \cite{yolo}. The approach consists in a single neural network trained end to end that takes an image as input and directly predicts bounding boxes and their class labels. The network divides the input image into a SxS grid, where SxS is equal to the width and height of the tensor which presents the final prediction. In case the center of an object is in a grid cell, the gird cell takes responsibility for detecting that object. Moreover, each gird cell is simultaneously responsible for predicting bounding boxes and confidence scores which represent how confident is the model about bounding box containing an object. YOLOv2 uses anchor boxes as Faster R-CNN
-\item SSD (Single Shot Detector) was proposed by Wei Liu et al. \cite{ssd} in 2016, with the aim of having the high computational speed of YOLO, while maintaining the accuracy of Faster R-CNN. SSD enhances the speed of running time with respect to Faster R-CNN by eliminating the need of the Region Proposal Network. Therefore, it causes a few drop in mAP, and SSD compensates this by applying some improvements including multiscale features and default boxes. These improvements allow SSD to gain the same of Faster R-CNN using lower resolution images, which then further speeds up the processing of SSD.
+\item YOLO (You Only Look Ones) Model Family: was proposed in 2015 by Joseph Redmon, et al \cite{yolo}.
+ The approach consists in a single neural network trained end to end that takes an image as input and directly predicts bounding boxes and their class labels.
+ The network divides the input image into a SxS grid, where SxS is equal to the width and height of the tensor which presents the final prediction. 
+ In case the center of an object is in a grid cell, the grid cell takes responsibility for detecting that object. Moreover, each grid cell is simultaneously 
+ responsible for predicting bounding boxes and confidence scores which represent how confident is the model about bounding box containing an object. YOLOv2 uses anchor boxes as Faster R-CNN
+\item SSD (Single Shot Detector) was proposed by Wei Liu et al. \cite{ssd} in 2016, with the aim of having the high computational speed of YOLO, while maintaining the accuracy of Faster R-CNN. 
+SSD enhances the speed of running time with respect to Faster R-CNN by eliminating the need of the Region Proposal Network. Therefore, it causes a few drop in mAP, and SSD compensates this by applying some improvements including multiscale features and default boxes.
+ These improvements allow SSD to gain the same of Faster R-CNN using lower resolution images, which then further speeds up the processing of SSD.
 \end{itemize}
 
 \chapter{Dataset description}\label{chap:dataset-description}
@@ -162,12 +168,14 @@ Each row of the ground-truth catalogue contains the subsequent information of th
     \item    x    [none]    pixel x coordinate of the centroid, starting from 0
     \item   y    [none]    pixel y coordinate of the centroid,starting from 0
 \end{itemize}
-We used declination, right ascension, minor and major axis to obtain the pixel coordinates of the source center and its bounding box. At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results.
+We used declination, right ascension, minor and major axis to obtain the pixel coordinates of the source center and its bounding box.
+ At first we tried to filter the dataset out using the flux information and the primary beam given by the SKA challenge in order
+  to discard sources with too low signal to noise ratio, but, at the end, we decided to adopt the cleaned dataset courtesy of the ICRAR group (The International Centre for Radio Astronomy Research ) to have a comparison with their results.
 
 We discarded all sources with SELECTION equal to 0 and assigned to each source a class label, given by the concatenation of SIZE and CLASS. In total there are 5 classes. 
 
-An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots in table \ref{table:class_analysis}. In particular class $2\_3$ is highly represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
-Balancing this dataset is a tricky task because patches contain several sources of different classes, depending on patch dimension. Indeed we tried two different approach to overcome this problem: find and re-sample patches that contain only the rare classes and use focal loss for the classification task.
+An analysis of the distribution of the classes shows that the dataset is highly unbalanced, as can be seen from the scatter plots \ref{fig:scatter_class} in table \ref{table:class_analysis}. In particular class $2\_3$ is highly represented, while the number of sources for the other classes is 2-3 orders of magnitude lower. We also analyzed the distribution of height and width by classes: the dimensions seem to be isotropic, but the standard deviation is very high for some classes, while extremely low for others. This can be seen in the scatter plot in \ref{fig:scatter_class}.
+Balancing this dataset is a tricky task because patches contain several sources of different classes, depending on patch dimension. Indeed we tried two different approaches to overcome this problem: find and re-sample patches that contain only the rare classes and use focal loss for the classification task.
 \begin{table}[h]
   \center
   \begin{tabular}{|c|c|c|c|c|}
@@ -201,7 +209,7 @@ The image size is 32768x32768 pixels while the portion of the image that contain
 Images were given in FITS format. Since they are a simulation of a radiotelescope acquisition the range of each pixel should be between 0 and 1.
 The brightest source in the fits image has value of 0.006586 while the minimum gray level is  $-1.9 \times 10^{-6}$ due to noise simulation.
 
-We converted the pixel value range from [0,1] to [0,255] experimenting with different approaches: firstly we applied a linear transformation considering the maximum GL value as 255 and set the lower value equal to 0. In this way we removed the negative noise signal. Unfortunately, because the sources intensity was not linearly distributed in the range [0,1], but the majority of them had a very low intensity, the resulting image was almost completely black with the exception of very few sources and most of the ground truth boxes were undetectable, \ref{fig:image_transf} (on the left).
+We converted the pixel value range from [0,1] to [0,255] experimenting with different approaches: firstly we applied a linear transformation considering the maximum gray level value as 255 and set the lower value equal to 0. In this way we removed the negative noise signal. Unfortunately, because the sources intensity was not linearly distributed in the range [0,1], but the majority of them had a very low intensity, the resulting image was almost completely black with the exception of very few sources and most of the ground truth boxes were undetectable, \ref{fig:image_transf} (on the left).
 
 The second attempt was using a $\gamma$ function in order to enhance the signal of low intensity sources. We tried several $\gamma$ values between 0.2 and 1, but again many sources were too dark.
 
@@ -214,7 +222,7 @@ Finally, the chosen method was to scale the image intensity range using a base 1
   \minipage{0.5\textwidth}
     \includegraphics[width=\linewidth]{RGB_log.png}
   \endminipage\hfill
-  \caption{Linear transformation on the left and logarithmic transformation on the rigth, of the given image.}
+  \caption{Linear transformation on the left and logarithmic transformation on the right, of the given image.}
   \label{fig:image_transf}
 \end{figure}
 
@@ -234,7 +242,7 @@ Basically, in this work we tested:
 \item how detection performance varies when changing the receptive field size of the model with respect to objects size.
 \end{enumerate}
 
-For this reasons we implemented three different feature extraction backbone with different receptive field size.
+For this reasons we implemented three different feature extraction backbones with different receptive field size.
 
 \subsection{B16 - Baseline 16}\label{subsec:b16}
 
@@ -369,7 +377,7 @@ where $CE(q_i, q_i^*)$ is the categorical cross entropy.
 We adopted $\alpha=0.25$ and $\gamma=2$ as the best performing ones found in \cite{focal-loss}.
 
 \chapter{Experimental setup and results}\label{chap:experiments}
- We defined 9 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
+ We defined 8 experiments, which are a combination of the three different backbone models discussed before and the following parameters:
 
 \begin{itemize}
     \item dimensions of the input patches: we tried $20 \times 20$, $50 \times 50$ and $100 \times 100$ pixel patches (see section \ref{sec:data-handling}). The patches size causes both a variation in the number of ground truth boxes per patch and their size. The latter because, before feeding the network, we scaled patches up to the network input size: 100x100px for B16 and B44, 600x600px for VGG16.
@@ -391,8 +399,6 @@ In table \ref{table:experimental_setup} and following chapters we adopt the nome
       \textbf{B16_50_100} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
       \hline
       \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & Yes & No \\
-      \hline
-      \textbf{B16_50_100+BD} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & Yes \\
       \hline
       \textbf{B16_20_100} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
       \hline
@@ -444,7 +450,7 @@ We will discuss in \ref{chap:discussion} how the receptive field influenced the 
                           & \textbf{Epochs} & \textbf{RPN regions} & \textbf{Detector ROI} & \textbf{NMS neg-pos} & \textbf{Optimizer} & \textbf{Learning rate} \\ \hline
       \textbf{B16}   & $200$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
       \textbf{B44}      & $400$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
-      \textbf{VGG16}       & $30$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
+      \textbf{VGG16}       & $26$            & $256$ & $16$ & $0.7-0.3$ & Adam & $1e-2$ \\ \hline
     \end{tabular}}
     \caption{Hyperparameters}
     \label{table:hyperparameters}
@@ -518,7 +524,6 @@ Unfortunately, VGG16 required a lot of computational resources and we couldn't m
                           & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%) & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%)  \\ \hline
       \textbf{B16_50_100}           & $25.07$ & $2.63$ & $6.54$ & $25.98$ & $2.23$ & $6.06$ \\ \hline
       \textbf{B16_50_100 + FL}      & $41.72$ & $3.13$ & $3.73$ & $\textbf{42.17}$ & $1.77$ & $1.63$ \\ \hline
-      \textbf{B16_50_100 + BD + Aug}      & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
       \textbf{B16_20_100}         & $\textbf{41.74}$ & $\textbf{23.29}$ & $\textbf{38.27}$ & $\textbf{39.50}$ & $\textbf{23.64}$ & $\textbf{43.45}$ \\ \hline
       \textbf{B16_20_100 + FL}    & $28.61$ & $1.25$ & $3.21$ & $30.48$ & $2.67$ & $5.48$ \\ \hline
       \textbf{B16_20_100 + BD + Aug}    & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
@@ -561,15 +566,30 @@ For the results analysis we report here some examples of predictions for the bes
   \label{fig:b44-pred}
 \end{figure}
 
+\begin{figure}[!htb]
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{vgg16_162_18276_16929_100.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+    \includegraphics[width=\linewidth]{vgg16_401_17826_17329_100.png}
+  \endminipage\hfill
+  \minipage{0.32\textwidth}
+  \includegraphics[width=\linewidth]{vgg16_735_17476_17879_100.png}
+  \endminipage\hfill
+  \caption{Examples of predictions for VGG16 model on images with the highest mAP.}
+  \label{fig:vgg16-pred}
+\end{figure}
+
 
 
 As we can see in \ref{fig:b16-pred} a very shallow model as B16 is quite good in locating the objects: indeed, mAP score is mainly affected by the misclassification of objects of class different from "2\_3".
+Instead, in fig \ref{fig:b16-pred} we can see that VGG16 has not reached good performance and the mAP result is due only to predicted boxes occasionally overlapped to ground truth.
 We will talk about this in the next chapter.
 
 \chapter{Discussion}\label{chap:discussion}
 
 In this work, we addressed the problem of small object detection and classification on the SKADC1 dataset by leveraging a Faster R-CNN model coded from scratch.
-In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones, for feature extraction, based on the following ideas:
+In particular we adopted Faster R-CNN architecture for the detection and recognition, but implemented our own backbones for feature extraction, besides the well known VGG16, based on the following ideas:
 \begin{itemize}
 \item objects are very small, so the receptive field of the network has to be chosen accurately \cite{effective-rf};
 \item objects have very simple shapes, so there is no need for a very deep convolutional pipeline;
@@ -579,22 +599,33 @@ In particular we adopted Faster R-CNN architecture for the detection and recogni
 \item the background is approximately uniform.
 \end{itemize}
 
-As described in \ref{chap:analysis-results} the best performing model is ...
+As described in \ref{chap:analysis-results} the best performing model is B16 without Focal Loss or Dataset Balancing, 
 although its mAP score is not comparable to SoTA models, trained on PASCAL-VOC dataset or COCO annotation \cite{faster-rcnn}.
 
-The principal source of error, the one that makes mAP scores to be low, is the unbalancedness of the dataset: all the baseline networks overfitted on the most common class and this makes mAP to be low also when the object is detected.
+We think that Dataset Balancing, as it has been implemented in this work, is not working due to lack of characteristic differences between different objects classes. 
+So by feeding the model with objects very similar but from different classes, the result is to confuse it and making it not able to classify.
+Indeed, when balancing the dataset, as in B16\_20\_100+BD experiment, the model is not anymore able to learn in the time frame of 200 epochs. 
+We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). 
+It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. 
+We believe this could be a valid point because we are talking about astronomical objects which could have different emission spectrum.
 
-The interesting thing is that a simple model as B16 outperforms a complex one like VGG16. [CONTROLLARE QUI]
+For what concerns Focal Loss and the novel way we exploited it, we think that it is not sufficient to correct the deep unbalancedness of the dataset.
 
-Another interesting point is that, when balancing the dataset, as in B16\_20\_100+BD experiment, the model is not anymore able to learn in the time frame of 200 epochs. We think that this is due to the strong similarity in shape and brightness between classes (at least in the 560MHz and 1000h exposure). It could be interesting to try addressing this point by using other images of the same frequencies and different exposure time as the other channels of the input image, instead of repeating 3 times the same input image. We believe this could be a valid point because we are talking about astronomical objects which could have different emission spectrum.
+The principal source of error, the one that makes mAP scores to be low, is the object misclassification: all the baseline networks overfitted on the most common class and this makes mAP to be low also when the object is detected.
 
-We didn't take for granted the fact that the best setting was freezing the first layer in each model. Indeed it could be interesting to try letting also the first B16 model layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
+The interesting thing is that a simple model as B16 outperforms, in metrics and efficiency, a complex one like VGG16.
+We must say that the complexity and deepness of VGG16 needs it to be trained for hundreds of epochs, as in \cite{claran}, while we managed to train it only for a total of 26 epochs, meaning 6500 iterations on images, because it took 45'' per image on our hardware, and so, training it for 80000 iterations as in \cite{claran} would require approximately 45 days of training.
+Furthermore, we observed better results when normalizing input images for B16 and B44, but we skipped normalization for VGG16 as in \cite{vgg}.
+It could be interesting to try training VGG16 for more epochs and comparing trainings with and without normalization.
 
-Future improvements could be using Feature Pyramid Network as in \cite{fpn} in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
+We don't take for granted the fact that the best setting was freezing the first layer in each model. 
+Indeed it could be interesting to try letting also the first B16 layers to learn (after having transferred learning from VGG16) and see what happens. Obviously this would require a greater computational effort.
+
+Future improvements could be using Feature Pyramid Network as in \cite{fpn} or feature fusion as in \cite{small-obj-detection-in-optical-remote-sensing}, in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
 
 We think also that combining the different sky image provided in the challenge, as they were different channel in an RGB image, could bring more information to the network and could lead to a performance improvements.
 
-A crucial aspect that could make the difference is the presence/absence of context as in \cite{small-obj-detection-in-optical-remote-sensing}. They proved that context around small objects help models to recognize them: that is why feature fusion works.
+A crucial aspect that could make the difference is the presence/absence of context as in \cite{small-obj-detection-in-optical-remote-sensing}. They proved that context around small objects helps models to recognize them: that is why feature fusion works.
 While in our problem, the background around the object is pretty much the same everywhere, so the task is even harder.
 
 Another hypothesis, that we would like to test with more time, is that the Faster R-CNN network is not well suited for this specific problem: we think that it would be worth to try a system where the dection is carried out through a \textbf{segmentation} approach and, as a second step, a classifier that classifies detected objects.
