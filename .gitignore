@@ -2,6 +2,8 @@
 training/
 model/
 predictions/
+models_weights.zip
+models_weights/
 DEBUG/
 
 # Byte-compiled / optimized / DLL files

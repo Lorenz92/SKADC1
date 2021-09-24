@@ -19,50 +19,47 @@ Reallocated singl_function (elt_size=4) to 100 items from 50.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: report-blx.bib
 Database file #2: references.bib
-Warning--string name "https://arxiv.org/abs/1708.02002" is undefined
---line 163 of file references.bib
 Biblatex version: 3.13
 Reallocated wiz_functions (elt_size=4) to 9000 items from 6000.
 Reallocated singl_function (elt_size=4) to 100 items from 50.
-You've used 26 entries,
+You've used 27 entries,
             6365 wiz_defined-function locations,
-            1330 strings with 15256 characters,
-and the built_in function-call counts, 250496 in all, are:
-= -- 19348
-> -- 3960
-< -- 977
-+ -- 7774
-- -- 1880
-* -- 19640
-:= -- 30994
+            1340 strings with 16700 characters,
+and the built_in function-call counts, 256756 in all, are:
+= -- 19735
+> -- 4100
+< -- 1010
++ -- 7949
+- -- 1948
+* -- 20145
+:= -- 31673
 add.period$ -- 0
-call.type$ -- 26
-change.case$ -- 327
+call.type$ -- 27
+change.case$ -- 337
 chr.to.int$ -- 62
-cite$ -- 50
-duplicate$ -- 27508
-empty$ -- 20286
-format.name$ -- 2783
-if$ -- 48883
+cite$ -- 52
+duplicate$ -- 28236
+empty$ -- 20823
+format.name$ -- 2870
+if$ -- 50143
 int.to.chr$ -- 0
-int.to.str$ -- 58
+int.to.str$ -- 60
 missing$ -- 0
-newline$ -- 1363
-num.names$ -- 1147
-pop$ -- 10153
+newline$ -- 1410
+num.names$ -- 1188
+pop$ -- 10501
 preamble$ -- 1
-purify$ -- 619
+purify$ -- 637
 quote$ -- 0
-skip$ -- 5304
+skip$ -- 5500
 stack$ -- 0
-substring$ -- 34375
-swap$ -- 5153
-text.length$ -- 1021
-text.prefix$ -- 34
+substring$ -- 34964
+swap$ -- 5341
+text.length$ -- 1056
+text.prefix$ -- 35
 top$ -- 1
-type$ -- 872
+type$ -- 906
 warning$ -- 0
-while$ -- 4559
+while$ -- 4662
 width$ -- 0
-write$ -- 1338
-(There was 1 warning)
+write$ -- 1384

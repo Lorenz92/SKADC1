@@ -710,6 +710,9 @@
     \verb 1708.02002
     \endverb
     \field{title}{Focal Loss for Dense Object Detection}
+    \verb{url}
+    \verb https://arxiv.org/abs/1708.02002
+    \endverb
     \field{eprinttype}{arXiv}
     \field{eprintclass}{cs.CV}
     \field{year}{2018}
@@ -952,6 +955,66 @@
     \field{eprinttype}{arXiv}
     \field{eprintclass}{cs.CV}
     \field{year}{2016}
+  \endentry
+
+  \entry{small-obj-detection-in-optical-remote-sensing}{article}{}
+    \name{author}{3}{}{%
+      {{hash=RY}{%
+         family={Ren},
+         familyi={R\bibinitperiod},
+         given={Yun},
+         giveni={Y\bibinitperiod},
+      }}%
+      {{hash=ZC}{%
+         family={Zhu},
+         familyi={Z\bibinitperiod},
+         given={Changren},
+         giveni={C\bibinitperiod},
+      }}%
+      {{hash=XS}{%
+         family={Xiao},
+         familyi={X\bibinitperiod},
+         given={Shunping},
+         giveni={S\bibinitperiod},
+      }}%
+    }
+    \strng{namehash}{RYZCXS1}
+    \strng{fullhash}{RYZCXS1}
+    \field{labelnamesource}{author}
+    \field{labeltitlesource}{title}
+    \field{sortinit}{R}
+    \field{sortinithash}{R}
+    \field{abstract}{%
+    The PASCAL VOC Challenge performance has been significantly boosted by the
+  prevalently CNN-based pipelines like Faster R-CNN. However, directly applying
+  the Faster R-CNN to the small remote sensing objects usually renders poor
+  performance. To address this issue, this paper investigates on how to modify
+  Faster R-CNN for the task of small object detection in optical remote sensing
+  images. First of all, we not only modify the RPN stage of Faster R-CNN by
+  setting appropriate anchors but also leverage a single high-level feature map
+  of a fine resolution by designing a similar architecture adopting top-down
+  and skip connections. In addition, we incorporate context information to
+  further boost small remote sensing object detection performance while we
+  apply a simple sampling strategy to solve the issue about the imbalanced
+  numbers of images between different classes. At last, we introduce a simple
+  yet effective data augmentation method named &lsquo;random rotation&rsquo;
+  during training. Experimental results show that our modified Faster R-CNN
+  algorithm improves the mean average precision by a large margin on detecting
+  small remote sensing objects.%
+    }
+    \verb{doi}
+    \verb 10.3390/app8050813
+    \endverb
+    \field{issn}{2076-3417}
+    \field{number}{5}
+    \field{title}{Small Object Detection in Optical Remote Sensing Images via
+  Modified Faster R-CNN}
+    \verb{url}
+    \verb https://www.mdpi.com/2076-3417/8/5/813
+    \endverb
+    \field{volume}{8}
+    \field{journaltitle}{Applied Sciences}
+    \field{year}{2018}
   \endentry
 
   \entry{iou}{misc}{}

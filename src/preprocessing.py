@@ -400,7 +400,7 @@ def get_anchor_gt(patches_path, patch_list, backbone, mode='train', use_expander
 				# Zero-center by mean pixel, and preprocess image
 				# zero_centering(x_img, pixel_mean)
 				
-				if (backbone == 'resnet50' or backbone =='baseline_16' or backbone =='baseline_44'):
+				if (backbone =='baseline_16' or backbone =='baseline_44'):
 					normalize_pixel_values(x_img)
 				
 				x_img = np.expand_dims(x_img, axis=0) # (600, 600) --> (1, 600, 600)

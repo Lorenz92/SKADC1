@@ -697,6 +697,7 @@ def evaluate_model(rpn_model, detector_model, backbone, val_patch_list, class_li
         detections = get_detections(patch_id, bboxes, probs, save_eval_results)
         macro_AP, macro_prec, macro_rec= get_img_scores(detections, patch_id, map_threshold)
         preds[patch_id] = {'bboxes':bboxes, 'probs':probs, 'mAP':macro_AP, 'macro_precision':macro_prec, 'macro_recall':macro_rec}
+        # print(macro_AP)
         mAP.append(macro_AP)
         mPrec.append(macro_prec)
         mRec.append(macro_rec)

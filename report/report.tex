@@ -390,7 +390,7 @@ In table \ref{table:experimental_setup} and following chapters we adopt the nome
       \hline
       \textbf{B16_50_100} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & No \\
       \hline
-      \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[4,8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & Yes & No \\
+      \textbf{B16_50_100+FL} & 16 &50x50 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & Yes & No \\
       \hline
       \textbf{B16_50_100+BD} & 16 &50x50 &100x100  & \shortstack{[8,16,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & Yes \\
       \hline
@@ -400,7 +400,9 @@ In table \ref{table:experimental_setup} and following chapters we adopt the nome
       \hline
       \textbf{B16_20_100+BD} & 16 &20x20 &100x100 & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}} & Yes  & No & Yes \\
       \hline
-      \textbf{B44_  } & 44  &20x20 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}}  & - & - & - \\
+      \textbf{B44_20_100} & 44  &20x20 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}}  & Yes & No & No \\
+      \hline
+      \textbf{B44_20_100+FL} & 44  &20x20 &100x100  & \shortstack{[4,8,16,24,32,64] \\ {[1:1,1:2,2:1]}}  & Yes & Yes & No \\
       \hline
       \textbf{VGG16_100_600} & 196 & 100x100 &600x600 & \shortstack{[32,64,128] \\ {[1:1,1:2,2:1]}} & No  & No & No \\
       \hline
@@ -514,15 +516,15 @@ Unfortunately, VGG16 required a lot of computational resources and we couldn't m
       \hline
       \multirow{2}{*}{}   & \multicolumn{3}{c|}{\textbf{Training}} & \multicolumn{3}{c|}{\textbf{Test}}                                                          \\ \cline{2-7}
                           & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%) & \textbf{mAP\textsubscript{.5}} (\%) & \textbf{mPrec} (\%) & \textbf{mRec} (\%)  \\ \hline
-      \textbf{B16_50_100}           & $$ & $$ & $$ & $$ & $$ & $$ \\ \hline
+      \textbf{B16_50_100}           & $25.07$ & $2.63$ & $6.54$ & $25.98$ & $2.23$ & $6.06$ \\ \hline
       \textbf{B16_50_100 + FL}      & $41.72$ & $3.13$ & $3.73$ & $\textbf{42.17}$ & $1.77$ & $1.63$ \\ \hline
-      \textbf{B16_50_100 + BD}      & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
+      \textbf{B16_50_100 + BD + Aug}      & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
       \textbf{B16_20_100}         & $\textbf{41.74}$ & $\textbf{23.29}$ & $\textbf{38.27}$ & $\textbf{39.50}$ & $\textbf{23.64}$ & $\textbf{43.45}$ \\ \hline
       \textbf{B16_20_100 + FL}    & $28.61$ & $1.25$ & $3.21$ & $30.48$ & $2.67$ & $5.48$ \\ \hline
       \textbf{B16_20_100 + BD + Aug}    & $-$ & $-$ & $-$ & $-$ & $-$ & $-$ \\ \hline
       \textbf{B44_20_100}         & $15.18$ & $2.65$ & $13.36$ & $15.46$ & $3.27$ & $14.52$ \\ \hline
       \textbf{B44_20_100 + FL}    & $17.32$ & $2.47$ & $10.08$ & $17.83$ & $4.05$ & $16.67$ \\ \hline
-      \textbf{VGG16_100_600}    &  &  &  &  &  &  \\ \hline
+      \textbf{VGG16_100_600}    & $27.22$ & $1.01$ & $1.46$ & $25.97$ & $0.56$ & $0.78$ \\ \hline
     \end{tabular}}
     \caption{Best results}
     \label{table:results}
@@ -591,6 +593,9 @@ We didn't take for granted the fact that the best setting was freezing the first
 Future improvements could be using Feature Pyramid Network as in \cite{fpn} in order to produce more accurate feature maps for smaller objects, or to implement the tweaks described in \cite{frcnn-small-obj} to enhance Faster R-CNN performance specifically for small objects.
 
 We think also that combining the different sky image provided in the challenge, as they were different channel in an RGB image, could bring more information to the network and could lead to a performance improvements.
+
+A crucial aspect that could make the difference is the presence/absence of context as in \cite{small-obj-detection-in-optical-remote-sensing}. They proved that context around small objects help models to recognize them: that is why feature fusion works.
+While in our problem, the background around the object is pretty much the same everywhere, so the task is even harder.
 
 Another hypothesis, that we would like to test with more time, is that the Faster R-CNN network is not well suited for this specific problem: we think that it would be worth to try a system where the dection is carried out through a \textbf{segmentation} approach and, as a second step, a classifier that classifies detected objects.
 
