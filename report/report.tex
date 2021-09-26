@@ -326,8 +326,8 @@ Depending on how the network works, the training phase is carried out in a stoch
 The structure of this network is the following:
 \begin{itemize}
     \item 1 convolutional layer with 3x3x512 filters, initialized with a Gaussian distribution centered in 0 with a stdev of 0.01  \cite{faster-rcnn}, followed by a ReLU activation layer;
-    \item 1 convolutional layer with 1x1xnum\_classes filters, initialized with a uniform distribution;
-    \item 1 convolutional layer with 1x1x4xnum\_classes filters, initialized to the constant 0.
+    \item 1 convolutional layer with 1x1xnum\_anchors filters, initialized with a uniform distribution;
+    \item 1 convolutional layer with 1x1x4xnum\_anchors filters, initialized to the constant 0.
 \end{itemize}
 
 The second layer is in charge to determine the "objectness" score of a candidate region, (which can be interpreted as the probability that the region contains an object) while its sibling, the third layer, is in charge of outputting the difference in coordinates of such proposals with respect to model anchors.
